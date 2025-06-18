@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           provider: 'google',
           providerAccountId: userInfo.id,
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
+          refreshToken: tokens.refresh_token || null,
           expiresAt: tokens.expiry_date || null,
         });
       }

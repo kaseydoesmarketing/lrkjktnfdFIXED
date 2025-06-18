@@ -23,3 +23,10 @@ export function generateSessionToken(): string {
 export function isValidSession(expires: Date): boolean {
   return new Date() < expires;
 }
+
+export const authService = {
+  generateSessionToken,
+  isValidSession,
+  encryptToken,
+  decryptToken
+};

@@ -44,8 +44,6 @@ function Router() {
       )} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/dashboard*" component={AuthCallback} />
-      <Route path="/dashboard*" component={AuthCallback} />
       <Route component={NotFound} />
     </Switch>
   );
