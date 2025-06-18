@@ -2,6 +2,9 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { scheduler } from "./scheduler";
+import { authService } from "./auth";
+import { googleAuthService } from "./googleAuth";
+import { youtubeService } from "./youtubeService";
 import { insertTestSchema, insertTitleSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -103,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           providerAccountId: userInfo.id,
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
-          expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+          expiresAt: tokens.expiry_date || null,
         });
       }
 
@@ -115,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createSession({
         sessionToken,
         userId: user.id,
-        expiresAt,
+        expires: expiresAt,
       });
 
       // Redirect to dashboard with session token

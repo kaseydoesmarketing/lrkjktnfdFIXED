@@ -42,13 +42,16 @@ export class YouTubeService {
     }
 
     // Get detailed video information
-    const videoIds = playlistResponse.data.items.map(item => item.snippet?.resourceId?.videoId).filter(Boolean);
+    const videoIds = playlistResponse.data.items
+      .map(item => item.snippet?.resourceId?.videoId)
+      .filter((id): id is string => Boolean(id));
+    
     const videosResponse = await youtube.videos.list({
       part: ['snippet', 'statistics', 'contentDetails'],
       id: videoIds
     });
 
-    return videosResponse.data.items?.map(video => ({
+    return videosResponse.data.items?.map((video: any) => ({
       id: video.id!,
       title: video.snippet?.title,
       description: video.snippet?.description,
@@ -129,7 +132,7 @@ export class YouTubeService {
       order: 'relevance'
     });
 
-    return response.data.items?.map(item => ({
+    return response.data.items?.map((item: any) => ({
       id: item.id?.videoId!,
       title: item.snippet?.title,
       description: item.snippet?.description,

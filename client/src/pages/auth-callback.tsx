@@ -19,10 +19,17 @@ export default function AuthCallback() {
     if (token) {
       // Store the session token
       localStorage.setItem('sessionToken', token);
-      // Redirect to dashboard
+      // Clear URL parameters and redirect to dashboard
+      window.history.replaceState({}, '', '/dashboard');
       setLocation('/dashboard');
     } else {
-      setLocation('/login');
+      // If no token and we're on dashboard route, check localStorage
+      const existingToken = localStorage.getItem('sessionToken');
+      if (existingToken) {
+        setLocation('/dashboard');
+      } else {
+        setLocation('/login');
+      }
     }
   }, [setLocation]);
 
