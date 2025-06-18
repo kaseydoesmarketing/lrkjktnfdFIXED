@@ -1,0 +1,107 @@
+# TitleTesterPro - YouTube A/B Testing Platform
+
+## Overview
+
+TitleTesterPro is a full-stack web application designed to help YouTubers optimize their video titles through automated A/B testing. The platform allows users to test multiple title variants, automatically rotate titles based on configurable intervals, and analyze performance metrics to determine the best-performing titles.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18+ with TypeScript
+- **Styling**: Tailwind CSS with Shadcn/ui component library
+- **State Management**: TanStack Query (React Query) for server state management
+- **Routing**: Wouter for client-side routing
+- **Data Visualization**: Recharts for charts and analytics
+- **Build Tool**: Vite for fast development and optimized builds
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript for type safety
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Custom session-based auth with Google OAuth integration
+- **Scheduler**: Node.js cron jobs for automated title rotation and data polling
+- **API Integration**: YouTube Data API v3 for video analytics
+
+### Database Design
+- **Users**: Store user profiles and OAuth tokens (encrypted)
+- **Tests**: Track A/B test configurations and status
+- **Titles**: Store title variants for each test
+- **Analytics**: Historical performance data for each title
+- **Sessions**: User session management
+
+## Key Components
+
+### Authentication System
+- Google OAuth 2.0 integration for YouTube API access
+- Session-based authentication with encrypted token storage
+- Automatic token refresh handling
+- Protected routes requiring authentication
+
+### Test Management
+- Create A/B tests with multiple title variants
+- Configure rotation intervals (minutes between title changes)
+- Choose success metrics (CTR or Average View Duration)
+- Pause, resume, and complete tests
+
+### Automated Scheduler
+- Background job system using Node.js cron
+- Automatic title rotation based on configured intervals
+- Periodic analytics polling from YouTube API
+- Data aggregation and summary generation
+
+### Analytics Dashboard
+- Real-time performance metrics visualization
+- Comparative analysis between title variants
+- Export functionality for test results (CSV)
+- Winner detection based on statistical significance
+
+## Data Flow
+
+1. **User Authentication**: Users authenticate via Google OAuth to access YouTube API
+2. **Test Creation**: Users create A/B tests by providing video URL and title variants
+3. **Title Rotation**: Scheduler automatically rotates video titles at configured intervals
+4. **Data Collection**: System polls YouTube API for performance metrics (views, impressions, CTR, AVD)
+5. **Analysis**: Analytics engine processes data to identify winning titles
+6. **Reporting**: Users view results through interactive dashboards and export data
+
+## External Dependencies
+
+### Google APIs
+- **YouTube Data API v3**: For retrieving video analytics and updating video metadata
+- **Google OAuth 2.0**: For user authentication and API authorization
+
+### Database
+- **PostgreSQL**: Primary data storage with connection pooling via Neon
+- **Drizzle ORM**: Type-safe database operations and schema management
+
+### Infrastructure
+- **Replit**: Development and deployment platform
+- **Node.js Scheduler**: Built-in cron functionality for background tasks
+
+## Deployment Strategy
+
+### Development Environment
+- Uses Vite dev server for hot module replacement
+- PostgreSQL database provisioned through Replit
+- Environment variables for API keys and secrets
+- Development mode with debug logging
+
+### Production Build
+- Vite builds optimized static assets
+- Express server serves both API and static files
+- Database migrations managed through Drizzle Kit
+- Session storage using PostgreSQL with connect-pg-simple
+
+### Environment Configuration
+- Database URL for PostgreSQL connection
+- Google OAuth credentials for API access
+- YouTube API key for data retrieval
+- Encryption keys for token security
+- Session secrets for authentication
+
+## Changelog
+- June 18, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
