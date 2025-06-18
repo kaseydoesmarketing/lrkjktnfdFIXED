@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { authService } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { Play } from 'lucide-react';
+import { Play, Youtube, BarChart3, TrendingUp, TestTube } from 'lucide-react';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -45,56 +45,102 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Play className="text-white w-5 h-5" />
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        {/* Left side - Features */}
+        <div className="space-y-8">
+          <div>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+                <Youtube className="text-white w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">TitleTesterPro</h1>
+                <p className="text-gray-600">Optimize your YouTube titles with data-driven A/B testing</p>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold">TitleTesterPro</CardTitle>
           </div>
-          <p className="text-gray-600">YouTube A/B Testing Made Simple</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-              />
+          
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TestTube className="text-blue-600 w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Automated A/B Testing</h3>
+                <p className="text-gray-600 text-sm">Test multiple title variants automatically with customizable rotation intervals</p>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="name">Name (Optional)</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your Name"
-              />
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="text-green-600 w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Real-time Analytics</h3>
+                <p className="text-gray-600 text-sm">Track CTR, views, and engagement metrics to identify winning titles</p>
+              </div>
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading || !email}
-            >
-              {isLoading ? 'Signing in...' : 'Sign in with Mock Google'}
-            </Button>
-          </form>
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Demo Mode:</strong> This is a demonstration version. In production, 
-              this would integrate with Google OAuth for YouTube API access.
-            </p>
+            
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="text-purple-600 w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Performance Optimization</h3>
+                <p className="text-gray-600 text-sm">Increase click-through rates and video performance with data-backed decisions</p>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Right side - Login form */}
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl font-semibold">Connect Your YouTube Account</CardTitle>
+            <p className="text-gray-600 text-sm">Start optimizing your video titles today</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <Label htmlFor="email">YouTube Account Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.youtube@gmail.com"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="name">Channel Name (Optional)</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your Channel Name"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                disabled={isLoading || !email}
+              >
+                <Youtube className="w-4 h-4 mr-2" />
+                {isLoading ? 'Connecting...' : 'Connect YouTube Account'}
+              </Button>
+            </form>
+            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                <strong>Demo Version:</strong> This connects to a demo environment. 
+                In production, this would securely integrate with Google OAuth and YouTube Data API v3.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

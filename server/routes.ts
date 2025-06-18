@@ -57,6 +57,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           providerAccountId: email,
           accessToken,
           refreshToken,
+          expiresAt: null,
+          tokenType: 'Bearer',
+          scope: 'https://www.googleapis.com/auth/youtube.force-ssl',
+          idToken: null,
+          sessionState: null,
         });
       }
 
