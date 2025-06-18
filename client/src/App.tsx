@@ -8,6 +8,7 @@ import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/landing";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useQuery({
@@ -34,7 +35,8 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={() => (
+      <Route path="/" component={Landing} />
+      <Route path="/dashboard" component={() => (
         <AuthWrapper>
           <Dashboard />
         </AuthWrapper>
