@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { authService } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { Play, Youtube, BarChart3, TrendingUp, TestTube } from 'lucide-react';
 
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +35,9 @@ export default function Login() {
         title: 'Success',
         description: 'Successfully logged in!',
       });
+      
+      // Redirect to dashboard after successful login
+      setLocation('/dashboard');
     } catch (error) {
       toast({
         title: 'Error',
