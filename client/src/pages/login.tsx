@@ -16,13 +16,19 @@ export default function Login() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleGoogleAuth = () => {
+    setIsLoading(true);
+    // Redirect to Google OAuth
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleDemoLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
     try {
-      // Mock Google OAuth - in production this would be handled by Google OAuth flow
+      // Demo mode fallback
       await authService.loginWithGoogle({
         email,
         name: name || email.split('@')[0],
@@ -36,7 +42,6 @@ export default function Login() {
         description: 'Successfully logged in!',
       });
       
-      // Redirect to dashboard after successful login
       setLocation('/dashboard');
     } catch (error) {
       toast({
@@ -106,41 +111,62 @@ export default function Login() {
             <p className="text-gray-600 text-sm">Start optimizing your video titles today</p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="email">YouTube Account Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.youtube@gmail.com"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="name">Channel Name (Optional)</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your Channel Name"
-                />
-              </div>
+            <div className="space-y-4">
               <Button
-                type="submit"
+                onClick={handleGoogleAuth}
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
-                disabled={isLoading || !email}
+                disabled={isLoading}
               >
                 <Youtube className="w-4 h-4 mr-2" />
-                {isLoading ? 'Connecting...' : 'Connect YouTube Account'}
+                {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
-            </form>
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800">
-                <strong>Demo Version:</strong> This connects to a demo environment. 
-                In production, this would securely integrate with Google OAuth and YouTube Data API v3.
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">Or try demo mode</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleDemoLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Demo Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="demo@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Demo Name (Optional)</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Demo Channel"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading || !email}
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Try Demo Mode
+                </Button>
+              </form>
+            </div>
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                <strong>Production Ready:</strong> Connect with your real YouTube account for live title testing, 
+                or use demo mode to explore the interface with sample data.
               </p>
             </div>
           </CardContent>

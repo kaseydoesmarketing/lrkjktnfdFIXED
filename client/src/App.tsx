@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import AuthCallback from "@/pages/auth-callback";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useQuery({
@@ -42,6 +43,7 @@ function Router() {
         </AuthWrapper>
       )} />
       <Route path="/login" component={Login} />
+      <Route path="/auth/callback" component={AuthCallback} />
       <Route component={NotFound} />
     </Switch>
   );

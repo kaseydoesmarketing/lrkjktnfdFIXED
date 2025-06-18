@@ -32,7 +32,101 @@ async function requireAuth(req: Request, res: Response, next: Function) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth routes
+  // Google OAuth routes
+  app.get('/api/auth/google', async (req: Request, res: Response) => {
+    try {
+      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        // Fallback to demo mode if credentials not configured
+        return res.redirect('/login?demo=true');
+      }
+      
+      const authUrl = googleAuthService.getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error('Error starting Google OAuth:', error);
+      res.status(500).json({ error: 'Failed to start authentication' });
+    }
+  });
+
+  app.get('/api/auth/callback', async (req: Request, res: Response) => {
+    try {
+      const { code } = req.query;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ error: 'No authorization code provided' });
+      }
+
+      // Exchange code for tokens
+      const tokens = await googleAuthService.exchangeCodeForTokens(code);
+      
+      if (!tokens.access_token) {
+        return res.status(400).json({ error: 'Failed to get access token' });
+      }
+
+      // Get user info from Google
+      const userInfo = await googleAuthService.getUserInfo(tokens.access_token);
+      
+      // Get YouTube channel info
+      let youtubeChannel;
+      try {
+        youtubeChannel = await googleAuthService.getYouTubeChannel(tokens.access_token);
+      } catch (error) {
+        console.error('Error getting YouTube channel:', error);
+        // Continue without YouTube channel info
+      }
+
+      // Create or update user
+      let user = await storage.getUserByEmail(userInfo.email);
+      
+      if (!user) {
+        user = await storage.createUser({
+          email: userInfo.email,
+          name: userInfo.name || userInfo.email.split('@')[0],
+          image: userInfo.picture,
+          youtubeId: youtubeChannel?.id,
+        });
+      } else {
+        user = await storage.updateUser(user.id, {
+          name: userInfo.name || user.name,
+          image: userInfo.picture || user.image,
+          youtubeId: youtubeChannel?.id || user.youtubeId,
+        });
+      }
+
+      // Store or update account tokens
+      const existingAccount = await storage.getAccountByProvider('google', userInfo.id);
+      if (!existingAccount) {
+        await storage.createAccount({
+          userId: user.id,
+          type: 'oauth',
+          provider: 'google',
+          providerAccountId: userInfo.id,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+        });
+      }
+
+      // Create session
+      const sessionToken = authService.generateSessionToken();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+      await storage.createSession({
+        sessionToken,
+        userId: user.id,
+        expiresAt,
+      });
+
+      // Redirect to dashboard with session token
+      res.redirect(`/dashboard?token=${sessionToken}`);
+    } catch (error) {
+      console.error('Error in OAuth callback:', error);
+      res.redirect('/login?error=oauth_failed');
+    }
+  });
+
+  // Demo auth route (fallback)
   app.post('/api/auth/google', async (req: Request, res: Response) => {
     try {
       const { email, name, image, accessToken, refreshToken } = req.body;
