@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Video } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import VideoSelector from '@/components/VideoSelector';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -17,9 +19,11 @@ interface CreateTestModalProps {
 
 export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProps) {
   const [videoUrl, setVideoUrl] = useState('');
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [rotationInterval, setRotationInterval] = useState('30');
   const [titles, setTitles] = useState(['', '']);
   const [winnerMetric, setWinnerMetric] = useState('ctr');
+  const [activeTab, setActiveTab] = useState('select');
   const { toast } = useToast();
 
   const createTestMutation = useMutation({
@@ -54,11 +58,28 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const videoId = extractVideoId(videoUrl);
-    if (!videoId) {
+    let videoId = '';
+    let videoTitle = '';
+    
+    if (activeTab === 'select' && selectedVideo) {
+      videoId = selectedVideo.id;
+      videoTitle = selectedVideo.title;
+    } else if (activeTab === 'manual') {
+      const extractedId = extractVideoId(videoUrl);
+      if (!extractedId) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid YouTube URL',
+          variant: 'destructive',
+        });
+        return;
+      }
+      videoId = extractedId;
+      videoTitle = titles[0] || 'YouTube Video';
+    } else {
       toast({
         title: 'Error',
-        description: 'Please enter a valid YouTube URL',
+        description: 'Please select a video or enter a YouTube URL',
         variant: 'destructive',
       });
       return;
@@ -76,7 +97,7 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
 
     createTestMutation.mutate({
       videoId,
-      videoTitle: validTitles[0], // Use first title as default video title
+      videoTitle,
       titles: validTitles,
       rotationIntervalMinutes: parseInt(rotationInterval),
       winnerMetric,
@@ -85,10 +106,22 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
 
   const handleClose = () => {
     setVideoUrl('');
+    setSelectedVideo(null);
     setRotationInterval('30');
     setTitles(['', '']);
     setWinnerMetric('ctr');
+    setActiveTab('select');
     onClose();
+  };
+
+  const handleVideoSelect = (video: any) => {
+    setSelectedVideo(video);
+    // Pre-populate first title with current video title
+    const newTitles = [...titles];
+    if (newTitles[0] === '') {
+      newTitles[0] = video.title;
+      setTitles(newTitles);
+    }
   };
 
   const addTitleVariant = () => {
@@ -111,24 +144,59 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-screen overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New A/B Test</DialogTitle>
+          <p className="text-sm text-gray-600">
+            Select a video from your channel or enter a YouTube URL to start testing titles
+          </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Video URL Input */}
-          <div>
-            <Label htmlFor="videoUrl">YouTube Video URL</Label>
-            <Input
-              id="videoUrl"
-              type="url"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
-              required
-            />
-          </div>
+          {/* Video Selection Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="select" className="flex items-center space-x-2">
+                <Video className="w-4 h-4" />
+                <span>Select from Channel</span>
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Enter URL Manually</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="select" className="mt-4">
+              <VideoSelector 
+                onSelectVideo={handleVideoSelect}
+                selectedVideoId={selectedVideo?.id}
+              />
+              {selectedVideo && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Selected:</strong> {selectedVideo.title}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Video ID: {selectedVideo.id}
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="manual" className="mt-4">
+              <div>
+                <Label htmlFor="videoUrl">YouTube Video URL</Label>
+                <Input
+                  id="videoUrl"
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  required={activeTab === 'manual'}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Rotation Interval */}
           <div>
@@ -153,6 +221,10 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
           {/* Title Variants */}
           <div>
             <Label>Title Variants (2-5 titles)</Label>
+            <p className="text-sm text-gray-600 mb-3">
+              TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. 
+              Each title will be tested for the duration you specify, and analytics will be collected to determine the winner.
+            </p>
             <div className="space-y-3 mt-2">
               {titles.map((title, index) => (
                 <div key={index} className="flex items-center space-x-3">
