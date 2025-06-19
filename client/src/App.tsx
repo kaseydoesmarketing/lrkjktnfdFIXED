@@ -36,6 +36,9 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  // Debug: Log current location
+  console.log('Router rendering for path:', window.location.pathname);
+  
   return (
     <Switch>
       <Route path="/" component={Landing} />
