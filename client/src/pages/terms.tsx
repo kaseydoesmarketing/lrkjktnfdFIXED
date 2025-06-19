@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useLocation, Link } from 'wouter';
+import { Link } from 'wouter';
 
 export default function Terms() {
-  const [, setLocation] = useLocation();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

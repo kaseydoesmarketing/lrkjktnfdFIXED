@@ -355,8 +355,8 @@ export default function Landing() {
               <div className="space-y-2 text-gray-400">
                 <div>About</div>
                 <div>Contact</div>
-                <div>Privacy</div>
-                <div>Terms</div>
+                <Link href="/privacy" className="block hover:text-white transition-colors">Privacy</Link>
+                <Link href="/terms" className="block hover:text-white transition-colors">Terms</Link>
               </div>
             </div>
           </div>
