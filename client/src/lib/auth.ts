@@ -77,8 +77,28 @@ class AuthService {
       return data.user;
     } catch (error) {
       console.error('Error getting current user:', error);
+      // Don't logout on network errors, only on auth errors
       return null;
     }
+  }
+
+  async demoLogin(): Promise<User> {
+    const response = await fetch('/api/auth/demo-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Demo login failed');
+    }
+
+    const data = await response.json();
+    this.sessionToken = data.sessionToken;
+    localStorage.setItem('sessionToken', data.sessionToken);
+    
+    return data.user;
   }
 
   getSessionToken(): string | null {

@@ -80,12 +80,12 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
   if (isLoading) {
     return (
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Tests</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">Active Tests</h2>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i} className="animate-pulse bg-gray-800 border-gray-700">
               <CardContent className="p-6">
-                <div className="h-32 bg-gray-200 rounded"></div>
+                <div className="h-32 bg-gray-700 rounded"></div>
               </CardContent>
             </Card>
           ))}
@@ -97,10 +97,10 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
   if (!tests || tests.length === 0) {
     return (
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Tests</h2>
-        <Card>
+        <h2 className="text-xl font-semibold text-white mb-4">Active Tests</h2>
+        <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-8 text-center">
-            <p className="text-gray-500">No tests created yet. Start your first A/B test!</p>
+            <p className="text-gray-400">No tests created yet. Start your first A/B test!</p>
           </CardContent>
         </Card>
       </div>
@@ -109,7 +109,7 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Tests</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">Tests</h2>
       
       <div className="space-y-4">
         {tests.map((test) => {
@@ -118,22 +118,22 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
           const activeTitles = test.titles.filter(t => t.activatedAt);
           
           return (
-            <Card key={test.id}>
+            <Card key={test.id} className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-white">
                         {test.videoTitle || `Video ${test.videoId}`}
                       </h3>
                       <Badge className={getStatusColor(test.status)}>
                         {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
                       </Badge>
                     </div>
-                    <p className="text-gray-600 text-sm mb-2">
+                    <p className="text-gray-400 text-sm mb-2">
                       Video ID: <span className="font-mono">{test.videoId}</span>
                     </p>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-400 text-sm">
                       Rotation: Every {test.rotationIntervalMinutes} minutes • 
                       Started {new Date(test.createdAt).toLocaleDateString()}
                     </p>
@@ -175,17 +175,17 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                 </div>
 
                 {/* Test Progress */}
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="bg-gray-700 rounded-lg p-4 mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-medium text-gray-300">
                       Current Title ({activeTitles.length}/{test.titles.length})
                     </span>
                     {test.status === 'active' && (
-                      <span className="text-sm text-gray-500">Active</span>
+                      <span className="text-sm text-gray-400">Active</span>
                     )}
                   </div>
                   <Progress value={progress} className="mb-3" />
-                  <p className="text-sm text-gray-900 font-medium">
+                  <p className="text-sm text-white font-medium">
                     "{currentTitle.text}"
                   </p>
                 </div>
@@ -198,37 +198,37 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                     const isPending = !title.activatedAt;
                     
                     return (
-                      <div key={title.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={title.id} className="border border-gray-600 bg-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-medium text-gray-400">
                             Title {String.fromCharCode(65 + index)}
                           </span>
                           <Badge 
                             variant={isActive ? 'default' : 'secondary'}
                             className={
                               isActive 
-                                ? 'bg-green-100 text-green-800' 
+                                ? 'bg-green-500 text-white' 
                                 : isCompleted 
-                                  ? 'bg-gray-100 text-gray-600'
-                                  : 'bg-blue-100 text-blue-600'
+                                  ? 'bg-gray-500 text-white'
+                                  : 'bg-blue-500 text-white'
                             }
                           >
                             {isActive ? 'Current' : isCompleted ? 'Completed' : 'Pending'}
                           </Badge>
                         </div>
-                        <p className="text-sm font-medium text-gray-900 mb-3 line-clamp-2">
+                        <p className="text-sm font-medium text-white mb-3 line-clamp-2">
                           {title.text}
                         </p>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">CTR</span>
-                            <span className="font-medium">
+                            <span className="text-gray-400">CTR</span>
+                            <span className="font-medium text-white">
                               {isPending ? '-' : `${(Math.random() * 5 + 3).toFixed(1)}%`}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Views</span>
-                            <span className="font-medium">
+                            <span className="text-gray-400">Views</span>
+                            <span className="font-medium text-white">
                               {isPending ? '-' : Math.floor(Math.random() * 1000 + 500).toLocaleString()}
                             </span>
                           </div>

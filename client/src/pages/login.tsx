@@ -24,22 +24,15 @@ export default function Login() {
 
   const handleDemoLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
 
     setIsLoading(true);
     try {
-      // Demo mode fallback
-      await authService.loginWithGoogle({
-        email,
-        name: name || email.split('@')[0],
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-      });
+      await authService.demoLogin();
 
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       toast({
         title: 'Success',
-        description: 'Successfully logged in!',
+        description: 'Successfully logged in to demo mode!',
       });
       
       setLocation('/dashboard');
