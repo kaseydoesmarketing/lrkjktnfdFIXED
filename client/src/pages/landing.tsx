@@ -150,49 +150,49 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700 hover:bg-gray-750">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 dark:bg-blue-900/20">
-                  <Clock className="h-6 w-6 text-blue-500" />
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <Clock className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Smart Scheduling</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Smart Scheduling</h3>
+                <p className="text-gray-200">
                   Configure rotation intervals and let our scheduler handle the timing for optimal testing.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700 hover:bg-gray-750">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 dark:bg-purple-900/20">
-                  <Target className="h-6 w-6 text-purple-500" />
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <Target className="h-6 w-6 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Winner Detection</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Winner Detection</h3>
+                <p className="text-gray-200">
                   Statistical analysis automatically identifies the best-performing titles with confidence scores.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700 hover:bg-gray-750">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 dark:bg-orange-900/20">
-                  <Users className="h-6 w-6 text-orange-500" />
+                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-orange-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Channel Integration</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Channel Integration</h3>
+                <p className="text-gray-200">
                   Connect your YouTube channel and select from your recent videos to start testing immediately.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700 hover:bg-gray-750">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4 dark:bg-teal-900/20">
-                  <Shield className="h-6 w-6 text-teal-500" />
+                <div className="w-12 h-12 bg-teal-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-teal-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Safe & Secure</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Safe & Secure</h3>
+                <p className="text-gray-200">
                   Your YouTube credentials are encrypted and secure. We only access what's needed for testing.
                 </p>
               </CardContent>
@@ -202,13 +202,13 @@ export default function Landing() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 px-6 bg-gray-50 dark:bg-gray-900">
+      <section className="py-20 px-6 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4">
               How it works
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-gray-300">
               Get started with title testing in just a few simple steps
             </p>
           </div>
@@ -218,8 +218,8 @@ export default function Landing() {
               <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 1
               </div>
-              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Connect Your Channel</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-semibold mb-4 text-white">Connect Your Channel</h3>
+              <p className="text-gray-300">
                 Sign in with your YouTube account and grant permissions for title testing and analytics access.
               </p>
             </div>
@@ -228,8 +228,8 @@ export default function Landing() {
               <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Create Your Test</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-semibold mb-4 text-white">Create Your Test</h3>
+              <p className="text-gray-300">
                 Choose a video, add 2-5 title variants, set your rotation schedule and success metrics.
               </p>
             </div>
@@ -238,8 +238,8 @@ export default function Landing() {
               <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Watch Results</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-semibold mb-4 text-white">Watch Results</h3>
+              <p className="text-gray-300">
                 Monitor real-time performance data and get notified when we find your winning title.
               </p>
             </div>
@@ -248,45 +248,45 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 bg-gray-900">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4">
               Trusted by top creators
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-8 border-gray-200 dark:border-gray-700">
+            <Card className="p-8 bg-gray-800 border-gray-700">
               <CardContent className="p-0">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
                     M
                   </div>
                   <div className="ml-4">
-                    <div className="font-semibold text-gray-900 dark:text-white">Mike Chen</div>
-                    <div className="text-gray-600 dark:text-gray-300">Tech Reviewer • 2.5M subs</div>
+                    <div className="font-semibold text-white">Mike Chen</div>
+                    <div className="text-gray-300">Tech Reviewer • 2.5M subs</div>
                   </div>
                 </div>
-                <p className="text-gray-700 dark:text-gray-300 italic">
+                <p className="text-gray-200 italic">
                   "TitleTesterPro increased my average CTR by 32%. The automatic testing saves me hours 
                   of manual work and the results speak for themselves."
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="p-8 border-gray-200 dark:border-gray-700">
+            <Card className="p-8 bg-gray-800 border-gray-700">
               <CardContent className="p-0">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
                     S
                   </div>
                   <div className="ml-4">
-                    <div className="font-semibold text-gray-900 dark:text-white">Sarah Williams</div>
-                    <div className="text-gray-600 dark:text-gray-300">Lifestyle Creator • 850K subs</div>
+                    <div className="font-semibold text-white">Sarah Williams</div>
+                    <div className="text-gray-300">Lifestyle Creator • 850K subs</div>
                   </div>
                 </div>
-                <p className="text-gray-700 dark:text-gray-300 italic">
+                <p className="text-gray-200 italic">
                   "Finally, a tool that tests titles on actual YouTube videos. The insights have 
                   completely changed how I approach content optimization."
                 </p>
