@@ -360,8 +360,22 @@ export default function Landing() {
               </div>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 TitleTesterPro. All rights reserved.</p>
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center space-x-6">
+                <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+                <span className="text-gray-600">•</span>
+                <Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
+                  Terms of Service
+                </Link>
+              </div>
+              <p className="text-center text-gray-400">&copy; 2025 TitleTesterPro. All rights reserved.</p>
+              <p className="text-xs text-gray-500">
+                Contact: <a href="mailto:kaseydoesmarketing@gmail.com" className="hover:text-gray-400">kaseydoesmarketing@gmail.com</a>
+              </p>
+            </div>
           </div>
         </div>
       </footer>
