@@ -6,16 +6,22 @@ Your Google Cloud Console OAuth consent screen requires verification for YouTube
 ## Required Actions in Google Cloud Console
 
 ### 1. Complete Scope Justifications
-For each YouTube scope, you need to provide:
+Copy and paste these exact texts into the "Enter justification here" field for each scope:
 
-**Scope: `https://www.googleapis.com/auth/youtube.readonly`**
-- **Justification:** "TitleTesterPro needs read access to retrieve video analytics data (views, impressions, CTR, average view duration) to measure the performance of different title variants during A/B testing."
+**For `https://www.googleapis.com/auth/youtube.readonly`:**
+```
+TitleTesterPro is a YouTube title A/B testing platform that helps creators optimize their video titles by automatically testing multiple variants. This scope is required to retrieve video analytics data including views, impressions, click-through rates, and average view duration to measure the performance of different title variants during testing periods. The app fetches this data periodically to determine which title performs best statistically.
+```
 
-**Scope: `https://www.googleapis.com/auth/youtube`** 
-- **Justification:** "TitleTesterPro needs to modify video metadata (specifically video titles) to automatically rotate different title variants during A/B testing experiments."
+**For `https://www.googleapis.com/auth/youtube`:**
+```
+TitleTesterPro automatically rotates video titles during A/B testing experiments to measure which title variant performs best. This scope is required to update video metadata (specifically the title field) at scheduled intervals during the test period. Users configure multiple title variants and rotation schedules, and the app changes titles automatically to collect performance data for statistical comparison.
+```
 
-**Scope: `https://www.googleapis.com/auth/youtube.force-ssl`**
-- **Justification:** "TitleTesterPro requires secure HTTPS access to YouTube API for updating video titles and retrieving analytics data during title A/B testing."
+**For `https://www.googleapis.com/auth/youtube.force-ssl`:**
+```
+TitleTesterPro requires secure HTTPS access to the YouTube API for both retrieving analytics data and updating video titles during A/B testing. This ensures all API communications are encrypted and secure when handling sensitive video metadata and analytics information for creators' YouTube channels.
+```
 
 ### 2. Demo Video Requirements
 Google requires a demo video showing:
@@ -32,13 +38,20 @@ Google requires a demo video showing:
 
 ### 3. Steps to Complete Verification
 
-1. **Go to Google Cloud Console** → APIs & Services → OAuth consent screen
-2. **Click "Edit App"**
-3. **In Scopes section**, click "Add or Remove Scopes"
-4. **For each YouTube scope**, click the pencil icon and add justification text above
-5. **Upload demo video** (can be unlisted YouTube video)
-6. **Submit for verification**
-7. **Wait for Google approval** (can take 1-7 days)
+**Based on your screenshots, here's exactly what to do:**
+
+1. **In the "How will the scopes be used?" text box**, paste this comprehensive justification:
+```
+TitleTesterPro is a YouTube title A/B testing platform for content creators. The app requires YouTube API access to: 1) Retrieve video analytics (views, CTR, watch time) to measure title performance, 2) Automatically rotate video titles during testing periods, and 3) Provide creators with statistical data to optimize their content. The app helps creators increase video performance through data-driven title optimization.
+```
+
+2. **For each individual scope** (the ones with warning triangles), use the specific justifications above
+
+3. **Upload demo video** showing the app in action (can be unlisted YouTube video)
+
+4. **Submit for verification** - Google review typically takes 1-7 business days
+
+5. **Add yourself as a test user** while waiting for approval
 
 ### 4. Temporary Workaround
 While waiting for verification, you can:
