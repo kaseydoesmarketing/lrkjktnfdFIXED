@@ -109,6 +109,14 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-semibold">Connect Your YouTube Account</CardTitle>
             <p className="text-gray-600 text-sm">Start optimizing your video titles today</p>
+            {new URLSearchParams(window.location.search).get('error') === 'oauth_verification' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+                <p className="text-yellow-800 text-sm">
+                  <strong>OAuth Setup Required:</strong> Your Google Cloud Console OAuth app needs verification or test user setup. 
+                  Use demo mode below or contact support.
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

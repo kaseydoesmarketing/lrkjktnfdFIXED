@@ -46,6 +46,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Starting OAuth flow with client ID ending in:', process.env.GOOGLE_CLIENT_ID?.slice(-10));
       const authUrl = googleAuthService.getAuthUrl();
       console.log('Generated OAuth URL:', authUrl);
+      
+      // Add note about OAuth app verification status
+      console.log('Note: If OAuth fails, check Google Cloud Console OAuth consent screen status');
+      console.log('App may need verification or publishing for external users');
+      
       res.redirect(authUrl);
     } catch (error) {
       console.error('OAuth initialization error:', error);

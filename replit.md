@@ -116,6 +116,9 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Corrected Client ID to match Google Cloud Console: 618794070994-n4n3b75oktui4efj7671il3jvef23peu.apps.googleusercontent.com
 - Verified OAuth consent screen configuration with scopes and test user properly added
 - Fixed redirect URI configuration to include required /google suffix for OAuth callback
+- June 19, 2025: Identified OAuth consent screen verification requirement as blocking authentication
+- Google Cloud Console OAuth app requires verification or publishing to allow external users
+- Added enhanced debugging to track OAuth callback parameters and flow
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
