@@ -48,7 +48,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* Left side - Features */}
         <div className="space-y-8">
@@ -58,53 +58,53 @@ export default function Login() {
                 <Youtube className="text-white w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">TitleTesterPro</h1>
-                <p className="text-gray-600">Optimize your YouTube titles with data-driven A/B testing</p>
+                <h1 className="text-3xl font-bold text-white">TitleTesterPro</h1>
+                <p className="text-gray-400">Optimize your YouTube titles with data-driven A/B testing</p>
               </div>
             </div>
           </div>
           
           <div className="space-y-6">
             <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <TestTube className="text-blue-600 w-5 h-5" />
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TestTube className="text-blue-400 w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Automated A/B Testing</h3>
-                <p className="text-gray-600 text-sm">Test multiple title variants automatically with customizable rotation intervals</p>
+                <h3 className="font-semibold text-white mb-1">Automated A/B Testing</h3>
+                <p className="text-gray-400 text-sm">Test multiple title variants automatically with customizable rotation intervals</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="text-green-600 w-5 h-5" />
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="text-green-400 w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Real-time Analytics</h3>
-                <p className="text-gray-600 text-sm">Track CTR, views, and engagement metrics to identify winning titles</p>
+                <h3 className="font-semibold text-white mb-1">Real-time Analytics</h3>
+                <p className="text-gray-400 text-sm">Track CTR, views, and engagement metrics to identify winning titles</p>
               </div>
             </div>
             
             <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="text-purple-600 w-5 h-5" />
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="text-purple-400 w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Performance Optimization</h3>
-                <p className="text-gray-600 text-sm">Increase click-through rates and video performance with data-backed decisions</p>
+                <h3 className="font-semibold text-white mb-1">Performance Optimization</h3>
+                <p className="text-gray-400 text-sm">Increase click-through rates and video performance with data-backed decisions</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Right side - Login form */}
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="w-full max-w-md mx-auto bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl font-semibold">Connect Your YouTube Account</CardTitle>
-            <p className="text-gray-600 text-sm">Start optimizing your video titles today</p>
+            <CardTitle className="text-xl font-semibold text-white">Connect Your YouTube Account</CardTitle>
+            <p className="text-gray-400 text-sm">Start optimizing your video titles today</p>
             {new URLSearchParams(window.location.search).get('error') === 'oauth_verification' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
-                <p className="text-yellow-800 text-sm">
+              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-3 mt-2">
+                <p className="text-yellow-300 text-sm">
                   <strong>OAuth Setup Required:</strong> Your Google Cloud Console OAuth app needs verification or test user setup. 
                   Use demo mode below or contact support.
                 </p>
@@ -124,59 +124,38 @@ export default function Login() {
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">Or try demo mode</span>
+                  <span className="bg-gray-800 px-2 text-gray-400">Or try demo mode</span>
                 </div>
               </div>
 
               <form onSubmit={handleDemoLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Demo Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="demo@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="name">Demo Name (Optional)</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Demo Channel"
-                  />
-                </div>
                 <Button
                   type="submit"
                   variant="outline"
-                  className="w-full"
-                  disabled={isLoading || !email}
+                  className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                  disabled={isLoading}
                 >
                   <TestTube className="w-4 h-4 mr-2" />
                   Enter Dashboard (Demo)
                 </Button>
               </form>
             </div>
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">
+            <div className="mt-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
+              <p className="text-sm text-green-300">
                 <strong>Production Ready:</strong> Connect with your real YouTube account for live title testing, 
                 or use demo mode to explore the interface with sample data.
               </p>
             </div>
             
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 text-center">
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <p className="text-xs text-gray-400 text-center">
                 By using TitleTesterPro, you agree to our{' '}
-                <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>
+                <a href="/terms" className="text-blue-400 hover:underline">Terms of Service</a>
                 {' '}and{' '}
-                <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+                <a href="/privacy" className="text-blue-400 hover:underline">Privacy Policy</a>
               </p>
             </div>
           </CardContent>

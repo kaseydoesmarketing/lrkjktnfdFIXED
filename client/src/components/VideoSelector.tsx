@@ -63,18 +63,18 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle>Select a Video to Test</CardTitle>
+          <CardTitle className="text-white">Select a Video to Test</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="animate-pulse flex space-x-4">
-                <div className="w-32 h-20 bg-gray-200 rounded"></div>
+                <div className="w-32 h-20 bg-gray-700 rounded"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-700 rounded w-1/2"></div>
                 </div>
               </div>
             ))}
@@ -86,12 +86,12 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
 
   if (!videos || (videos as Video[]).length === 0) {
     return (
-      <Card>
+      <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle>Select a Video to Test</CardTitle>
+          <CardTitle className="text-white">Select a Video to Test</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 text-center py-8">
+          <p className="text-gray-400 text-center py-8">
             No recent videos found. Make sure your YouTube channel has published videos.
           </p>
         </CardContent>
@@ -100,10 +100,10 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
   }
 
   return (
-    <Card>
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle>Select a Video to Test</CardTitle>
-        <p className="text-sm text-gray-600">Choose from your recent videos to start A/B testing titles</p>
+        <CardTitle className="text-white">Select a Video to Test</CardTitle>
+        <p className="text-sm text-gray-400">Choose from your recent videos to start A/B testing titles</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -111,7 +111,7 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
             <div 
               key={video.id} 
               className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                selectedVideoId === video.id ? 'border-primary bg-primary/5' : 'border-gray-200'
+                selectedVideoId === video.id ? 'border-red-500 bg-red-500/10' : 'border-gray-600 bg-gray-700'
               }`}
               onClick={() => onSelectVideo(video)}
             >
@@ -128,11 +128,11 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                  <h3 className="font-medium text-white mb-2 line-clamp-2">
                     {video.title}
                   </h3>
                   
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                  <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
                     <div className="flex items-center space-x-1">
                       <Eye className="w-4 h-4" />
                       <span>{formatViewCount(video.viewCount)} views</span>
@@ -143,16 +143,16 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
                     </div>
                   </div>
                   
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  <p className="text-sm text-gray-400 line-clamp-2 mb-3">
                     {video.description}
                   </p>
                   
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-300">
                       Video ID: {video.id}
                     </Badge>
                     {selectedVideoId === video.id && (
-                      <Badge className="bg-primary text-primary-foreground">
+                      <Badge className="bg-red-500 text-white">
                         Selected
                       </Badge>
                     )}
