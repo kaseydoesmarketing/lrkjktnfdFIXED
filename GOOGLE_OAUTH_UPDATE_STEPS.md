@@ -68,9 +68,9 @@ Google also requires domain verification through Search Console:
    - Enter your domain: `titletesterpro.[YOUR-USERNAME].repl.co`
 
 2. **Choose Verification Method:**
-   - Select "HTML file upload" or "HTML tag" method
-   - If using HTML tag: Copy the verification code
-   - Update the meta tag in the app's index.html
+   - ✅ **Use "HTML file upload" method** (recommended for Replit domains)
+   - The verification file is already configured in the application
+   - **Important:** Do NOT use "Domain name provider" method as you cannot control DNS for repl.co domains
 
 3. **Verification Code Added:**
    - ✅ Google verification code already integrated: `HL-Ok2Phgo779IPhnCWIujfJ-rNAhHqxSYr4zccIT9w`

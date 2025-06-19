@@ -20,9 +20,10 @@
    - Redirect URI: `https://titletesterpro.[your-username].repl.co/api/auth/callback/google`
 
 3. **Verify Domain in Search Console:**
-   - The verification code is already in the HTML
+   - ✅ Both HTML meta tag and file verification methods are ready
    - Add your production URL to Google Search Console
-   - Complete verification process
+   - **Use "HTML file upload" method** when prompted (not DNS)
+   - Verification file will be at: `/googleHL-Ok2Phgo779IPhnCWIujfJ-rNAhHqxSYr4zccIT9w.html`
 
 4. **Test All URLs:**
    - Homepage loads and displays properly

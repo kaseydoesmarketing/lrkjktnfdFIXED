@@ -25,12 +25,14 @@ Google will offer several verification methods. Choose one:
 4. Redeploy the application
 5. Click "Verify" in Search Console
 
-#### Option B: HTML File Upload
+#### Option B: HTML File Upload (Recommended for Replit)
 1. Select "HTML file upload" method
-2. Download the verification file
-3. Upload it to your app's public directory
-4. Ensure the file is accessible at: `https://titletesterpro.[YOUR-USERNAME].repl.co/google[FILENAME].html`
+2. Download the verification file from Google
+3. ✅ **Already implemented**: The verification file route is set up
+4. File will be accessible at: `https://titletesterpro.[YOUR-USERNAME].repl.co/googleHL-Ok2Phgo779IPhnCWIujfJ-rNAhHqxSYr4zccIT9w.html`
 5. Click "Verify" in Search Console
+
+**Note:** Use this method instead of DNS TXT records since you cannot control DNS for repl.co domains.
 
 ### 4. Verify Ownership
 1. After choosing your method and implementing it
