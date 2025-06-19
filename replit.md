@@ -127,6 +127,9 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Added debug logging to track component rendering and routing behavior
 - Fixed OAuth login database error by changing expires_at field from integer to bigint for timestamp handling
 - Resolved "value out of range for type integer" error that prevented successful OAuth authentication
+- June 19, 2025: Identified Google OAuth consent screen verification requirement for YouTube scopes
+- OAuth requires scope justifications and demo video for production use due to YouTube API security requirements
+- Created detailed setup guide for completing Google Cloud Console OAuth verification process
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
