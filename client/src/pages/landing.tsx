@@ -17,6 +17,7 @@ import {
 import heroImage from "@assets/4DE9BFEB-EEEB-4EDE-B30E-5453C05714C6_1750286981502.png";
 import logoWhite from "@assets/9C82A0A6-B151-41BB-953A-513AC09CBEFD_1750286981502.png";
 import logoRed from "@assets/2392070F-42C6-416A-ABCA-837B1117C4EA_1750286981502.png";
+import newLogo from "@assets/Untitled design (11)_1750353468294.png";
 
 export default function Landing() {
   return (
@@ -25,7 +26,7 @@ export default function Landing() {
       <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-50">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img src={logoRed} alt="TitleTesterPro" className="h-8" />
+            <img src={newLogo} alt="TitleTesterPro" className="h-8" />
           </div>
           <div className="flex items-center space-x-4">
             <Link href="/login">
@@ -50,13 +51,13 @@ export default function Landing() {
               <Badge className="mb-6 bg-red-900/20 text-red-400 hover:bg-red-900/20">
                 Made for Creators
               </Badge>
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              <h1 className="text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
                 Made for creators,<br />
                 <span className="text-red-500">developed by marketers</span><br />
                 to grow YouTube<br />
                 channels.
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                 Stop guessing which titles work. TitleTesterPro automatically tests your video titles 
                 on real YouTube videos and shows you which ones drive the most views and engagement.
               </p>
@@ -67,7 +68,7 @@ export default function Landing() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800">
+                <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white">
                   <PlayCircle className="mr-2 h-5 w-5" />
                   Watch Demo
                 </Button>
@@ -115,35 +116,35 @@ export default function Landing() {
       <section className="py-20 px-6">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4">
               Everything you need to optimize your titles
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
               Our platform handles the entire A/B testing process automatically, 
               so you can focus on creating great content while we optimize your reach.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4 dark:bg-red-900/20">
-                  <TrendingUp className="h-6 w-6 text-red-500" />
+                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <TrendingUp className="h-6 w-6 text-red-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Automatic Testing</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Automatic Testing</h3>
+                <p className="text-gray-400">
                   Set up once and let our system automatically rotate your titles and collect performance data.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow border-gray-200 dark:border-gray-700">
+            <Card className="p-6 hover:shadow-lg transition-shadow bg-gray-800 border-gray-700">
               <CardContent className="p-0">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 dark:bg-green-900/20">
-                  <BarChart3 className="h-6 w-6 text-green-500" />
+                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <BarChart3 className="h-6 w-6 text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Real-Time Analytics</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-xl font-semibold mb-3 text-white">Real-Time Analytics</h3>
+                <p className="text-gray-400">
                   Track CTR, view duration, and engagement metrics as your tests run on live YouTube videos.
                 </p>
               </CardContent>

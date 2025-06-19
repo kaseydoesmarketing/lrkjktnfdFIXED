@@ -9,6 +9,7 @@ import StatsCards from '@/components/StatsCards';
 import TestsList from '@/components/TestsList';
 import CreateTestModal from '@/components/CreateTestModal';
 import ResultsDashboard from '@/components/ResultsDashboard';
+import newLogo from "@assets/Untitled design (11)_1750353468294.png";
 
 export default function Dashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,10 +44,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                <Play className="text-white w-4 h-4" />
-              </div>
-              <span className="text-xl font-bold text-white">TitleTesterPro</span>
+              <img src={newLogo} alt="TitleTesterPro" className="h-8" />
             </div>
           </div>
           
