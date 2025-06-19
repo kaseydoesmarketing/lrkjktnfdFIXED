@@ -15,27 +15,29 @@
 - Environment variables properly configured
 
 #### 2. Domain Configuration
-**For Google Cloud Console OAuth settings, update:**
+**After deployment, your production URLs will be:**
 
 **Homepage URL:** 
 ```
-https://[your-app-name].[your-username].repl.co
+https://titletesterpro.[your-username].repl.co
 ```
 
 **Privacy Policy URL:**
 ```
-https://[your-app-name].[your-username].repl.co/privacy
+https://titletesterpro.[your-username].repl.co/privacy
 ```
 
 **Terms of Service URL:**
 ```
-https://[your-app-name].[your-username].repl.co/terms
+https://titletesterpro.[your-username].repl.co/terms
 ```
 
 **Authorized Redirect URIs:**
 ```
-https://[your-app-name].[your-username].repl.co/api/auth/callback/google
+https://titletesterpro.[your-username].repl.co/api/auth/callback/google
 ```
+
+**Important:** Replace `[your-username]` with your actual Replit username.
 
 #### 3. Steps to Fix Google OAuth Verification:
 
