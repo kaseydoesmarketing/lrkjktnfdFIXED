@@ -167,7 +167,7 @@ export default function Login() {
                   disabled={isLoading || !email}
                 >
                   <TestTube className="w-4 h-4 mr-2" />
-                  Enter Dashboard (Demo)
+                  Try Demo Mode
                 </Button>
               </form>
             </div>
