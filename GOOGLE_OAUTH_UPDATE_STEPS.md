@@ -59,7 +59,28 @@ Verify these pages load correctly:
 3. Reply to Google's verification email with the updated URLs
 4. Mention that all URLs are now responsive and properly configured
 
-### 5. Verification Email Template
+### 5. Domain Verification (Required)
+Google also requires domain verification through Search Console:
+
+1. **Add Property to Search Console:**
+   - Go to [Google Search Console](https://search.google.com/search-console)
+   - Click "Add Property"
+   - Enter your domain: `titletesterpro.[YOUR-USERNAME].repl.co`
+
+2. **Choose Verification Method:**
+   - Select "HTML file upload" or "HTML tag" method
+   - If using HTML tag: Copy the verification code
+   - Update the meta tag in the app's index.html
+
+3. **Replace Verification Code:**
+   - Find `[VERIFICATION-CODE-PLACEHOLDER]` in the deployed app
+   - Replace with your actual verification code from Google
+
+4. **Complete Verification:**
+   - Click "Verify" in Search Console
+   - Ensure the domain is verified before resubmitting OAuth app
+
+### 6. Verification Email Template
 ```
 Subject: Re: OAuth App Verification - Updated URLs
 
@@ -72,8 +93,10 @@ I have addressed all the issues mentioned in your review:
 3. ✅ Terms of Service URL updated and responsive: https://titletesterpro.[YOUR-USERNAME].repl.co/terms
 4. ✅ All URLs are now different and properly configured
 5. ✅ OAuth redirect URI updated in console settings
+6. ✅ Domain ownership verified through Google Search Console
+7. ✅ Website is registered and verified under my ownership
 
-The application is now fully deployed and all pages are accessible. Please continue with the verification process.
+The application is now fully deployed, domain verified, and all pages are accessible. Please continue with the verification process.
 
 Thank you for your patience.
 
