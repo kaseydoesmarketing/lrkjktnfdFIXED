@@ -74,7 +74,8 @@ class AuthService {
       }
 
       const data = await response.json();
-      return data.user;
+      // API returns user directly, not wrapped in user property
+      return data;
     } catch (error) {
       console.error('Error getting current user:', error);
       // Don't logout on network errors, only on auth errors
