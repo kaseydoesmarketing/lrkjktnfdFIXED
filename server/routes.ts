@@ -10,7 +10,7 @@ import { z } from "zod";
 
 // Session middleware
 async function requireAuth(req: Request, res: Response, next: Function) {
-  const sessionToken = req.headers.authorization?.replace('Bearer ', '');
+  const sessionToken = req.cookies['session-token'] || req.headers.authorization?.replace('Bearer ', '');
   
   if (!sessionToken) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -35,6 +35,48 @@ async function requireAuth(req: Request, res: Response, next: Function) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Demo login route for immediate dashboard access
+  app.post('/api/auth/demo-login', async (req: Request, res: Response) => {
+    try {
+      const demoUser = {
+        id: 'demo-user-123',
+        email: 'demo@titletesterpro.com',
+        name: 'Demo User',
+        image: null
+      };
+
+      // Create or get demo user
+      let user = await storage.getUserByEmail(demoUser.email);
+      if (!user) {
+        user = await storage.createUser(demoUser);
+      }
+
+      // Create session
+      const sessionToken = authService.generateSessionToken();
+      const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      await storage.createSession({
+        id: authService.generateSessionToken(),
+        sessionToken,
+        userId: user.id,
+        expires
+      });
+
+      // Set session cookie
+      res.cookie('session-token', sessionToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax'
+      });
+
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error('Demo login error:', error);
+      res.status(500).json({ error: 'Demo login failed' });
+    }
+  });
+
   // Google OAuth routes
   app.get('/api/auth/google', async (req: Request, res: Response) => {
     try {
