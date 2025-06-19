@@ -125,6 +125,8 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Diagnosed and fixed 404 routing issues for privacy and terms pages
 - Changed routing syntax to use component functions for proper rendering
 - Added debug logging to track component rendering and routing behavior
+- Fixed OAuth login database error by changing expires_at field from integer to bigint for timestamp handling
+- Resolved "value out of range for type integer" error that prevented successful OAuth authentication
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

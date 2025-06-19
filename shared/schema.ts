@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, bigint, boolean, timestamp, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -22,7 +22,7 @@ export const accounts = pgTable("accounts", {
   providerAccountId: text("provider_account_id").notNull(),
   refreshToken: text("refresh_token"),
   accessToken: text("access_token"),
-  expiresAt: integer("expires_at"),
+  expiresAt: bigint("expires_at", { mode: "number" }),
   tokenType: text("token_type"),
   scope: text("scope"),
   idToken: text("id_token"),
