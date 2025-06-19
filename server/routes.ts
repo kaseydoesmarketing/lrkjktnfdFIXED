@@ -39,15 +39,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/google', async (req: Request, res: Response) => {
     try {
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        // Fallback to demo mode if credentials not configured
+        console.log('OAuth credentials missing');
         return res.redirect('/login?demo=true');
       }
       
+      console.log('Using OAuth client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...');
       const authUrl = googleAuthService.getAuthUrl();
+      console.log('Generated OAuth URL successfully');
       res.redirect(authUrl);
     } catch (error) {
       console.error('Error starting Google OAuth:', error);
-      res.status(500).json({ error: 'Failed to start authentication' });
+      res.status(500).json({ error: 'Failed to start authentication', details: error.message });
     }
   });
 
