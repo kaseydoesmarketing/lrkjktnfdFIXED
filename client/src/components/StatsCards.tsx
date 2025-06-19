@@ -45,9 +45,14 @@ export default function StatsCards({ stats }: StatsCardsProps) {
               <FlaskRound className="text-primary w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <span className="text-green-600">↗ 12%</span>
-            <span className="text-gray-500 ml-2">vs last month</span>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <div className="flex items-center">
+              <span className="text-green-600">↗ 12%</span>
+              <span className="text-gray-500 ml-2">vs last month</span>
+            </div>
+            <div className="w-16 bg-gray-200 rounded-full h-2">
+              <div className="bg-primary h-2 rounded-full w-3/4"></div>
+            </div>
           </div>
         </CardContent>
       </Card>
