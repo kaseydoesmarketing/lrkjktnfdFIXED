@@ -88,13 +88,12 @@ export default function Dashboard() {
               <p className="text-gray-400">Manage your YouTube title A/B tests and track performance</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-400">Momentum Score</div>
-                <div className="text-2xl font-bold text-red-500">62</div>
-              </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center border-2 border-red-400">
-                <span className="text-xl text-white font-bold">62</span>
-              </div>
+              <Button 
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Create New Test
+              </Button>
             </div>
           </div>
 
@@ -102,81 +101,7 @@ export default function Dashboard() {
           <StatsCards stats={stats} />
         </div>
 
-        {/* Quick Actions & Recent Activity */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">Active Tests</h2>
-              <Button 
-                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                Launch New Challenge
-              </Button>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <Card className="bg-gray-800 border-gray-700 cursor-pointer group hover:bg-gray-750 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">Title A</h3>
-                      <p className="text-sm text-gray-400">CTR</p>
-                      <p className="text-3xl font-bold text-white">5.7%</p>
-                    </div>
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">🔥</span>
-                    </div>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full w-3/5"></div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-800 border-gray-700 cursor-pointer group hover:bg-gray-750 transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">Title B</h3>
-                      <p className="text-sm text-gray-400">CTR</p>
-                      <p className="text-3xl font-bold text-white">8.4%</p>
-                    </div>
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center relative">
-                      <span className="text-white text-sm font-bold">🔥</span>
-                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                        43% Better
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full w-4/5"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          
-          <div>
-            <h2 className="text-xl font-bold text-white mb-6">Creator Streak</h2>
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{width: '80%'}}></div>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-white">1 week</p>
-                      <p className="text-xs text-gray-400">Keep going!</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+
 
         {/* Tests Section */}
         <div>
@@ -202,7 +127,10 @@ export default function Dashboard() {
                 <option>Paused</option>
                 <option>Completed</option>
               </select>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
                 <Play className="w-4 h-4 mr-2" />
                 New Test
               </Button>
