@@ -55,9 +55,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/callback', async (req: Request, res: Response) => {
     try {
-      const { code } = req.query;
+      console.log('OAuth callback received with query:', req.query);
+      const { code, error, error_description } = req.query;
+      
+      if (error) {
+        console.error('OAuth error:', error, error_description);
+        return res.redirect(`/login?error=${error}&description=${error_description}`);
+      }
       
       if (!code || typeof code !== 'string') {
+        console.error('No authorization code provided');
         return res.status(400).json({ error: 'No authorization code provided' });
       }
 
