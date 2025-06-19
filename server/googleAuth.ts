@@ -5,11 +5,10 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    const redirectUri = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`
-      : 'http://localhost:5000/api/auth/callback/google';
+    // Always use the Replit domain for OAuth redirect since we're running on Replit
+    const redirectUri = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`;
       
-    // Console log removed for production
+    console.log('OAuth redirect URI:', redirectUri);
       
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
