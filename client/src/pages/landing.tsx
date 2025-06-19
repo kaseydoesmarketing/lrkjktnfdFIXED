@@ -20,16 +20,16 @@ import logoRed from "@assets/2392070F-42C6-416A-ABCA-837B1117C4EA_1750286981502.
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80 sticky top-0 z-50">
+      <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-50">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img src={logoRed} alt="TitleTesterPro" className="h-8" />
           </div>
           <div className="flex items-center space-x-4">
             <Link href="/login">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              <Button variant="ghost" className="text-gray-300 hover:text-white">
                 Sign In
               </Button>
             </Link>
@@ -47,7 +47,7 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-left">
-              <Badge className="mb-6 bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400">
+              <Badge className="mb-6 bg-red-900/20 text-red-400 hover:bg-red-900/20">
                 Made for Creators
               </Badge>
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">

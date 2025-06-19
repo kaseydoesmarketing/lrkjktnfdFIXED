@@ -441,26 +441,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dashboard stats
   app.get('/api/dashboard/stats', async (req: Request, res: Response) => {
-    const sessionToken = req.headers.authorization?.replace('Bearer ', '');
-    const isDemoMode = req.headers['x-demo-mode'] === 'true';
-    
-    // Allow demo mode or authenticated access
-    let isAuthorized = isDemoMode;
-    if (sessionToken && !isDemoMode) {
-      try {
-        const session = await storage.getSession(sessionToken);
-        isAuthorized = session && session.expires > new Date();
-      } catch (error) {
-        // Continue with unauthorized
-      }
-    }
-    
-    if (!isAuthorized) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
     try {
-      const user = (req as any).user;
-      const tests = await storage.getTestsByUserId(user.id);
+      const sessionToken = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.['session-token'];
+      
+      if (!sessionToken) {
+        return res.status(401).json({ error: 'No session token' });
+      }
+      
+      const session = await storage.getSession(sessionToken);
+      if (!session || session.expires <= new Date()) {
+        return res.status(401).json({ error: 'Invalid or expired session' });
+      }
+      
+      const tests = await storage.getTestsByUserId(session.userId);
       
       const activeTests = tests.filter(t => t.status === 'active').length;
       const completedTests = tests.filter(t => t.status === 'completed').length;
