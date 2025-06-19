@@ -37,16 +37,16 @@ export default function Dashboard() {
   const selectedTest = tests?.find((test: any) => test.id === selectedTestId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       {/* Navigation Header */}
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
+      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-3 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
                 <Play className="text-white w-4 h-4" />
               </div>
-              <span className="text-xl font-bold text-gray-900">TitleTesterPro</span>
+              <span className="text-xl font-bold text-white">TitleTesterPro</span>
             </div>
           </div>
           
@@ -62,14 +62,14 @@ export default function Dashboard() {
                   className="w-8 h-8 rounded-full" 
                 />
               )}
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-300">
                 {user?.name || user?.email}
               </span>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleLogout}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-200"
               >
                 Logout
               </Button>
@@ -82,30 +82,125 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Dashboard Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-              <p className="text-gray-600">Manage your YouTube title A/B tests and track performance</p>
+              <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+              <p className="text-gray-400">Manage your YouTube title A/B tests and track performance</p>
             </div>
-            <Button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center space-x-2"
-            >
-              <span className="text-xl">+</span>
-              <span>Create New Test</span>
-            </Button>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-400">Momentum Score</div>
+                <div className="text-2xl font-bold text-red-500">62</div>
+              </div>
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center border-2 border-red-400">
+                <span className="text-xl text-white font-bold">62</span>
+              </div>
+            </div>
           </div>
 
           {/* Stats Overview */}
           <StatsCards stats={stats} />
         </div>
 
-        {/* Active Tests Section */}
-        <TestsList 
-          tests={tests} 
-          isLoading={testsLoading}
-          onSelectTest={setSelectedTestId}
-        />
+        {/* Quick Actions & Recent Activity */}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Active Tests</h2>
+              <Button 
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Launch New Challenge
+              </Button>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card
+                className="border-2 border-dashed border-blue-300 hover:border-blue-500 transition-all cursor-pointer group transform hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <CardContent className="p-6 text-left">
+                  <div className="flex items-center justify-between mb-3">
+                    <Play className="text-blue-600 w-8 h-8" />
+                    <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Recommended</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-900 mb-1">Create New Test</h3>
+                  <p className="text-sm text-blue-700">Start optimizing a new video title</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="cursor-pointer group hover:shadow-md transition-all transform hover:scale-105 bg-gradient-to-br from-purple-50 to-purple-100">
+                <CardContent className="p-6 text-left">
+                  <div className="flex items-center justify-between mb-3">
+                    <BarChart3 className="text-purple-600 w-8 h-8" />
+                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">3 ready</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-purple-900 mb-1">Review Results</h3>
+                  <p className="text-sm text-purple-700">Check completed test outcomes</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-bold text-white mb-6">Creator Streak</h2>
+            <Card className="p-4 bg-gray-800 border-gray-700">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '80%'}}></div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-white">1 week</p>
+                      <p className="text-xs text-gray-400">Keep going!</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Tests Section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-white">Your Title Tests</h2>
+              <p className="text-sm text-gray-400">Manage and monitor your active title optimization tests</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search tests..."
+                  className="pl-8 pr-4 py-2 border border-gray-600 bg-gray-800 text-white rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+                <svg className="w-4 h-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <select className="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                <option>All Tests</option>
+                <option>Active</option>
+                <option>Paused</option>
+                <option>Completed</option>
+              </select>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Play className="w-4 h-4 mr-2" />
+                New Test
+              </Button>
+            </div>
+          </div>
+          
+          <TestsList 
+            tests={tests} 
+            isLoading={testsLoading}
+            onSelectTest={setSelectedTestId}
+          />
+        </div>
 
         {/* Results Dashboard */}
         {selectedTest && (
@@ -122,25 +217,25 @@ export default function Dashboard() {
         onClose={() => setIsCreateModalOpen(false)}
       />
       
-      <footer className="bg-gray-50 border-t border-gray-200 py-8 mt-16">
+      <footer className="bg-gray-800 border-t border-gray-700 py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-center space-y-4">
             <div className="flex items-center space-x-6">
-              <a href="/privacy" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              <a href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </a>
-              <span className="text-gray-400">•</span>
-              <a href="/terms" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              <span className="text-gray-600">•</span>
+              <a href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Terms of Service
               </a>
             </div>
             
             <div className="text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-400">
                 © 2025 TitleTesterPro. All rights reserved.
               </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Contact: <a href="mailto:kaseydoesmarketing@gmail.com" className="hover:text-gray-600">kaseydoesmarketing@gmail.com</a>
+              <p className="text-xs text-gray-500 mt-1">
+                Contact: <a href="mailto:kaseydoesmarketing@gmail.com" className="hover:text-gray-300">kaseydoesmarketing@gmail.com</a>
               </p>
             </div>
           </div>

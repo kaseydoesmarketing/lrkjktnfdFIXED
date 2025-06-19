@@ -33,26 +33,21 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      <Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <Card className="bg-gray-800 border-gray-700">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Tests</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.activeTests}</p>
+              <p className="text-sm font-medium text-gray-400">Active Tests</p>
+              <p className="text-4xl font-bold text-white">{stats.activeTests}</p>
             </div>
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-              <FlaskRound className="text-primary w-6 h-6" />
+            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <FlaskRound className="text-red-500 w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center justify-between text-sm">
-            <div className="flex items-center">
-              <span className="text-green-600">↗ 12%</span>
-              <span className="text-gray-500 ml-2">vs last month</span>
-            </div>
-            <div className="w-16 bg-gray-200 rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full w-3/4"></div>
-            </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-green-400">↗ 12%</span>
+            <span className="text-gray-500 ml-2">vs last month</span>
           </div>
         </CardContent>
       </Card>
