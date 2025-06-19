@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 
 export default function Privacy() {
+  console.log('Privacy component rendering');
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
