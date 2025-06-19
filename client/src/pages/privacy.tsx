@@ -51,7 +51,7 @@ export default function Privacy() {
 
             <h2 className="text-xl font-semibold mb-4">2. How We Use Your Information</h2>
             <p className="mb-4">We use your data to:</p>
-            <ul className="list-disc ml-6 mb-6 space-y-1">
+            <ul className="list-disc ml-6 mb-4 space-y-1">
               <li>Authenticate your YouTube account</li>
               <li>Allow you to select videos for title testing</li>
               <li>Temporarily update video titles to run A/B tests</li>
