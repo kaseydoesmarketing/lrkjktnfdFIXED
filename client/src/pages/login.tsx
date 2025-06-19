@@ -177,6 +177,15 @@ export default function Login() {
                 or use demo mode to explore the interface with sample data.
               </p>
             </div>
+            
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <p className="text-xs text-gray-500 text-center">
+                By using TitleTesterPro, you agree to our{' '}
+                <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
