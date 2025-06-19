@@ -107,6 +107,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token || null,
           expiresAt: tokens.expiry_date || null,
+          scope: null,
+          tokenType: null,
+          idToken: null,
+          sessionState: null,
         });
       }
 

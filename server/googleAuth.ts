@@ -5,12 +5,14 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
+    const redirectUri = process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback`
+      : 'http://localhost:5000/api/auth/callback';
+      
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.NODE_ENV === 'production' 
-        ? `${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback`
-        : 'http://localhost:5000/api/auth/callback'
+      redirectUri
     );
   }
 
