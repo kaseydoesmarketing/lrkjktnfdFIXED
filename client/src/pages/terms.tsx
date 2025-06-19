@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 
 export default function Terms() {
   const [, setLocation] = useLocation();
@@ -12,11 +12,13 @@ export default function Terms() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => setLocation('/')}
+            asChild
             className="mb-4"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            <Link href="/">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Link>
           </Button>
         </div>
 
