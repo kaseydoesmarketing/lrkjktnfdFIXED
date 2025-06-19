@@ -1,35 +1,22 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { Link } from 'wouter';
-
 export default function Privacy() {
-  console.log('Privacy component rendering');
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            asChild
-            className="mb-4"
-          >
-            <Link href="/">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
-          </Button>
+          <a href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+            ← Back to Home
+          </a>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Privacy Policy for TitleTesterPro
-            </CardTitle>
-            <p className="text-center text-gray-600">Last updated: June 18, 2025</p>
-          </CardHeader>
-          <CardContent className="prose max-w-none">
+            </h1>
+            <p className="text-gray-600">Last updated: June 18, 2025</p>
+          </div>
+          
+          <div className="prose max-w-none">
             <p className="text-gray-700 mb-6">
               Welcome to TitleTesterPro ("we", "our", or "us"). This Privacy Policy explains how we collect, use, and protect your
               information when you use our web application at https://titletesterpro.com.
@@ -107,8 +94,8 @@ export default function Privacy() {
                 kaseydoesmarketing@gmail.com
               </a>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

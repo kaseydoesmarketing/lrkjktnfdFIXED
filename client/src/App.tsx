@@ -49,12 +49,8 @@ function Router() {
       )} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/privacy">
-        <Privacy />
-      </Route>
-      <Route path="/terms">
-        <Terms />
-      </Route>
+      <Route path="/privacy" component={() => <Privacy />} />
+      <Route path="/terms" component={() => <Terms />} />
       <Route component={NotFound} />
     </Switch>
   );
