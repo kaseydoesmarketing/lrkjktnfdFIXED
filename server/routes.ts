@@ -45,6 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Starting OAuth flow with client ID ending in:', process.env.GOOGLE_CLIENT_ID?.slice(-10));
       const authUrl = googleAuthService.getAuthUrl();
+      console.log('Generated OAuth URL:', authUrl);
       res.redirect(authUrl);
     } catch (error) {
       console.error('OAuth initialization error:', error);
@@ -56,16 +57,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/callback/google', async (req: Request, res: Response) => {
     try {
       console.log('OAuth callback received with query:', req.query);
+      console.log('OAuth callback received with full URL:', req.url);
+      console.log('OAuth callback headers:', req.headers);
+      
       const { code, error, error_description } = req.query;
       
       if (error) {
         console.error('OAuth error:', error, error_description);
-        return res.redirect(`/login?error=${error}&description=${error_description}`);
+        return res.redirect(`/login?error=${error}&description=${encodeURIComponent(error_description as string || '')}`);
       }
       
       if (!code || typeof code !== 'string') {
         console.error('No authorization code provided');
-        return res.status(400).json({ error: 'No authorization code provided' });
+        console.log('Full request query params:', Object.keys(req.query));
+        return res.redirect('/login?error=no_code&description=No authorization code received from Google');
       }
 
       // Exchange code for tokens
