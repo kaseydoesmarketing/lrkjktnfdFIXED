@@ -9,11 +9,7 @@ export class GoogleAuthService {
       ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback`
       : 'http://localhost:5000/api/auth/callback';
       
-    console.log('OAuth2Client configuration:', {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      redirectUri: redirectUri,
-      hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
-    });
+    // Console log removed for production
       
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
