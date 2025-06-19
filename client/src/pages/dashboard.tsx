@@ -40,11 +40,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Navigation Header */}
-      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-3 sticky top-0 z-50">
+      <nav className="bg-gray-800 border-b border-gray-700 px-4 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <img src={newLogo} alt="TitleTesterPro" className="h-8" />
+              <img src={newLogo} alt="TitleTesterPro" className="h-12" />
             </div>
           </div>
           
