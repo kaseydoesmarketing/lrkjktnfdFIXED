@@ -10,6 +10,8 @@ import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import AuthCallback from "@/pages/auth-callback";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useQuery({
@@ -44,6 +46,8 @@ function Router() {
       )} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );

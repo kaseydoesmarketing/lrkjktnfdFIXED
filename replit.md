@@ -119,6 +119,9 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - June 19, 2025: Identified OAuth consent screen verification requirement as blocking authentication
 - Google Cloud Console OAuth app requires verification or publishing to allow external users
 - Added enhanced debugging to track OAuth callback parameters and flow
+- Created Privacy Policy and Terms of Service pages based on provided legal documents
+- Added routing for /privacy and /terms pages with proper navigation
+- Integrated privacy and terms links into login page footer
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
