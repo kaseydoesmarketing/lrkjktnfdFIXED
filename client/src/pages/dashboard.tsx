@@ -115,28 +115,42 @@ export default function Dashboard() {
               </Button>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
-              <Card
-                className="border-2 border-dashed border-blue-300 hover:border-blue-500 transition-all cursor-pointer group transform hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                <CardContent className="p-6 text-left">
-                  <div className="flex items-center justify-between mb-3">
-                    <Play className="text-blue-600 w-8 h-8" />
-                    <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Recommended</span>
+              <Card className="bg-gray-800 border-gray-700 cursor-pointer group hover:bg-gray-750 transition-all">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-1">Title A</h3>
+                      <p className="text-sm text-gray-400">CTR</p>
+                      <p className="text-3xl font-bold text-white">5.7%</p>
+                    </div>
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">🔥</span>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-blue-900 mb-1">Create New Test</h3>
-                  <p className="text-sm text-blue-700">Start optimizing a new video title</p>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full w-3/5"></div>
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card className="cursor-pointer group hover:shadow-md transition-all transform hover:scale-105 bg-gradient-to-br from-purple-50 to-purple-100">
-                <CardContent className="p-6 text-left">
-                  <div className="flex items-center justify-between mb-3">
-                    <BarChart3 className="text-purple-600 w-8 h-8" />
-                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">3 ready</span>
+              <Card className="bg-gray-800 border-gray-700 cursor-pointer group hover:bg-gray-750 transition-all">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-1">Title B</h3>
+                      <p className="text-sm text-gray-400">CTR</p>
+                      <p className="text-3xl font-bold text-white">8.4%</p>
+                    </div>
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center relative">
+                      <span className="text-white text-sm font-bold">🔥</span>
+                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                        43% Better
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-purple-900 mb-1">Review Results</h3>
-                  <p className="text-sm text-purple-700">Check completed test outcomes</p>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full w-4/5"></div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
