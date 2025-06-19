@@ -27,16 +27,21 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await authService.demoLogin();
+      const user = await authService.demoLogin();
+      console.log('Demo login returned user:', user);
 
+      // Invalidate auth queries to refresh state
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
       toast({
         title: 'Success',
         description: 'Successfully logged in to demo mode!',
       });
       
+      // Navigate to dashboard immediately
       setLocation('/dashboard');
     } catch (error) {
+      console.error('Demo login error:', error);
       toast({
         title: 'Error',
         description: 'Failed to login. Please try again.',

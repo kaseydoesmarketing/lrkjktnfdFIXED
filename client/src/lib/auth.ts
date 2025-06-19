@@ -95,9 +95,17 @@ class AuthService {
     }
 
     const data = await response.json();
+    
+    // Check if we have a sessionToken in the response
+    if (!data.sessionToken) {
+      console.error('No sessionToken in response:', data);
+      throw new Error('No session token received');
+    }
+    
     this.sessionToken = data.sessionToken;
     localStorage.setItem('sessionToken', data.sessionToken);
     
+    console.log('Demo login successful, token stored:', data.sessionToken);
     return data.user;
   }
 

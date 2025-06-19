@@ -70,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sameSite: 'lax'
       });
 
-      res.json({ success: true, user });
+      res.json({ success: true, user, sessionToken });
     } catch (error) {
       console.error('Demo login error:', error);
       res.status(500).json({ error: 'Demo login failed' });
