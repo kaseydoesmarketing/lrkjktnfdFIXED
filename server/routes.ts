@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/callback', async (req: Request, res: Response) => {
+  app.get('/api/auth/callback/google', async (req: Request, res: Response) => {
     try {
       console.log('OAuth callback received with query:', req.query);
       const { code, error, error_description } = req.query;
