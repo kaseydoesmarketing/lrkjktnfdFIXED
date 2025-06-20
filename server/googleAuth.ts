@@ -5,13 +5,11 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    // Use the current Replit domain for OAuth redirect
-    const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
-    const redirectUri = replotDomain 
-      ? `https://${replotDomain}/api/auth/callback/google`
-      : 'http://localhost:5000/api/auth/callback/google';
+    // FIXED: Use exact hardcoded URI that matches Google Cloud Console
+    const redirectUri = 'https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google';
       
-    console.log('OAuth redirect URI:', redirectUri);
+    console.log('FIXED: Using exact redirect URI:', redirectUri);
+    console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...');
       
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
