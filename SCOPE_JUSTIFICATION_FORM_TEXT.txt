@@ -1,0 +1,26 @@
+TitleTesterPro is a YouTube title optimization platform that helps content creators increase video performance through automated A/B testing.
+
+YOUTUBE.READONLY SCOPE:
+We need read access to retrieve the user's video list for test selection, access current video metadata (titles, descriptions, statistics), and display channel information in the user dashboard. This allows users to select from their existing videos and see baseline performance before starting tests.
+
+YOUTUBE SCOPE:
+Core functionality requires updating video titles during automated A/B tests. We rotate between different title variants on user's selected videos to measure performance differences. Users can then apply winning titles permanently. This is the primary feature - automated title testing without manual intervention.
+
+YOUTUBE.FORCE-SSL SCOPE:
+Ensures all API operations are performed securely over HTTPS, maintaining data integrity during automated title updates and complying with YouTube's security requirements for sensitive operations.
+
+YT-ANALYTICS.READONLY SCOPE:
+Essential for measuring A/B test effectiveness. We track impressions, click-through rates, views, and watch time for each title variant to calculate statistical significance and identify winning titles. This provides the data-driven insights users need for optimization decisions.
+
+USERINFO.EMAIL & USERINFO.PROFILE SCOPES:
+Standard authentication scopes for secure user identification, personalized dashboard experience, and account management. Enables users to access their test history and results.
+
+DATA USAGE:
+- Only accesses authenticated user's own YouTube data
+- Stores minimal test configurations and aggregated performance metrics
+- No cross-user data access or third-party sharing
+- Users can delete their data anytime
+- All operations performed securely within our encrypted environment
+
+BUSINESS PURPOSE:
+Helps YouTube creators optimize video titles through data-driven testing, potentially increasing click-through rates by 15-30% and improving overall channel performance. The automated testing saves time while providing reliable optimization insights.
