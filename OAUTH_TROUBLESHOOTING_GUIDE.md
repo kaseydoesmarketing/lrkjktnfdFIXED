@@ -39,14 +39,21 @@ After updating Google Cloud Console:
 - ❌ YouTube scopes require verification (scope justification + demo video)
 - ✅ Client ID and Secret configured in Replit
 
-### Immediate Solution
-**Testing with Basic Scopes:**
-- Removed YouTube scopes temporarily to bypass verification
-- Using only basic Google account scopes (email, profile)
-- This allows OAuth authentication to work immediately
-- Full YouTube functionality requires Google verification process
+### Production Configuration
+**Full YouTube API Scopes Enabled:**
+- All required YouTube scopes restored for full functionality
+- User is proceeding with Google verification process
+- App configured for production use with complete YouTube API access
+
+### Required Scopes for Verification:
+- `https://www.googleapis.com/auth/userinfo.email` - User identification
+- `https://www.googleapis.com/auth/userinfo.profile` - User profile data
+- `https://www.googleapis.com/auth/youtube.readonly` - Read YouTube data
+- `https://www.googleapis.com/auth/youtube` - Manage YouTube account
+- `https://www.googleapis.com/auth/youtube.force-ssl` - Secure YouTube operations
+- `https://www.googleapis.com/auth/yt-analytics.readonly` - YouTube Analytics access
 
 ### Next Steps
-1. Test basic OAuth authentication (should work now)
-2. Complete scope justification and demo video for YouTube scopes
-3. Submit for Google verification to enable full YouTube functionality
+1. Complete Google verification process with scope justifications
+2. Test full OAuth authentication after verification approval
+3. Deploy production-ready TitleTesterPro with complete YouTube integration
