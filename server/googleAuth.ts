@@ -28,13 +28,10 @@ export class GoogleAuthService {
   }
 
   getAuthUrl() {
+    // Minimal scopes for testing - only basic Google account access
     const scopes = [
       'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/youtube',
-      'https://www.googleapis.com/auth/youtube.force-ssl',
-      'https://www.googleapis.com/auth/yt-analytics.readonly'
+      'https://www.googleapis.com/auth/userinfo.profile'
     ];
 
     const authUrl = this.oauth2Client.generateAuthUrl({
@@ -45,7 +42,7 @@ export class GoogleAuthService {
       response_type: 'code'
     });
 
-    console.log('Generated clean OAuth URL:', authUrl);
+    console.log('Generated minimal OAuth URL (testing mode):', authUrl);
     return authUrl;
   }
 
