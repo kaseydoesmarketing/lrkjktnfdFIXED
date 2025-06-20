@@ -139,17 +139,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continue without YouTube channel info
       }
 
+      console.log('Creating or updating user...');
       // Create or update user
       let user = await storage.getUserByEmail(userInfo.email);
       
       if (!user) {
+        console.log('Creating new user...');
         user = await storage.createUser({
           email: userInfo.email,
           name: userInfo.name || userInfo.email.split('@')[0],
           image: userInfo.picture,
           youtubeId: youtubeChannel?.id,
         });
+        console.log('User created:', user.id);
       } else {
+        console.log('Updating existing user:', user.id);
         user = await storage.updateUser(user.id, {
           name: userInfo.name || user.name,
           image: userInfo.picture || user.image,
@@ -157,9 +161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log('Storing account tokens...');
       // Store or update account tokens
       const existingAccount = await storage.getAccountByProvider('google', userInfo.id);
       if (!existingAccount) {
+        console.log('Creating new account record...');
         await storage.createAccount({
           userId: user.id,
           type: 'oauth',
@@ -175,6 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log('Creating session...');
       // Create session
       const sessionToken = authService.generateSessionToken();
       const expiresAt = new Date();
@@ -186,10 +193,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires: expiresAt,
       });
 
+      console.log('OAuth flow completed successfully, redirecting to dashboard...');
       // Redirect to dashboard with session token
       res.redirect(`/dashboard?token=${sessionToken}`);
     } catch (error) {
       console.error('Error in OAuth callback:', error);
+      console.error('Full error details:', error);
       res.redirect('/login?error=oauth_failed');
     }
   });
