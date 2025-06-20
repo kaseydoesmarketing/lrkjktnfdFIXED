@@ -10,6 +10,11 @@ export class GoogleAuthService {
       
     console.log('FIXED: Using exact redirect URI:', redirectUri);
     console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...');
+    
+    // Validate OAuth configuration
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.error('Missing Google OAuth credentials!');
+    }
       
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -20,20 +25,24 @@ export class GoogleAuthService {
 
   getAuthUrl() {
     const scopes = [
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/youtube.readonly',
       'https://www.googleapis.com/auth/youtube',
       'https://www.googleapis.com/auth/youtube.force-ssl',
-      'https://www.googleapis.com/auth/yt-analytics.readonly',
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile'
+      'https://www.googleapis.com/auth/yt-analytics.readonly'
     ];
 
-    return this.oauth2Client.generateAuthUrl({
+    const authUrl = this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: scopes,
+      scope: scopes.join(' '),
       prompt: 'consent',
-      include_granted_scopes: true
+      include_granted_scopes: true,
+      response_type: 'code'
     });
+
+    console.log('Generated clean OAuth URL:', authUrl);
+    return authUrl;
   }
 
   async exchangeCodeForTokens(code: string) {
