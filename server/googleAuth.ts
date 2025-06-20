@@ -5,8 +5,11 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    // Always use the Replit domain for OAuth redirect since we're running on Replit
-    const redirectUri = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`;
+    // Use the current Replit domain for OAuth redirect
+    const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+    const redirectUri = replotDomain 
+      ? `https://${replotDomain}/api/auth/callback/google`
+      : 'http://localhost:5000/api/auth/callback/google';
       
     console.log('OAuth redirect URI:', redirectUri);
       
