@@ -5,15 +5,19 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    // FIXED: Use exact hardcoded URI that matches Google Cloud Console
-    const redirectUri = 'https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google';
+    // Use environment variable if set, otherwise fall back to current domain
+    const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+    const redirectUri = process.env.OAUTH_REDIRECT_URI || 
+      (replotDomain ? `https://${replotDomain}/api/auth/callback/google` : 
+       'https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google');
       
-    console.log('FIXED: Using exact redirect URI:', redirectUri);
-    console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...');
+    console.log('OAuth redirect URI:', redirectUri);
+    console.log('Google Client ID configured:', !!process.env.GOOGLE_CLIENT_ID);
     
     // Validate OAuth configuration
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.error('Missing Google OAuth credentials!');
+      console.error('CRITICAL: Missing Google OAuth credentials!');
+      throw new Error('Google OAuth not configured');
     }
       
     this.oauth2Client = new google.auth.OAuth2(
