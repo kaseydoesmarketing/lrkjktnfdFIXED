@@ -68,7 +68,12 @@ export default function Landing() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="px-8 py-4 text-lg border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                  onClick={() => window.open('https://youtu.be/UCNzlHmYGD4', '_blank')}
+                >
                   <PlayCircle className="mr-2 h-5 w-5" />
                   Watch Demo
                 </Button>
@@ -312,7 +317,12 @@ export default function Landing() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-4 text-lg">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white text-white hover:bg-white/10 px-8 py-4 text-lg"
+              onClick={() => window.open('https://youtu.be/UCNzlHmYGD4', '_blank')}
+            >
               <PlayCircle className="mr-2 h-5 w-5" />
               Watch Demo
             </Button>
