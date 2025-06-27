@@ -29,6 +29,9 @@ export default function Landing() {
             <img src={newLogo} alt="TitleTesterPro" className="h-12" />
           </div>
           <div className="flex items-center space-x-4">
+            <Link href="/privacy" className="text-sm text-gray-300 hover:text-white transition-colors">
+              Privacy
+            </Link>
             <Link href="/login">
               <Button variant="ghost" className="text-gray-300 hover:text-white">
                 Sign In
@@ -374,7 +377,7 @@ export default function Landing() {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-6">
-                <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
+                <Link href="/privacy" className="text-sm text-blue-400 hover:text-white transition-colors font-medium">
                   Privacy Policy
                 </Link>
                 <span className="text-gray-600">•</span>
