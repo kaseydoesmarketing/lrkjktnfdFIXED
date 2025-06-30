@@ -440,34 +440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }
 
-      // Try to fetch videos, refresh token if needed
-      let videos;
-      try {
-        videos = await youtubeService.getChannelVideos(account.accessToken, 10);
-      } catch (apiError: any) {
-        // If access token expired, try to refresh it
-        if (apiError.code === 401 && account.refreshToken) {
-          console.log('Access token expired, refreshing...');
-          try {
-            const newCredentials = await googleAuthService.refreshAccessToken(account.refreshToken);
-            
-            // Update stored access token
-            await storage.updateAccountTokens(account.id, {
-              accessToken: newCredentials.access_token!,
-              refreshToken: newCredentials.refresh_token || account.refreshToken,
-              expiresAt: newCredentials.expiry_date || null
-            });
-            
-            // Retry the API call with new token
-            videos = await youtubeService.getChannelVideos(newCredentials.access_token!, 10);
-          } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-            return res.status(401).json({ error: 'YouTube authorization expired. Please reconnect your account.' });
-          }
-        } else {
-          throw apiError; // Re-throw if not a token issue
-        }
-      }
+      // Fetch videos using automatic token refresh system
+      const videos = await youtubeService.getChannelVideos(user.id, 10);
       
       res.json(videos);
     } catch (error) {
