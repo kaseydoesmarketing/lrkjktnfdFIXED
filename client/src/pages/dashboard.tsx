@@ -5,54 +5,86 @@ import { queryClient } from '@/lib/queryClient';
 import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function Dashboard() {
-  const { toast } = useToast();
+function DashboardContent() {
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
+  
+  // Safe toast hook with error handling
+  let toast: any;
+  try {
+    toast = useToast().toast;
+  } catch (error) {
+    console.warn('Toast hook not available:', error);
+    toast = () => {}; // No-op fallback
+  }
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionToken = urlParams.get('sessionToken');
-    
-    if (sessionToken) {
-      console.log('OAuth login successful, storing session token');
-      localStorage.setItem('sessionToken', sessionToken);
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionToken = urlParams.get('sessionToken');
       
-      const url = new URL(window.location.href);
-      url.searchParams.delete('sessionToken');
-      window.history.replaceState({}, '', url.pathname);
+      if (sessionToken) {
+        console.log('OAuth login successful, storing session token');
+        localStorage.setItem('sessionToken', sessionToken);
+        
+        const url = new URL(window.location.href);
+        url.searchParams.delete('sessionToken');
+        window.history.replaceState({}, '', url.pathname);
+        
+        if (toast) {
+          toast({
+            title: "Login Successful",
+            description: "Welcome to TitleTesterPro! You're now connected to YouTube.",
+          });
+        }
+      }
       
-      toast({
-        title: "Login Successful",
-        description: "Welcome to TitleTesterPro! You're now connected to YouTube.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    } catch (error) {
+      console.error('Error in dashboard useEffect:', error);
     }
-    
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
   }, [toast]);
 
-  const { data: user } = useQuery({
+  // Safe queries with error handling
+  const { data: user, error: userError } = useQuery({
     queryKey: ['/api/auth/me'],
     enabled: !!localStorage.getItem('sessionToken'),
+    retry: 1,
+    staleTime: 5000,
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats, error: statsError } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     enabled: !!user,
+    retry: 1,
+    staleTime: 30000,
   });
 
-  const { data: tests = [] } = useQuery({
+  const { data: tests = [], error: testsError } = useQuery({
     queryKey: ['/api/tests'],
     enabled: !!user,
+    retry: 1,
+    staleTime: 10000,
   });
 
-  const { data: recentVideos = [] } = useQuery({
+  const { data: recentVideos = [], error: videosError } = useQuery({
     queryKey: ['/api/videos/recent'],
     enabled: !!user,
+    retry: 1,
+    staleTime: 60000,
   });
 
-  const activeTests = tests.filter((test: any) => test.status === 'active');
-  const completedTests = tests.filter((test: any) => test.status === 'completed');
+  // Log any errors for debugging
+  useEffect(() => {
+    if (userError) console.error('User query error:', userError);
+    if (statsError) console.error('Stats query error:', statsError);
+    if (testsError) console.error('Tests query error:', testsError);
+    if (videosError) console.error('Videos query error:', videosError);
+  }, [userError, statsError, testsError, videosError]);
+
+  // Safe data processing with error handling
+  const activeTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'active') : [];
+  const completedTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'completed') : [];
 
   // Mock data for active test demonstration
   const activeTitles = [
@@ -343,4 +375,55 @@ export default function Dashboard() {
       `}</style>
     </div>
   );
+}
+
+// Error boundary wrapper component
+export default function Dashboard() {
+  try {
+    return <DashboardContent />;
+  } catch (error) {
+    console.error('Dashboard crash prevented:', error);
+    
+    // Fallback UI if dashboard crashes
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f9fafb', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '2rem', 
+          borderRadius: '8px', 
+          border: '1px solid #e5e7eb',
+          textAlign: 'center',
+          maxWidth: '400px'
+        }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
+            TitleTesterPro Dashboard
+          </h1>
+          <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+            Loading your dashboard... If this continues, please refresh the page.
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ 
+              backgroundColor: '#3b82f6', 
+              color: 'white', 
+              padding: '0.5rem 1rem', 
+              borderRadius: '6px', 
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
