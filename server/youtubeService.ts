@@ -122,7 +122,6 @@ export class YouTubeService {
       // Sum up metrics across all days in the range
       let totalViews = 0;
       let totalImpressions = 0;
-      let totalCtr = 0;
       let totalAvgViewDuration = 0;
       let daysWithData = 0;
 
@@ -130,16 +129,18 @@ export class YouTubeService {
         if (row && row.length >= 4) {
           totalViews += parseInt(row[1]) || 0;
           totalImpressions += parseInt(row[2]) || 0;
-          totalCtr += parseFloat(row[3]) || 0;
           totalAvgViewDuration += parseInt(row[4]) || 0;
           daysWithData++;
         }
       });
 
+      // Calculate accurate CTR from total impressions and views
+      const accurateCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
+
       return {
         views: totalViews,
         impressions: totalImpressions,
-        ctr: daysWithData > 0 ? totalCtr / daysWithData : 0,
+        ctr: accurateCtr,
         averageViewDuration: daysWithData > 0 ? totalAvgViewDuration / daysWithData : 0,
         likes: 0, // Not available in Analytics API
         comments: 0 // Not available in Analytics API

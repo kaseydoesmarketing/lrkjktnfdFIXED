@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pause, BarChart3, Play, Search, Filter, MoreVertical, Trash2, Copy, Settings } from 'lucide-react';
+import { Pause, BarChart3, Play, Search, Filter, MoreVertical, Trash2, Copy, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [titleCarouselIndices, setTitleCarouselIndices] = useState<Record<string, number>>({});
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ testId, status }: { testId: string; status: string }) => {
@@ -126,6 +127,37 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
     } else {
       setSelectedTests([]);
     }
+  };
+
+  const navigateCarousel = (testId: string, direction: 'prev' | 'next', totalTitles: number) => {
+    const currentIndex = titleCarouselIndices[testId] || 0;
+    let newIndex;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : totalTitles - 3;
+    } else {
+      newIndex = currentIndex + 3 < totalTitles ? currentIndex + 1 : 0;
+    }
+    
+    setTitleCarouselIndices(prev => ({
+      ...prev,
+      [testId]: newIndex
+    }));
+  };
+
+  const getVisibleTitles = (test: Test) => {
+    const startIndex = titleCarouselIndices[test.id] || 0;
+    const titlesPerPage = 3;
+    return test.titles.slice(startIndex, startIndex + titlesPerPage);
+  };
+
+  const canNavigatePrev = (test: Test) => {
+    return (titleCarouselIndices[test.id] || 0) > 0;
+  };
+
+  const canNavigateNext = (test: Test) => {
+    const currentIndex = titleCarouselIndices[test.id] || 0;
+    return currentIndex + 3 < test.titles.length;
   };
 
   const filteredTests = tests?.filter(test => {
