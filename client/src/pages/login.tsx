@@ -144,18 +144,7 @@ export default function Login() {
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
 
-              <div className="text-center">
-                <span className="text-gray-400 text-sm">or</span>
-              </div>
 
-              <Button
-                onClick={handleDemoLogin}
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white"
-                disabled={isLoading}
-              >
-                <TestTube className="w-4 h-4 mr-2" />
-                View Demo Dashboard
-              </Button>
               
 
             </div>
