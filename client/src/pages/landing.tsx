@@ -103,6 +103,27 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Privacy Notice Section */}
+      <section className="py-8 px-6 bg-gray-900">
+        <div className="container mx-auto max-w-4xl">
+          <div className="p-6 bg-blue-900/30 border-2 border-blue-400 rounded-xl text-center">
+            <div className="flex items-center justify-center mb-3">
+              <Shield className="w-6 h-6 text-blue-400 mr-3" />
+              <h3 className="text-xl font-bold text-white">Data Privacy & Security</h3>
+            </div>
+            <p className="text-gray-300 mb-4">
+              🔒 Your data privacy is our priority. We only access YouTube analytics data you explicitly authorize. 
+              TitleTesterPro never shares your data with third parties and uses bank-level encryption to protect your information.
+            </p>
+            <Link href="/privacy">
+              <Button variant="outline" className="border-blue-400 text-blue-300 hover:bg-blue-900/50">
+                Read Our Privacy Policy
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="py-16 bg-red-500 text-white">
         <div className="container mx-auto px-6">
