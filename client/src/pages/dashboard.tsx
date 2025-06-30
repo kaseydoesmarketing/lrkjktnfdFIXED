@@ -262,6 +262,48 @@ export default function Dashboard() {
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)}
       />
+
+      {/* Keyboard Shortcuts Modal */}
+      {showKeyboardShortcuts && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+            <CardHeader className="border-b border-gray-700">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-white">Keyboard Shortcuts</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowKeyboardShortcuts(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Create new test</span>
+                  <Badge variant="secondary" className="text-xs">Ctrl + N</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Show shortcuts</span>
+                  <Badge variant="secondary" className="text-xs">?</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Close modal/details</span>
+                  <Badge variant="secondary" className="text-xs">Esc</Badge>
+                </div>
+                <div className="pt-4 border-t border-gray-600">
+                  <p className="text-xs text-gray-500">
+                    Shortcuts work when not typing in input fields
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
       <footer className="bg-gray-800 border-t border-gray-700 py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
