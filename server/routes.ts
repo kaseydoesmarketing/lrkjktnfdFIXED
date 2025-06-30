@@ -350,6 +350,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/tests/:testId', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = (req as any).user;
+      
+      // Verify the test belongs to the user
+      const test = await storage.getTest(testId);
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+      
+      if (test.userId !== user.id) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      // Cancel any scheduled jobs for this test
+      scheduler.cancelJob(`rotation-${testId}`);
+      
+      // Delete the test (cascade delete will handle related records)
+      await storage.deleteTest(testId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      res.status(500).json({ error: 'Failed to delete test' });
+    }
+  });
+
   app.get('/api/tests/:testId/results', requireAuth, async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;

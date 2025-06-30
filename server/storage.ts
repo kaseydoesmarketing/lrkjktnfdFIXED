@@ -5,7 +5,8 @@ import {
   type Account, type Session
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
+import crypto from "crypto";
 
 export interface IStorage {
   // Users
@@ -28,6 +29,7 @@ export interface IStorage {
   getTest(id: string): Promise<Test | undefined>;
   createTest(test: InsertTest): Promise<Test>;
   updateTestStatus(id: string, status: string): Promise<Test>;
+  deleteTest(id: string): Promise<void>;
   
   // Titles
   getTitlesByTestId(testId: string): Promise<Title[]>;
@@ -145,6 +147,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tests.id, id))
       .returning();
     return test;
+  }
+
+  async deleteTest(id: string): Promise<void> {
+    // Delete in order to respect foreign key constraints
+    // First get all titles for this test
+    const testTitles = await db.select().from(titles).where(eq(titles.testId, id));
+    const titleIds = testTitles.map(t => t.id);
+    
+    // Delete analytics polls for all titles
+    for (const titleId of titleIds) {
+      await db.delete(analyticsPolls).where(eq(analyticsPolls.titleId, titleId));
+    }
+    
+    // Delete title summaries for all titles
+    for (const titleId of titleIds) {
+      await db.delete(titleSummaries).where(eq(titleSummaries.titleId, titleId));
+    }
+    
+    // Delete titles
+    await db.delete(titles).where(eq(titles.testId, id));
+    
+    // Finally delete the test
+    await db.delete(tests).where(eq(tests.id, id));
   }
 
   // Titles

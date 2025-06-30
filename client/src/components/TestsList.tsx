@@ -46,6 +46,7 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
         title: 'Success',
         description: 'Test status updated successfully',
@@ -55,6 +56,28 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
       toast({
         title: 'Error',
         description: 'Failed to update test status',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteTestMutation = useMutation({
+    mutationFn: async (testId: string) => {
+      const response = await apiRequest('DELETE', `/api/tests/${testId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: 'Success',
+        description: 'Test deleted successfully',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete test',
         variant: 'destructive',
       });
     },
