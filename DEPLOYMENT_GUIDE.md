@@ -17,24 +17,26 @@
 #### 2. Domain Configuration
 **After deployment, your production URLs will be:**
 
+**Current Production URLs (Updated):**
+
 **Homepage URL:** 
 ```
-https://titletesterpro.[your-username].repl.co
+https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/
 ```
 
 **Privacy Policy URL:**
 ```
-https://titletesterpro.[your-username].repl.co/privacy
+https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/privacy
 ```
 
 **Terms of Service URL:**
 ```
-https://titletesterpro.[your-username].repl.co/terms
+https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/terms
 ```
 
 **Authorized Redirect URIs:**
 ```
-https://titletesterpro.[your-username].repl.co/api/auth/callback/google
+https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google
 ```
 
 **Important:** Replace `[your-username]` with your actual Replit username.
