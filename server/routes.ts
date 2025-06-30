@@ -598,33 +598,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug route to test rotation system (no auth required for debugging)
-  app.post('/api/debug-rotation/:testId', async (req: Request, res: Response) => {
+  app.get('/api/debug-rotation/:testId/:titleOrder', async (req: Request, res: Response) => {
+    console.log(`🔧 [DEBUG ROUTE] Route handler called for ${req.path}`);
     try {
-      const { testId } = req.params;
-      const { titleOrder } = req.body;
+      const { testId, titleOrder } = req.params;
+      const order = parseInt(titleOrder);
+
+      console.log(`🔧 [DEBUG ROUTE] Parsed testId: ${testId}, titleOrder: ${order}`);
 
       const test = await storage.getTest(testId);
       if (!test) {
+        console.log(`🔧 [DEBUG ROUTE] Test not found: ${testId}`);
         return res.status(404).json({ error: 'Test not found' });
       }
 
-      console.log(`🔧 [DEBUG ROUTE] Manual rotation trigger for test ${testId}, titleOrder: ${titleOrder}`);
+      console.log(`🔧 [DEBUG ROUTE] Test found: ${test.id}, status: ${test.status}`);
       
       // Get titles for debugging
       const titles = await storage.getTitlesByTestId(testId);
-      console.log(`🔧 [DEBUG ROUTE] Available titles:`, titles.map(t => ({ order: t.order, text: t.text, id: t.id })));
+      console.log(`🔧 [DEBUG ROUTE] Found ${titles.length} titles for test ${testId}`);
       
-      // Trigger rotation with 1 minute delay for testing
-      scheduler.scheduleRotation(testId, titleOrder || 0, 0.1); // 6 seconds for immediate testing
+      // Trigger rotation with 6 second delay for immediate testing
+      console.log(`🔧 [DEBUG ROUTE] Calling scheduler.scheduleRotation(${testId}, ${order}, 0.1)`);
+      scheduler.scheduleRotation(testId, order, 0.1); 
+      console.log(`🔧 [DEBUG ROUTE] Scheduler called successfully`);
       
-      res.json({ 
+      const response = { 
         success: true, 
-        message: `Rotation scheduled for test ${testId}, titleOrder: ${titleOrder || 0}`,
+        message: `Rotation scheduled for test ${testId}, titleOrder: ${order}`,
         titles: titles.map(t => ({ order: t.order, text: t.text, id: t.id }))
-      });
+      };
+      
+      console.log(`🔧 [DEBUG ROUTE] Sending response:`, JSON.stringify(response, null, 2));
+      return res.json(response);
     } catch (error) {
-      console.error('Error in debug rotation:', error);
-      res.status(500).json({ error: 'Failed to trigger debug rotation' });
+      console.error('🔧 [DEBUG ROUTE] Error in debug rotation:', error);
+      return res.status(500).json({ error: 'Failed to trigger debug rotation', details: error.message });
     }
   });
 
