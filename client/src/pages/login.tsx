@@ -26,6 +26,37 @@ export default function Login() {
     window.location.href = '/api/auth/google';
   };
 
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'demo@titletesterpro.com',
+          name: 'Demo User',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('sessionToken', data.sessionToken);
+        window.location.href = '/dashboard';
+      } else {
+        setError('Demo login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Demo login error:', error);
+      setError('Demo login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
 
   return (
@@ -111,6 +142,19 @@ export default function Login() {
               >
                 <Youtube className="w-4 h-4 mr-2" />
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
+              </Button>
+
+              <div className="text-center">
+                <span className="text-gray-400 text-sm">or</span>
+              </div>
+
+              <Button
+                onClick={handleDemoLogin}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+                disabled={isLoading}
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                View Demo Dashboard
               </Button>
               
 
