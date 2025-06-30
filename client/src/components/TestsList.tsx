@@ -96,6 +96,22 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
     setShowBulkActions(false);
   };
 
+  const handleDeleteTest = (testId: string) => {
+    if (confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
+      deleteTestMutation.mutate(testId);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (confirm(`Are you sure you want to delete ${selectedTests.length} test${selectedTests.length > 1 ? 's' : ''}? This action cannot be undone.`)) {
+      selectedTests.forEach(testId => {
+        deleteTestMutation.mutate(testId);
+      });
+      setSelectedTests([]);
+      setShowBulkActions(false);
+    }
+  };
+
   const handleSelectTest = (testId: string, checked: boolean) => {
     if (checked) {
       setSelectedTests([...selectedTests, testId]);
@@ -235,6 +251,16 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={handleBulkDelete}
+                  className="text-red-400 border-red-400/30 hover:bg-red-400/10"
+                  disabled={deleteTestMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete All
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => setSelectedTests([])}
                   className="text-gray-400 border-gray-400/30 hover:bg-gray-400/10"
                 >
@@ -313,6 +339,15 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                     >
                       <BarChart3 className="w-4 h-4 mr-1" />
                       View Results
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteTest(test.id)}
+                      disabled={deleteTestMutation.isPending}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
