@@ -42,11 +42,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/dashboard" component={() => (
-        <AuthWrapper>
-          <Dashboard />
-        </AuthWrapper>
-      )} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/privacy" component={() => <Privacy />} />
