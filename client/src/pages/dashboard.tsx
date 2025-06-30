@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { authService } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
-  const [selectedChannel, setSelectedChannel] = useState('');
-  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Check for successful OAuth login and refresh auth state
@@ -61,240 +55,232 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '32px', height: '32px', border: '4px solid #3b82f6', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ backgroundColor: '#f9fafb', color: '#111827', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', color: '#111827' }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4" style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-              <Play className="w-4 h-4 text-white fill-current" />
+      <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', backgroundColor: '#ef4444', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Play style={{ width: '16px', height: '16px', color: 'white', fill: 'white' }} />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">Thumbnail Tester Dashboard</h1>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827' }}>Thumbnail Tester Dashboard</h1>
           </div>
-          <div className="flex items-center space-x-4">
-            <Bell className="w-5 h-5 text-gray-500" />
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-600" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Bell style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+            <div style={{ width: '32px', height: '32px', backgroundColor: '#d1d5db', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User style={{ width: '16px', height: '16px', color: '#4b5563' }} />
             </div>
           </div>
         </div>
       </header>
 
-      <div className="p-6 max-w-7xl mx-auto">
+      <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}>
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-green-50 border-green-200" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-            <CardContent className="p-6" style={{ padding: '1.5rem' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <TestTube className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">Active Tests</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{activeTests.length}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Active Tests Card */}
+          <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <TestTube style={{ width: '16px', height: '16px', color: '#16a34a' }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#16a34a' }}>Active Tests</span>
                 </div>
-                <div className="text-green-600 text-sm font-medium">%18</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{activeTests.length}</div>
               </div>
-            </CardContent>
-          </Card>
+              <div style={{ color: '#16a34a', fontSize: '0.875rem', fontWeight: '500' }}>%18</div>
+            </div>
+          </div>
 
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-600">Total Views</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{stats?.totalViews || 888}</div>
+          {/* Total Views Card */}
+          <div style={{ backgroundColor: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <TrendingUp style={{ width: '16px', height: '16px', color: '#2563eb' }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb' }}>Total Views</span>
                 </div>
-                <div className="text-blue-600 text-sm font-medium">%18</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{stats?.totalViews || 888}</div>
               </div>
-            </CardContent>
-          </Card>
+              <div style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500' }}>%18</div>
+            </div>
+          </div>
 
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <MousePointer className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium text-purple-600">Average CTR</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '4.7%'}</div>
+          {/* Average CTR Card */}
+          <div style={{ backgroundColor: '#faf5ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <MousePointer style={{ width: '16px', height: '16px', color: '#9333ea' }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9333ea' }}>Average CTR</span>
                 </div>
-                <div className="text-purple-600 text-sm font-medium">-2%</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '4.7%'}</div>
               </div>
-            </CardContent>
-          </Card>
+              <div style={{ color: '#9333ea', fontSize: '0.875rem', fontWeight: '500' }}>-2%</div>
+            </div>
+          </div>
 
-          <Card className="bg-orange-50 border-orange-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Eye className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm font-medium text-orange-600">Completed</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{completedTests.length}</div>
+          {/* Completed Tests Card */}
+          <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <Eye style={{ width: '16px', height: '16px', color: '#ea580c' }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#ea580c' }}>Completed</span>
                 </div>
-                <div className="text-orange-600 text-sm font-medium">+9%</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{completedTests.length}</div>
               </div>
-            </CardContent>
-          </Card>
+              <div style={{ color: '#ea580c', fontSize: '0.875rem', fontWeight: '500' }}>+9%</div>
+            </div>
+          </div>
         </div>
 
         {/* Channel Selector and New Test Button */}
-        <div className="flex items-center justify-between mb-8">
-          <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Select YouTube Channel" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="channel1">Main Channel</SelectItem>
-              <SelectItem value="channel2">Secondary Channel</SelectItem>
-            </SelectContent>
-          </Select>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <select style={{ width: '256px', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
+            <option>Select YouTube Channel</option>
+            <option>Main Channel</option>
+            <option>Secondary Channel</option>
+          </select>
           
-          <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-            <Plus className="w-4 h-4 mr-2" />
+          <button style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <Plus style={{ width: '16px', height: '16px' }} />
             New Test
-          </Button>
+          </button>
         </div>
 
         {/* Video Selection Section */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Select video to test</h2>
-          <div className="space-y-4">
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Select video to test</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {recentVideos.slice(0, 2).map((video: any, index: number) => (
-              <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <img 
-                        src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
-                        alt="Video thumbnail" 
-                        className="w-32 h-18 object-cover rounded"
-                      />
-                      <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 rounded">
-                        {video.duration || '4:05'}
-                      </div>
+              <div key={index} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', cursor: 'pointer', transition: 'box-shadow 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <img 
+                      src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+                      alt="Video thumbnail" 
+                      style={{ width: '128px', height: '72px', objectFit: 'cover', borderRadius: '4px' }}
+                    />
+                    <div style={{ position: 'absolute', bottom: '4px', right: '4px', backgroundColor: 'rgba(0,0,0,0.75)', color: 'white', fontSize: '0.75rem', padding: '2px 4px', borderRadius: '2px' }}>
+                      {video.duration || '4:05'}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 mb-1">{video.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Eye className="w-3 h-3 mr-1" />
-                          {video.viewCount || '405'} views
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {video.publishedAt || '4 days ago'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{video.description || 'What if i told your Diddy\'s walking fart is about Cassie and Diddy, i dreak Todd/k about a better...'}</p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '0.25rem' }}>{video.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Eye style={{ width: '12px', height: '12px' }} />
+                        {video.viewCount || '405'} views
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Clock style={{ width: '12px', height: '12px' }} />
+                        {video.publishedAt || '4 days ago'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '0.25rem' }}>{video.description || 'What if i told your Diddy\'s walking fart is about Cassie and Diddy, i dreak Todd/k about a better...'}</p>
+                  </div>
+                  <ChevronRight style={{ width: '20px', height: '20px', color: '#9ca3af' }} />
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Active Test Section */}
+        {/* Active Test Section - Only show if there are active tests */}
         {activeTests.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>
                 This Diddy Story Proves Cancel Culture is a Lie
               </h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <RotateCcw className="w-4 h-4" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                <RotateCcw style={{ width: '16px', height: '16px' }} />
                 <span>10 min Rotation</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
               {/* Title A */}
-              <Card className="border-purple-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-gray-600">Title A</span>
+              <div style={{ backgroundColor: 'white', border: '1px solid #e5b4fc', borderRadius: '8px', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4b5563' }}>Title A</span>
+                </div>
+                <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>Y'all Cancel Everybody But Diddy?</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>CTR</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>7.4%</span>
                   </div>
-                  <h3 className="font-medium text-gray-900 mb-4">Y'all Cancel Everybody But Diddy?</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">CTR</span>
-                      <span className="text-sm font-medium">7.4%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Views</span>
-                      <span className="text-sm font-medium">1,182</span>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Views</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>1,182</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Title B */}
-              <Card className="border-green-200 bg-green-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-gray-600">Title B</span>
-                    <Badge className="bg-green-500 text-white text-xs">Current</Badge>
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4b5563' }}>Title B</span>
+                  <span style={{ backgroundColor: '#22c55e', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>Current</span>
+                </div>
+                <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>Nobody Wants to Admit This About Cassie and Diddy</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>CTR</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>8.6%</span>
                   </div>
-                  <h3 className="font-medium text-gray-900 mb-4">Nobody Wants to Admit This About Cassie and Diddy</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">CTR</span>
-                      <span className="text-sm font-medium">8.6%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Views</span>
-                      <span className="text-sm font-medium">773</span>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Views</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>773</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Title C */}
-              <Card className="border-blue-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium text-gray-600">Title C</span>
-                    <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">Pending</Badge>
-                  </div>
-                  <h3 className="font-medium text-gray-900 mb-4">if Diddy Walks, It's Proof This System Ain't Built for Us</h3>
-                  <div className="text-center py-8">
-                    <Button variant="outline" className="text-blue-600 border-blue-600">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Generate Title With AI
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div style={{ backgroundColor: 'white', border: '1px solid #93c5fd', borderRadius: '8px', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4b5563' }}>Title C</span>
+                  <span style={{ border: '1px solid #2563eb', color: '#2563eb', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>Pending</span>
+                </div>
+                <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>if Diddy Walks, It's Proof This System Ain't Built for Us</h3>
+                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                  <button style={{ border: '1px solid #2563eb', color: '#2563eb', backgroundColor: 'transparent', padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 auto', cursor: 'pointer' }}>
+                    <Plus style={{ width: '16px', height: '16px' }} />
+                    Generate Title With AI
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Title Variants Info */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-2">Title Variants</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+              <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>Title Variants</h3>
+              <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '1rem' }}>
                 Enter 3-5 titles to A/B test. TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. Best click-through rate determines the winner.
               </p>
-              <Button variant="outline" className="text-blue-600 border-blue-600">
+              <button style={{ border: '1px solid #2563eb', color: '#2563eb', backgroundColor: 'transparent', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>
                 Cancel test
-              </Button>
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Add keyframes for spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
