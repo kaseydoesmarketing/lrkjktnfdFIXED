@@ -210,6 +210,12 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Production site (titletesterpro.com) working correctly with new dashboard design
 - Development environment experiencing OAuth verification issues (Google 403 error) but production unaffected
 - Enhanced scheduler debugging to identify title cycling issue that stops after 3 of 5 titles
+- June 30, 2025: Reverted dashboard to stable dark theme and implemented comprehensive debugging system
+- Fixed development environment crashes by removing problematic redesign elements
+- Added comprehensive debugging logging to scheduler system with emojis and structured output
+- Enhanced rotation debugging to track job scheduling, execution, and title order progression
+- Created debug API endpoint (/api/tests/:testId/debug-rotation) for manual rotation testing
+- Identified title cycling issue requires deeper investigation into database queries, YouTube API calls, or job scheduling
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

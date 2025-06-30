@@ -597,6 +597,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug route to test rotation system
+  app.post('/api/tests/:testId/debug-rotation', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const { titleOrder } = req.body;
+      const user = (req as any).user;
+
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      console.log(`🔧 [DEBUG ROUTE] Manual rotation trigger for test ${testId}, titleOrder: ${titleOrder}`);
+      
+      // Get titles for debugging
+      const titles = await storage.getTitlesByTestId(testId);
+      console.log(`🔧 [DEBUG ROUTE] Available titles:`, titles.map(t => ({ order: t.order, text: t.text, id: t.id })));
+      
+      // Trigger rotation with 1 minute delay for testing
+      scheduler.scheduleRotation(testId, titleOrder || 0, 1);
+      
+      res.json({ 
+        success: true, 
+        message: `Rotation scheduled for test ${testId}, titleOrder: ${titleOrder || 0}`,
+        titles: titles.map(t => ({ order: t.order, text: t.text, id: t.id }))
+      });
+    } catch (error) {
+      console.error('Error in debug rotation:', error);
+      res.status(500).json({ error: 'Failed to trigger debug rotation' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
