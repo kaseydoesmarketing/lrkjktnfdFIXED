@@ -20,19 +20,38 @@ Google requires your demo video to show the OAuth consent flow. Here's exactly w
 - Show the Google OAuth login button
 - Mention this connects to user's YouTube account
 
-### 3. OAuth Consent Flow (60 seconds) - **CRITICAL**
-**This is what Google specifically wants to see:**
+### 3. OAuth Consent Flow (90 seconds) - **CRITICAL FOR GOOGLE APPROVAL**
+**This is exactly what Google's verification team needs to see:**
 
-- Click "Continue with Google" 
-- Show Google's account selection screen
-- **Show the consent screen with scopes listed:**
-  - YouTube account access
-  - View YouTube channel
-  - Manage YouTube videos
-  - View YouTube Analytics
-- **Narrate: "The app requests permission to access YouTube data for title testing"**
-- Click "Allow" to grant permissions
-- Show successful redirect back to TitleTesterPro dashboard
+**Step 1: Initiate OAuth (10 seconds)**
+- Click "Continue with Google" button
+- **Narrate: "I'll now connect my YouTube account to TitleTesterPro"**
+
+**Step 2: Account Selection (10 seconds)**
+- Show Google account selection screen
+- Select your YouTube channel account
+- **Narrate: "Selecting my YouTube creator account"**
+
+**Step 3: Consent Screen - MOST IMPORTANT (45 seconds)**
+- **Show the full consent screen with all scopes visible**
+- **Read aloud each permission being requested:**
+  - "View your YouTube account information"
+  - "Manage your YouTube videos" 
+  - "View your YouTube Analytics data"
+  - "See your primary Google Account email address"
+- **Narrate: "These permissions allow TitleTesterPro to read my video list, update titles during tests, and analyze performance data"**
+- **Explain: "I'm granting permission for automated title testing on my videos"**
+- **Show clicking "Allow" button**
+
+**Step 4: Successful Authorization (15 seconds)**
+- Show redirect back to TitleTesterPro dashboard
+- Display connected YouTube channel information
+- **Narrate: "Successfully connected! My YouTube channel is now linked for title testing"**
+
+**Step 5: Data Access Demonstration (10 seconds)**
+- Show user's videos loading in the dashboard
+- Point out privacy notice
+- **Narrate: "The app can now access my authorized YouTube data securely"**
 
 ### 4. Dashboard Overview (45 seconds)
 - Show main dashboard with user's YouTube channel connected
