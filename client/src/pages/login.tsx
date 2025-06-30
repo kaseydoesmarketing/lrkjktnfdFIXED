@@ -1,20 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { authService } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
-import { Play, Youtube, BarChart3, TrendingUp, TestTube } from 'lucide-react';
+import { Youtube, BarChart3, TrendingUp, TestTube } from 'lucide-react';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
 
   const handleGoogleAuth = () => {
     setIsLoading(true);
@@ -22,35 +12,7 @@ export default function Login() {
     window.location.href = '/api/auth/google';
   };
 
-  const handleDemoLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    setIsLoading(true);
-    try {
-      const user = await authService.demoLogin();
-      console.log('Demo login returned user:', user);
-
-      // Invalidate auth queries to refresh state
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-      
-      toast({
-        title: 'Success',
-        description: 'Successfully logged in to demo mode!',
-      });
-      
-      // Navigate to dashboard immediately
-      setLocation('/dashboard');
-    } catch (error) {
-      console.error('Demo login error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to login. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -127,31 +89,11 @@ export default function Login() {
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
               
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-600" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-gray-800 px-2 text-gray-400">Or try demo mode</span>
-                </div>
-              </div>
 
-              <form onSubmit={handleDemoLogin} className="space-y-4">
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-                  disabled={isLoading}
-                >
-                  <TestTube className="w-4 h-4 mr-2" />
-                  Enter Dashboard (Demo)
-                </Button>
-              </form>
             </div>
             <div className="mt-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
               <p className="text-sm text-green-300">
-                <strong>Production Ready:</strong> Connect with your real YouTube account for live title testing, 
-                or use demo mode to explore the interface with sample data.
+                <strong>Production Ready:</strong> Connect with your YouTube account to start optimizing your video titles with real data-driven A/B testing.
               </p>
             </div>
             
