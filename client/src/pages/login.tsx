@@ -83,14 +83,12 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-semibold text-white">Connect Your YouTube Account</CardTitle>
             <p className="text-gray-400 text-sm">Start optimizing your video titles today</p>
-            {new URLSearchParams(window.location.search).get('error') === 'oauth_verification' && (
-              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-3 mt-2">
-                <p className="text-yellow-300 text-sm">
-                  <strong>OAuth Setup Required:</strong> Your Google Cloud Console OAuth app needs verification or test user setup. 
-                  Use demo mode below or contact support.
-                </p>
-              </div>
-            )}
+            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-3 mt-2">
+              <p className="text-yellow-300 text-sm">
+                <strong>OAuth Verification Pending:</strong> Google is currently reviewing our YouTube API access. 
+                While we wait for approval, you can test the app using the developer access below.
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -113,6 +111,24 @@ export default function Login() {
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
               
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-600" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-gray-800 px-2 text-gray-400">Or</span>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleDeveloperAccess}
+                variant="outline"
+                className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
+                disabled={isLoading}
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                Developer Test Access
+              </Button>
 
             </div>
             <div className="mt-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
