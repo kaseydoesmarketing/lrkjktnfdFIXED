@@ -8,9 +8,11 @@ export class GoogleAuthService {
     // Auto-detect environment and use appropriate domain
     const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
     
-    // Use custom domain for production, Replit domain for development
+    // For production deployments, use the production domain
+    // For development, use the Replit domain
     const redirectUri = process.env.OAUTH_REDIRECT_URI || 
-      (replotDomain ? `https://${replotDomain}/api/auth/callback/google` : 
+      (replotDomain && replotDomain.includes('replit') ? 
+       `https://${replotDomain}/api/auth/callback/google` : 
        'https://titletesterpro.com/api/auth/callback/google');
       
     console.log('OAuth redirect URI:', redirectUri);
