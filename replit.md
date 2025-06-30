@@ -193,6 +193,12 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Added domain verification file and enhanced privacy policy visibility in header navigation
 - Google is actively reviewing all verification requirements (Privacy Policy, App Functionality, Branding, Data Access)
 - Verification status: Submitted and under review by Google Trust & Safety team
+- June 30, 2025: Enhanced dashboard with title carousel system and accurate CTR data
+- Implemented comprehensive title carousel allowing users to navigate through all title variants (up to 5)
+- Fixed CTR calculation accuracy by computing actual CTR from total impressions and views instead of averaging daily percentages
+- Added carousel navigation with previous/next buttons and page indicators for tests with more than 3 titles
+- Removed demo login functionality to focus on production-ready OAuth authentication only
+- Improved OAuth redirect URI detection for seamless production deployment compatibility
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

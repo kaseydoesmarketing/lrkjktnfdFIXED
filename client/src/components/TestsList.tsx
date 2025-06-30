@@ -401,17 +401,52 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                 </div>
 
                 {/* Title Variants Preview */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {test.titles.slice(0, 3).map((title, index) => {
-                    const isActive = currentTitle.id === title.id;
-                    const isCompleted = title.activatedAt && !isActive;
-                    const isPending = !title.activatedAt;
+                <div className="space-y-4">
+                  {/* Carousel Header */}
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-300">
+                      Title Variants ({test.titles.length} total)
+                    </h4>
+                    {test.titles.length > 3 && (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigateCarousel(test.id, 'prev', test.titles.length)}
+                          disabled={!canNavigatePrev(test)}
+                          className="h-7 w-7 p-0 border-gray-600 text-gray-400 hover:text-white"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-xs text-gray-500">
+                          {Math.floor((titleCarouselIndices[test.id] || 0) / 3) + 1} / {Math.ceil(test.titles.length / 3)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigateCarousel(test.id, 'next', test.titles.length)}
+                          disabled={!canNavigateNext(test)}
+                          className="h-7 w-7 p-0 border-gray-600 text-gray-400 hover:text-white"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Carousel Content */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {getVisibleTitles(test).map((title, index) => {
+                      const globalIndex = (titleCarouselIndices[test.id] || 0) + index;
+                      const isActive = currentTitle.id === title.id;
+                      const isCompleted = title.activatedAt && !isActive;
+                      const isPending = !title.activatedAt;
                     
                     return (
                       <div key={title.id} className="border border-gray-600 bg-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-medium text-gray-400">
-                            Title {String.fromCharCode(65 + index)}
+                            Title {String.fromCharCode(65 + globalIndex)}
                           </span>
                           <Badge 
                             variant={isActive ? 'default' : 'secondary'}
@@ -446,6 +481,7 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
