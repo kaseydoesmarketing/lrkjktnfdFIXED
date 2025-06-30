@@ -78,41 +78,41 @@ export class YouTubeService {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
-      // First get the channel's uploads playlist
-      const channelResponse = await youtube.channels.list({
-        part: ['contentDetails'],
-        mine: true
-      });
+    // First get the channel's uploads playlist
+    const channelResponse = await youtube.channels.list({
+      part: ['contentDetails'],
+      mine: true
+    });
 
-      if (!channelResponse.data.items?.length) {
-        throw new Error('No channel found');
-      }
+    if (!channelResponse.data.items?.length) {
+      throw new Error('No channel found');
+    }
 
-      const uploadsPlaylistId = channelResponse.data.items[0].contentDetails?.relatedPlaylists?.uploads;
-      if (!uploadsPlaylistId) {
-        throw new Error('No uploads playlist found');
-      }
+    const uploadsPlaylistId = channelResponse.data.items[0].contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) {
+      throw new Error('No uploads playlist found');
+    }
 
-      // Get videos from uploads playlist
-      const playlistResponse = await youtube.playlistItems.list({
-        part: ['snippet'],
-        playlistId: uploadsPlaylistId,
-        maxResults
-      });
+    // Get videos from uploads playlist
+    const playlistResponse = await youtube.playlistItems.list({
+      part: ['snippet'],
+      playlistId: uploadsPlaylistId,
+      maxResults
+    });
 
-      if (!playlistResponse.data.items?.length) {
-        return [];
-      }
+    if (!playlistResponse.data.items?.length) {
+      return [];
+    }
 
-      // Get detailed video information
-      const videoIds = playlistResponse.data.items
-        .map(item => item.snippet?.resourceId?.videoId)
-        .filter((id): id is string => Boolean(id));
-      
-      const videosResponse = await youtube.videos.list({
-        part: ['snippet', 'statistics', 'contentDetails'],
-        id: videoIds
-      });
+    // Get detailed video information
+    const videoIds = playlistResponse.data.items
+      .map(item => item.snippet?.resourceId?.videoId)
+      .filter((id): id is string => Boolean(id));
+    
+    const videosResponse = await youtube.videos.list({
+      part: ['snippet', 'statistics', 'contentDetails'],
+      id: videoIds
+    });
 
       return videosResponse.data.items?.map((video: any) => ({
         id: video.id!,
@@ -169,64 +169,110 @@ export class YouTubeService {
     });
   }
 
+  // Legacy method for backward compatibility (will be removed)
+  async updateVideoTitleLegacy(accessToken: string, videoId: string, newTitle: string) {
+    try {
+      console.log(`🎬 [YOUTUBE API] Legacy method - Updating video ${videoId} to title: "${newTitle}"`);
+      
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const youtube = google.youtube({ version: 'v3', auth: authClient });
+
+      // First get current video data
+      console.log(`🎬 [YOUTUBE API] Fetching current video data for ${videoId}`);
+      const videoResponse = await youtube.videos.list({
+        part: ['snippet'],
+        id: [videoId]
+      });
+
+      if (!videoResponse.data.items?.length) {
+        console.error(`❌ [YOUTUBE API] Video ${videoId} not found in YouTube`);
+        throw new Error('Video not found');
+      }
+
+      const currentVideo = videoResponse.data.items[0];
+      console.log(`🎬 [YOUTUBE API] Current video title: "${currentVideo.snippet?.title}"`);
+      
+      // Update the title
+      console.log(`🎬 [YOUTUBE API] Sending title update request to YouTube API`);
+      await youtube.videos.update({
+        part: ['snippet'],
+        requestBody: {
+          id: videoId,
+          snippet: {
+            ...currentVideo.snippet,
+            title: newTitle
+          }
+        }
+      });
+
+      console.log(`✅ [YOUTUBE API] Successfully updated video ${videoId} title to: "${newTitle}"`);
+      return { success: true, newTitle };
+    } catch (error: any) {
+      console.error(`❌ [YOUTUBE API] Failed to update video ${videoId}:`, error.message);
+      console.error(`❌ [YOUTUBE API] Error code:`, error.code);
+      console.error(`❌ [YOUTUBE API] Error details:`, error.errors);
+      throw error;
+    }
+  }
+
   async getVideoAnalytics(userId: string, videoId: string, startDate: string, endDate: string) {
     console.log(`📊 [YOUTUBE ANALYTICS] Getting analytics for video ${videoId} (${startDate} to ${endDate}) for user ${userId}`);
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
     
-      try {
-        // Use YouTube Analytics API for accurate metrics
-        const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
-        
-        // Get detailed analytics data for the specific date range
-        const analyticsResponse = await youtubeAnalytics.reports.query({
-          ids: 'channel==MINE',
-          startDate,
-          endDate,
-          metrics: 'views,impressions,ctr,averageViewDuration',
-          filters: `video==${videoId}`,
-          dimensions: 'day'
-        });
+    try {
+      // Use YouTube Analytics API for accurate metrics
+      const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
+      
+      // Get detailed analytics data for the specific date range
+      const analyticsResponse = await youtubeAnalytics.reports.query({
+        ids: 'channel==MINE',
+        startDate,
+        endDate,
+        metrics: 'views,impressions,ctr,averageViewDuration',
+        filters: `video==${videoId}`,
+        dimensions: 'day'
+      });
 
-        if (!analyticsResponse.data.rows || analyticsResponse.data.rows.length === 0) {
-          // Fallback to Data API if Analytics API fails
-          console.log('No analytics data found, falling back to basic statistics');
-          return await this.getBasicVideoStats(accessToken, videoId);
-        }
-
-        // Sum up metrics across all days in the range
-        let totalViews = 0;
-        let totalImpressions = 0;
-        let totalAvgViewDuration = 0;
-        let daysWithData = 0;
-
-        analyticsResponse.data.rows.forEach((row: any[]) => {
-          if (row && row.length >= 4) {
-            totalViews += parseInt(row[1]) || 0;
-            totalImpressions += parseInt(row[2]) || 0;
-            totalAvgViewDuration += parseInt(row[4]) || 0;
-            daysWithData++;
-          }
-        });
-
-        // Calculate accurate CTR from total impressions and views
-        const accurateCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
-
-        return {
-          views: totalViews,
-          impressions: totalImpressions,
-          ctr: accurateCtr,
-          averageViewDuration: daysWithData > 0 ? totalAvgViewDuration / daysWithData : 0,
-          likes: 0, // Not available in Analytics API
-          comments: 0 // Not available in Analytics API
-        };
-
-      } catch (error) {
-        console.error('YouTube Analytics API error:', error);
-        // Fallback to basic statistics if Analytics API fails
+      if (!analyticsResponse.data.rows || analyticsResponse.data.rows.length === 0) {
+        // Fallback to Data API if Analytics API fails
+        console.log('No analytics data found, falling back to basic statistics');
         return await this.getBasicVideoStats(accessToken, videoId);
       }
+
+      // Sum up metrics across all days in the range
+      let totalViews = 0;
+      let totalImpressions = 0;
+      let totalAvgViewDuration = 0;
+      let daysWithData = 0;
+
+      analyticsResponse.data.rows.forEach((row: any[]) => {
+        if (row && row.length >= 4) {
+          totalViews += parseInt(row[1]) || 0;
+          totalImpressions += parseInt(row[2]) || 0;
+          totalAvgViewDuration += parseInt(row[4]) || 0;
+          daysWithData++;
+        }
+      });
+
+      // Calculate accurate CTR from total impressions and views
+      const accurateCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
+
+      return {
+        views: totalViews,
+        impressions: totalImpressions,
+        ctr: accurateCtr,
+        averageViewDuration: daysWithData > 0 ? totalAvgViewDuration / daysWithData : 0,
+        likes: 0, // Not available in Analytics API
+        comments: 0 // Not available in Analytics API
+      };
+
+    } catch (error) {
+      console.error('YouTube Analytics API error:', error);
+      // Fallback to basic statistics if Analytics API fails
+      return await this.getBasicVideoStats(accessToken, videoId);
+    }
     });
   }
 
@@ -267,7 +313,7 @@ export class YouTubeService {
     });
 
     return response.data.items?.map((item: any) => ({
-      id: item.id?.videoId,
+      id: item.id?.videoId!,
       title: item.snippet?.title,
       description: item.snippet?.description,
       thumbnail: item.snippet?.thumbnails?.medium?.url,
@@ -279,8 +325,7 @@ export class YouTubeService {
   extractVideoIdFromUrl(url: string): string | null {
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-      /youtube\.com\/v\/([^&\n?#]+)/,
-      /youtube\.com\/shorts\/([^&\n?#]+)/
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
     ];
 
     for (const pattern of patterns) {

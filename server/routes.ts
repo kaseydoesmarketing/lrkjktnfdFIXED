@@ -567,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const endDate = new Date().toISOString().split('T')[0];
       
       const analytics = await youtubeService.getVideoAnalytics(
-        account.accessToken, 
+        user.id, 
         test.videoId, 
         startDate, 
         endDate
