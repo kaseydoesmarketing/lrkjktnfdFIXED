@@ -20,21 +20,10 @@ export default function Dashboard() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const { toast } = useToast();
 
-  // Handle session token from OAuth callback
+  // Check for successful OAuth login and refresh auth state
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    
-    if (token) {
-      // Store the session token
-      document.cookie = `session-token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; secure; samesite=strict`;
-      
-      // Clear the token from URL
-      window.history.replaceState({}, document.title, '/dashboard');
-      
-      // Force refresh of auth query
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-    }
+    // Force refresh of auth query on dashboard load
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
   }, []);
 
   const { data: user } = useQuery({

@@ -194,8 +194,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log('OAuth flow completed successfully, redirecting to dashboard...');
-      // Redirect to dashboard with session token
-      res.redirect(`/dashboard?token=${sessionToken}`);
+      // Set session token as cookie
+      res.cookie('session-token', sessionToken, {
+        httpOnly: false, // Allow frontend access
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+      
+      // Redirect to dashboard
+      res.redirect('/dashboard');
     } catch (error) {
       console.error('Error in OAuth callback:', error);
       console.error('Full error details:', error);
