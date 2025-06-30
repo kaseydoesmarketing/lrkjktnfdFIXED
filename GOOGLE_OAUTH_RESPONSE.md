@@ -12,22 +12,22 @@ The URLs mentioned in your verification email have been updated. Please use the 
 
 **Homepage URL:**
 ```
-https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/
+https://titletesterpro.com/
 ```
 
 **Privacy Policy URL:**
 ```
-https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/privacy
+https://titletesterpro.com/privacy
 ```
 
 **Terms of Service URL:**
 ```
-https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/terms
+https://titletesterpro.com/terms
 ```
 
 **OAuth Redirect URI:**
 ```
-https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google
+https://titletesterpro.com/api/auth/callback/google
 ```
 
 ### OAuth Scope Justification:
@@ -61,7 +61,7 @@ A demonstration video showing the complete OAuth workflow will be provided upon 
 ### Domain Ownership Verification:
 Domain ownership verification file has been added at:
 ```
-https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/googlefcd4a4ce68b0c1c4.html
+https://titletesterpro.com/googlefcd4a4ce68b0c1c4.html
 ```
 
 Please let me know if you need any additional information or clarification.
