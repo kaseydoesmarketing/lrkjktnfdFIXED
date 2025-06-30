@@ -151,7 +151,7 @@ class Scheduler {
       
       console.log(`🔄 [ROTATION DEBUG] ================== ROTATION COMPLETE ==================\n`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [ROTATION DEBUG] Critical error executing rotation:', error);
       console.error('❌ [ROTATION DEBUG] Error stack:', error.stack);
       console.log(`🔄 [ROTATION DEBUG] ================= ROTATION FAILED ===================\n`);
