@@ -76,6 +76,18 @@ export default function Landing() {
                   Watch Demo
                 </Button>
               </div>
+              
+              <div className="mt-6 p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+                <p className="text-sm text-gray-300">
+                  <Shield className="inline-block w-4 h-4 mr-2 text-blue-400" />
+                  Your data privacy is our priority. We only access YouTube analytics data you explicitly authorize. 
+                  Learn more in our{' '}
+                  <Link href="/privacy" className="text-blue-400 hover:text-blue-300 underline font-medium">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
             <div className="relative">
               <img 

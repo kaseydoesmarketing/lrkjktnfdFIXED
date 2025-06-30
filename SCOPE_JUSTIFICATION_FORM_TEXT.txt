@@ -1,19 +1,38 @@
-TitleTesterPro is a YouTube title optimization platform that helps content creators increase video performance through automated A/B testing.
+TitleTesterPro is a YouTube title optimization platform that helps content creators increase video performance through automated A/B testing. Our platform provides data-driven insights to help creators optimize their video titles and increase click-through rates by 15-30%.
 
-YOUTUBE.READONLY SCOPE:
-We need read access to retrieve the user's video list for test selection, access current video metadata (titles, descriptions, statistics), and display channel information in the user dashboard. This allows users to select from their existing videos and see baseline performance before starting tests.
+DETAILED SCOPE JUSTIFICATIONS:
 
-YOUTUBE SCOPE:
-Core functionality requires updating video titles during automated A/B tests. We rotate between different title variants on user's selected videos to measure performance differences. Users can then apply winning titles permanently. This is the primary feature - automated title testing without manual intervention.
+YOUTUBE.READONLY SCOPE - CRITICAL FOR CORE FUNCTIONALITY:
+- VIDEO SELECTION: Users must select from their existing videos to create A/B tests. We retrieve the user's video list (videos.list) to populate the test creation interface with their content.
+- BASELINE METRICS: We access current video metadata including titles, descriptions, view counts, and publication dates to establish baseline performance before testing begins.
+- CHANNEL INFORMATION: We display user's channel name, subscriber count, and basic channel information in the dashboard for personalized experience.
+- TEST VALIDATION: We verify video ownership and access permissions before allowing users to create tests on their content.
+- HISTORICAL DATA: We retrieve video statistics to show users their content performance trends and help them make informed testing decisions.
 
-YOUTUBE.FORCE-SSL SCOPE:
-Ensures all API operations are performed securely over HTTPS, maintaining data integrity during automated title updates and complying with YouTube's security requirements for sensitive operations.
+YOUTUBE SCOPE - ESSENTIAL FOR AUTOMATED TESTING:
+- TITLE ROTATION: Our core feature automatically updates video titles during A/B tests. We use videos.update to change titles between variants according to user-defined rotation schedules (e.g., every 2 hours, daily).
+- AUTOMATED TESTING: Users set up tests with multiple title variants, and our system automatically rotates between them without manual intervention. This requires write access to modify video metadata.
+- WINNER IMPLEMENTATION: When tests conclude, users can permanently apply the winning title variant to their video. This requires updating the video title with the optimal variant.
+- ROLLBACK CAPABILITY: If users want to revert to original titles, we update the video metadata back to the original state.
+- BATCH OPERATIONS: For users running multiple tests, we efficiently update multiple video titles in sequence.
 
-YT-ANALYTICS.READONLY SCOPE:
-Essential for measuring A/B test effectiveness. We track impressions, click-through rates, views, and watch time for each title variant to calculate statistical significance and identify winning titles. This provides the data-driven insights users need for optimization decisions.
+YOUTUBE.FORCE-SSL SCOPE - SECURITY REQUIREMENT:
+- SECURE OPERATIONS: All API calls for updating video titles and accessing sensitive analytics data are performed over HTTPS to ensure data integrity and prevent man-in-the-middle attacks.
+- COMPLIANCE: YouTube requires HTTPS for all operations involving content modification to maintain platform security standards.
+- DATA PROTECTION: Encrypts all communications between our platform and YouTube's API to protect user's content and analytics data.
 
-USERINFO.EMAIL & USERINFO.PROFILE SCOPES:
-Standard authentication scopes for secure user identification, personalized dashboard experience, and account management. Enables users to access their test history and results.
+YT-ANALYTICS.READONLY SCOPE - PERFORMANCE MEASUREMENT:
+- A/B TEST EFFECTIVENESS: We track key performance indicators (impressions, clicks, click-through rates, average view duration) for each title variant to determine statistical significance.
+- PERFORMANCE COMPARISON: We compare metrics between different title variants to identify which titles drive more engagement and views.
+- TREND ANALYSIS: We analyze performance data over time to show users how their title changes impact video performance.
+- OPTIMIZATION INSIGHTS: We provide detailed analytics showing which title elements (keywords, length, emotional triggers) perform best for their content.
+- STATISTICAL SIGNIFICANCE: We calculate confidence intervals and p-values to ensure test results are statistically meaningful before recommending title changes.
+
+USERINFO.EMAIL & USERINFO.PROFILE SCOPES - USER AUTHENTICATION:
+- SECURE LOGIN: We use Google OAuth for secure user authentication without storing passwords.
+- PERSONALIZED DASHBOARD: We display user's name and profile information for personalized dashboard experience.
+- ACCOUNT MANAGEMENT: We link user's Google account to their TitleTesterPro account for seamless access to their test history and results.
+- COMMUNICATION: We use email for sending test completion notifications and important account updates (with user consent).
 
 DATA USAGE:
 - Only accesses authenticated user's own YouTube data
