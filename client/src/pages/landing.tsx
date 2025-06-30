@@ -33,11 +33,6 @@ export default function Landing() {
               Privacy
             </Link>
             <Link href="/login">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/login">
               <Button className="bg-red-500 hover:bg-red-600 text-white">
                 Start Testing
               </Button>
