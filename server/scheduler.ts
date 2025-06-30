@@ -26,7 +26,7 @@ class Scheduler {
         console.log(`🚀 [SCHEDULER DEBUG] Active jobs before execution: ${this.jobs.size}`);
         await this.executeRotation(testId, titleOrder);
         console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} completed and removed from queue`);
-      } catch (error) {
+      } catch (error: any) {
         console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} failed with error:`, error);
         console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} error stack:`, error.stack);
       } finally {
@@ -102,29 +102,29 @@ class Scheduler {
 
       console.log(`📝 [ROTATION DEBUG] Current title (order ${titleOrder}): "${currentTitle.text}" (ID: ${currentTitle.id})`);
 
-      // Get user account for YouTube API access
-      const user = await storage.getUser(test.userId);
-      if (!user) return;
-      
-      const account = await storage.getAccountByUserId(user.id, 'google');
-      if (!account?.accessToken) {
-        console.error('No YouTube access token found for user');
-        return;
-      }
-
-      // Actually update the YouTube video title
+      // Update the YouTube video title using token refresh system
       try {
-        console.log(`📺 [ROTATION DEBUG] Attempting YouTube API call to update video ${test.videoId}`);
-        await youtubeService.updateVideoTitle(account.accessToken, test.videoId, currentTitle.text);
+        console.log(`📺 [ROTATION DEBUG] Attempting YouTube API call to update video ${test.videoId} with automatic token refresh`);
+        await youtubeService.updateVideoTitle(test.userId, test.videoId, currentTitle.text);
         console.log(`✅ [ROTATION DEBUG] Successfully updated video ${test.videoId} to title: "${currentTitle.text}"`);
         
         // Update title activation
         await storage.updateTitleActivation(currentTitle.id, new Date());
         console.log(`✅ [ROTATION DEBUG] Title activation updated for title ID: ${currentTitle.id}`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ [ROTATION DEBUG] Error updating YouTube title:', error);
         console.error('❌ [ROTATION DEBUG] Error details:', error.message);
-        // Try again in 5 minutes if the update failed
+        
+        // Check if it's a token refresh failure
+        if (error.message?.includes('authentication') || error.message?.includes('token refresh')) {
+          console.error('❌ [ROTATION DEBUG] Authentication failure - user needs to re-authenticate');
+          // Mark test as paused due to authentication issues
+          await storage.updateTestStatus(testId, 'paused');
+          console.log(`⏸️ [ROTATION DEBUG] Test ${testId} paused due to authentication failure`);
+          return;
+        }
+        
+        // Try again in 5 minutes for other errors
         console.log(`⏰ [ROTATION DEBUG] Rescheduling rotation for test ${testId}, titleOrder ${titleOrder} in 5 minutes`);
         this.scheduleRotation(testId, titleOrder, 5);
         return;

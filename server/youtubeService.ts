@@ -211,8 +211,11 @@ export class YouTubeService {
     }
   }
 
-  async getVideoAnalytics(accessToken: string, videoId: string, startDate: string, endDate: string) {
-    const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+  async getVideoAnalytics(userId: string, videoId: string, startDate: string, endDate: string) {
+    console.log(`📊 [YOUTUBE ANALYTICS] Getting analytics for video ${videoId} (${startDate} to ${endDate}) for user ${userId}`);
+    
+    return await this.withTokenRefresh(userId, async (accessToken: string) => {
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
     
     try {
       // Use YouTube Analytics API for accurate metrics
@@ -266,6 +269,7 @@ export class YouTubeService {
       // Fallback to basic statistics if Analytics API fails
       return await this.getBasicVideoStats(accessToken, videoId);
     }
+    });
   }
 
   private async getBasicVideoStats(accessToken: string, videoId: string) {
