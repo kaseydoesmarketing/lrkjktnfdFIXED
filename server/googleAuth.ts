@@ -5,18 +5,28 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    // Auto-detect environment and use appropriate domain
+    // Determine the correct redirect URI based on the environment
     const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
     
-    // For production deployments, use the production domain
-    // For development, use the Replit domain
-    const redirectUri = process.env.OAUTH_REDIRECT_URI || 
-      (replotDomain && replotDomain.includes('replit') ? 
-       `https://${replotDomain}/api/auth/callback/google` : 
-       'https://titletesterpro.com/api/auth/callback/google');
+    // Check if we're running on the production domain
+    const isProductionDomain = process.env.NODE_ENV === 'production' || 
+                              (replotDomain && !replotDomain.includes('replit'));
+    
+    // Use explicit redirect URI based on environment
+    let redirectUri;
+    if (process.env.OAUTH_REDIRECT_URI) {
+      redirectUri = process.env.OAUTH_REDIRECT_URI;
+    } else if (isProductionDomain || !replotDomain) {
+      redirectUri = 'https://titletesterpro.com/api/auth/callback/google';
+    } else {
+      redirectUri = `https://${replotDomain}/api/auth/callback/google`;
+    }
       
     console.log('OAuth redirect URI:', redirectUri);
     console.log('Google Client ID configured:', !!process.env.GOOGLE_CLIENT_ID);
+    console.log('REPLIT_DOMAINS env var:', process.env.REPLIT_DOMAINS);
+    console.log('OAUTH_REDIRECT_URI env var:', process.env.OAUTH_REDIRECT_URI);
+    console.log('Detected replotDomain:', replotDomain);
     
     // Validate OAuth configuration
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
