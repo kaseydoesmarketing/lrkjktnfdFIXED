@@ -22,9 +22,29 @@ export default function Dashboard() {
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
+    // Check for sessionToken in URL parameters from OAuth redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('sessionToken');
+    
+    if (sessionToken) {
+      console.log('OAuth login successful, storing session token');
+      localStorage.setItem('sessionToken', sessionToken);
+      
+      // Clean up URL by removing the token parameter
+      const url = new URL(window.location.href);
+      url.searchParams.delete('sessionToken');
+      window.history.replaceState({}, '', url.pathname);
+      
+      // Show success toast
+      toast({
+        title: "Login Successful",
+        description: "Welcome to TitleTesterPro! You're now connected to YouTube.",
+      });
+    }
+    
     // Force refresh of auth query on dashboard load
     queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-  }, []);
+  }, [toast]);
 
   const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],

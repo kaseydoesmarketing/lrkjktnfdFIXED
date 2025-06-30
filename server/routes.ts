@@ -56,7 +56,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       
       await storage.createSession({
-        id: authService.generateSessionToken(),
         sessionToken,
         userId: user.id,
         expires
@@ -552,9 +551,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get the currently active title
       const titles = await storage.getTitlesByTestId(testId);
-      const activeTitle = titles.find(t => t.activatedAt && !titles.some(other => 
-        other.activatedAt && other.activatedAt > t.activatedAt
-      ));
+      const activeTitle = titles.find(t => {
+        if (!t.activatedAt) return false;
+        return !titles.some(other => 
+          other.activatedAt && other.activatedAt > t.activatedAt!
+        );
+      });
       
       if (!activeTitle?.activatedAt) {
         return res.status(400).json({ error: 'No active title found' });
