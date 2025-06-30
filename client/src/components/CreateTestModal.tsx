@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Video } from 'lucide-react';
+import { Plus, Trash2, Video, Calendar } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import VideoSelector from '@/components/VideoSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -24,6 +26,8 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
   const [titles, setTitles] = useState(['', '']);
   const [winnerMetric, setWinnerMetric] = useState('ctr');
   const [activeTab, setActiveTab] = useState('select');
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // 7 days from now
   const { toast } = useToast();
 
   const createTestMutation = useMutation({
@@ -95,12 +99,24 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
       return;
     }
 
+    // Validate dates
+    if (endDate <= startDate) {
+      toast({
+        title: 'Error',
+        description: 'End date must be after start date',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     createTestMutation.mutate({
       videoId,
       videoTitle,
       titles: validTitles,
       rotationIntervalMinutes: parseInt(rotationInterval),
       winnerMetric,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     });
   };
 
@@ -111,6 +127,8 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
     setTitles(['', '']);
     setWinnerMetric('ctr');
     setActiveTab('select');
+    setStartDate(new Date());
+    setEndDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     onClose();
   };
 
@@ -216,6 +234,60 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
                 <SelectItem value="1440">24 hours</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Test Duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(startDate, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <input
+                    type="date"
+                    className="w-full p-3 border rounded-md"
+                    value={format(startDate, "yyyy-MM-dd")}
+                    onChange={(e) => setStartDate(new Date(e.target.value))}
+                    min={format(new Date(), "yyyy-MM-dd")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <Label>End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(endDate, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <input
+                    type="date"
+                    className="w-full p-3 border rounded-md"
+                    value={format(endDate, "yyyy-MM-dd")}
+                    onChange={(e) => setEndDate(new Date(e.target.value))}
+                    min={format(new Date(startDate.getTime() + 24 * 60 * 60 * 1000), "yyyy-MM-dd")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-sm text-gray-600 mt-1">
+                No maximum time limit - run tests as long as needed
+              </p>
+            </div>
           </div>
 
           {/* Title Variants */}
