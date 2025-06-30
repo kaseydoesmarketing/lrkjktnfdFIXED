@@ -441,19 +441,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }
 
-      // Fetch real videos from user's YouTube channel
-      const videos = await youtubeService.getChannelVideos(account.accessToken, 10);
+      // Try to fetch videos, refresh token if needed
+      let videos;
+      try {
+        videos = await youtubeService.getChannelVideos(account.accessToken, 10);
+      } catch (apiError: any) {
+        // If access token expired, try to refresh it
+        if (apiError.code === 401 && account.refreshToken) {
+          console.log('Access token expired, refreshing...');
+          try {
+            const newCredentials = await googleAuthService.refreshAccessToken(account.refreshToken);
+            
+            // Update stored access token
+            await storage.updateAccountTokens(account.id, {
+              accessToken: newCredentials.access_token!,
+              refreshToken: newCredentials.refresh_token || account.refreshToken,
+              expiresAt: newCredentials.expiry_date || null
+            });
+            
+            // Retry the API call with new token
+            videos = await youtubeService.getChannelVideos(newCredentials.access_token!, 10);
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            return res.status(401).json({ error: 'YouTube authorization expired. Please reconnect your account.' });
+          }
+        } else {
+          throw apiError; // Re-throw if not a token issue
+        }
+      }
       
       res.json(videos);
     } catch (error) {
       console.error('Error fetching recent videos:', error);
       
       // If YouTube API fails, provide helpful error message
-      if (error.message?.includes('quotaExceeded')) {
+      if ((error as any).message?.includes('quotaExceeded')) {
         return res.status(429).json({ error: 'YouTube API quota exceeded. Please try again later.' });
       }
       
-      if (error.message?.includes('invalid_credentials') || error.message?.includes('invalid_grant')) {
+      if ((error as any).message?.includes('invalid_credentials') || (error as any).message?.includes('invalid_grant')) {
         return res.status(401).json({ error: 'YouTube authorization expired. Please reconnect your account.' });
       }
       

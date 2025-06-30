@@ -19,6 +19,7 @@ export interface IStorage {
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
   getAccountByProvider(provider: string, providerAccountId: string): Promise<Account | undefined>;
   getAccountByUserId(userId: string, provider: string): Promise<Account | undefined>;
+  updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken: string; expiresAt: number | null; }): Promise<Account>;
   
   // Sessions
   createSession(session: Omit<Session, 'id'>): Promise<Session>;
@@ -102,6 +103,23 @@ export class DatabaseStorage implements IStorage {
       .from(accounts)
       .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)));
     return account || undefined;
+  }
+
+  async updateAccountTokens(accountId: string, tokens: { 
+    accessToken: string; 
+    refreshToken: string; 
+    expiresAt: number | null; 
+  }): Promise<Account> {
+    const [account] = await db
+      .update(accounts)
+      .set({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt
+      })
+      .where(eq(accounts.id, accountId))
+      .returning();
+    return account;
   }
 
   // Sessions
