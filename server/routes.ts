@@ -302,10 +302,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/tests', requireAuth, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
-      const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric } = req.body;
+      const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric, startDate, endDate } = req.body;
 
       if (!videoId || !titleTexts || titleTexts.length < 2) {
         return res.status(400).json({ error: 'Video ID and at least 2 titles are required' });
+      }
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Start date and end date are required' });
       }
 
       // Create test
@@ -315,6 +319,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         videoTitle,
         rotationIntervalMinutes: rotationIntervalMinutes || 30,
         winnerMetric: winnerMetric || 'ctr',
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
       });
 
       // Create titles
@@ -351,6 +357,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const test = await storage.updateTestStatus(testId, status);
+      
+      // If test is being activated, start title rotation immediately
+      if (status === 'active') {
+        scheduler.scheduleRotation(testId, 0, 0); // Start immediately (0 minutes delay)
+      }
+      
       res.json(test);
     } catch (error) {
       console.error('Error updating test status:', error);

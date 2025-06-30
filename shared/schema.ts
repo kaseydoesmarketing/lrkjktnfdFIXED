@@ -44,8 +44,8 @@ export const tests = pgTable("tests", {
   rotationIntervalMinutes: integer("rotation_interval_minutes").notNull(),
   status: text("status").notNull().default("pending"), // "pending", "active", "paused", "completed"
   winnerMetric: text("winner_metric").notNull().default("ctr"), // "ctr", "avd"
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  endDate: timestamp("end_date").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
