@@ -597,19 +597,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug route to test rotation system
-  app.post('/api/tests/:testId/debug-rotation', requireAuth, async (req: Request, res: Response) => {
+  // Debug route to test rotation system (no auth required for debugging)
+  app.post('/api/debug-rotation/:testId', async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;
       const { titleOrder } = req.body;
-      const user = (req as any).user;
-
-      if (!user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
 
       const test = await storage.getTest(testId);
-      if (!test || test.userId !== user.id) {
+      if (!test) {
         return res.status(404).json({ error: 'Test not found' });
       }
 
@@ -620,7 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔧 [DEBUG ROUTE] Available titles:`, titles.map(t => ({ order: t.order, text: t.text, id: t.id })));
       
       // Trigger rotation with 1 minute delay for testing
-      scheduler.scheduleRotation(testId, titleOrder || 0, 1);
+      scheduler.scheduleRotation(testId, titleOrder || 0, 0.1); // 6 seconds for immediate testing
       
       res.json({ 
         success: true, 
