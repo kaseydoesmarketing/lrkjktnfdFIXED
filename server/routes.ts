@@ -423,64 +423,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       
-      // Mock recent videos - in production this would call YouTube Data API
-      const mockVideos = [
-        {
-          id: 'dQw4w9WgXcQ',
-          title: 'How to Build Amazing React Apps in 2024',
-          description: 'Learn the latest React patterns and best practices...',
-          thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
-          publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-          viewCount: 12540,
-          duration: 'PT15M30S',
-          status: 'published'
-        },
-        {
-          id: 'jNQXAC9IVRw',
-          title: 'JavaScript Tips Every Developer Should Know',
-          description: 'Advanced JavaScript techniques that will make you a better developer...',
-          thumbnail: 'https://img.youtube.com/vi/jNQXAC9IVRw/mqdefault.jpg',
-          publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-          viewCount: 8920,
-          duration: 'PT12M15S',
-          status: 'published'
-        },
-        {
-          id: 'M7lc1UVf-VE',
-          title: 'Building a Full Stack App with TypeScript',
-          description: 'Complete tutorial on building modern web applications...',
-          thumbnail: 'https://img.youtube.com/vi/M7lc1UVf-VE/mqdefault.jpg',
-          publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-          viewCount: 15680,
-          duration: 'PT20M45S',
-          status: 'published'
-        },
-        {
-          id: 'kJQP7kiw5Fk',
-          title: 'CSS Grid vs Flexbox: When to Use Which?',
-          description: 'Comprehensive guide to modern CSS layout techniques...',
-          thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg',
-          publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
-          viewCount: 9450,
-          duration: 'PT18M20S',
-          status: 'published'
-        },
-        {
-          id: 'L72fhGm1tfE',
-          title: 'Database Design Best Practices for Developers',
-          description: 'Learn how to design efficient and scalable databases...',
-          thumbnail: 'https://img.youtube.com/vi/L72fhGm1tfE/mqdefault.jpg',
-          publishedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-          viewCount: 7230,
-          duration: 'PT25M10S',
-          status: 'published'
-        }
-      ];
+      // Get user's account to access YouTube tokens
+      const account = await storage.getAccountByProvider('google', user.email);
+      if (!account || !account.accessToken) {
+        return res.status(401).json({ error: 'YouTube account not connected' });
+      }
 
-      res.json(mockVideos);
+      // Fetch real videos from user's YouTube channel
+      const videos = await youtubeService.getChannelVideos(account.accessToken, 10);
+      
+      res.json(videos);
     } catch (error) {
       console.error('Error fetching recent videos:', error);
-      res.status(500).json({ error: 'Failed to fetch recent videos' });
+      
+      // If YouTube API fails, provide helpful error message
+      if (error.message?.includes('quotaExceeded')) {
+        return res.status(429).json({ error: 'YouTube API quota exceeded. Please try again later.' });
+      }
+      
+      if (error.message?.includes('invalid_credentials') || error.message?.includes('invalid_grant')) {
+        return res.status(401).json({ error: 'YouTube authorization expired. Please reconnect your account.' });
+      }
+      
+      res.status(500).json({ error: 'Failed to fetch videos from YouTube. Please try again.' });
     }
   });
 
