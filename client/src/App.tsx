@@ -38,17 +38,23 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 function Router() {
   // Debug: Log current location
   console.log('Router rendering for path:', window.location.pathname);
+  console.log('Full URL:', window.location.href);
   
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/login" component={Login} />
-      <Route path="/auth/callback" component={AuthCallback} />
-      <Route path="/privacy" component={() => <Privacy />} />
-      <Route path="/terms" component={() => <Terms />} />
-      <Route component={NotFound} />
-    </Switch>
+    <div>
+      <p style={{ padding: '10px', background: 'yellow', color: 'black' }}>
+        Debug: Current path = {window.location.pathname}
+      </p>
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/login" component={Login} />
+        <Route path="/auth/callback" component={AuthCallback} />
+        <Route path="/privacy" component={() => <Privacy />} />
+        <Route path="/terms" component={() => <Terms />} />
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 
