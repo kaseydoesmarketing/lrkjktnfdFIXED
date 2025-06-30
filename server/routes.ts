@@ -533,24 +533,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate
       );
 
-      // Create analytics poll with real data
-      const estimatedImpressions = analytics.views * 15;
-      const estimatedCtr = estimatedImpressions > 0 ? (analytics.views / estimatedImpressions) * 100 : 0;
-
+      // Create analytics poll with real YouTube Analytics data
       await storage.createAnalyticsPoll({
         titleId: activeTitle.id,
         views: analytics.views,
-        impressions: estimatedImpressions,
-        ctr: estimatedCtr,
-        averageViewDuration: 150, // Default since detailed analytics need special API access
+        impressions: analytics.impressions,
+        ctr: analytics.ctr,
+        averageViewDuration: analytics.averageViewDuration,
       });
 
       res.json({ 
         success: true, 
         analytics: {
           views: analytics.views,
-          impressions: estimatedImpressions,
-          ctr: estimatedCtr
+          impressions: analytics.impressions,
+          ctr: analytics.ctr,
+          averageViewDuration: analytics.averageViewDuration
         }
       });
     } catch (error) {

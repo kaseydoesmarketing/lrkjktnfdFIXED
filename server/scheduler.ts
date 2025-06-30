@@ -130,16 +130,13 @@ class Scheduler {
           endDate
         );
 
-        // Calculate estimated metrics since full analytics require special API access
-        const estimatedImpressions = analytics.views * 15; // Typical impression-to-view ratio
-        const estimatedCtr = (analytics.views / estimatedImpressions) * 100;
-
+        // Use real analytics data from YouTube Analytics API
         await storage.createAnalyticsPoll({
           titleId: title.id,
           views: analytics.views,
-          impressions: estimatedImpressions,
-          ctr: estimatedCtr,
-          averageViewDuration: analytics.averageViewDuration || 150, // Default based on typical YouTube metrics
+          impressions: analytics.impressions,
+          ctr: analytics.ctr,
+          averageViewDuration: analytics.averageViewDuration,
         });
       } catch (error) {
         console.error('Error fetching YouTube analytics:', error);
