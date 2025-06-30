@@ -5,8 +5,13 @@ export class GoogleAuthService {
   private oauth2Client: OAuth2Client;
   
   constructor() {
-    // Use custom domain for production OAuth
-    const redirectUri = process.env.OAUTH_REDIRECT_URI || 'https://titletesterpro.com/api/auth/callback/google';
+    // Auto-detect environment and use appropriate domain
+    const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
+    
+    // Use custom domain for production, Replit domain for development
+    const redirectUri = process.env.OAUTH_REDIRECT_URI || 
+      (replotDomain ? `https://${replotDomain}/api/auth/callback/google` : 
+       'https://titletesterpro.com/api/auth/callback/google');
       
     console.log('OAuth redirect URI:', redirectUri);
     console.log('Google Client ID configured:', !!process.env.GOOGLE_CLIENT_ID);
