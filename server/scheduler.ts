@@ -15,6 +15,8 @@ class Scheduler {
     const jobId = `rotate-${testId}-${titleOrder}`;
     const delay = delayMinutes * 60 * 1000; // Convert to milliseconds
     
+    console.log(`Scheduling rotation job ${jobId} with delay ${delayMinutes} minutes`);
+    
     const timeout = setTimeout(async () => {
       await this.executeRotation(testId, titleOrder);
     }, delay);
@@ -43,19 +45,26 @@ class Scheduler {
 
   private async executeRotation(testId: string, titleOrder: number) {
     try {
+      console.log(`Executing rotation for test ${testId}, titleOrder: ${titleOrder}`);
+      
       const test = await storage.getTest(testId);
       if (!test || test.status !== 'active') {
+        console.log(`Test ${testId} not found or not active. Status: ${test?.status}`);
         return;
       }
 
       const titles = await storage.getTitlesByTestId(testId);
+      console.log(`Found ${titles.length} titles for test ${testId}:`, titles.map(t => ({ order: t.order, text: t.text })));
+      
       const currentTitle = titles.find(t => t.order === titleOrder);
       
       if (!currentTitle) {
-        // Test completed
+        console.log(`No title found with order ${titleOrder}. Test completed.`);
         await storage.updateTestStatus(testId, 'completed');
         return;
       }
+
+      console.log(`Current title (order ${titleOrder}): ${currentTitle.text}`);
 
       // Get user account for YouTube API access
       const user = await storage.getUser(test.userId);
@@ -83,9 +92,13 @@ class Scheduler {
       
       // Schedule next rotation
       const nextTitleOrder = titleOrder + 1;
+      console.log(`Next title order: ${nextTitleOrder}, titles.length: ${titles.length}`);
+      
       if (nextTitleOrder < titles.length) {
+        console.log(`Scheduling next rotation: test ${testId}, titleOrder ${nextTitleOrder}, delay ${test.rotationIntervalMinutes} minutes`);
         this.scheduleRotation(testId, nextTitleOrder, test.rotationIntervalMinutes);
       } else {
+        console.log(`All titles completed for test ${testId}. Marking as completed.`);
         await storage.updateTestStatus(testId, 'completed');
       }
       
