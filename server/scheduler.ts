@@ -79,13 +79,16 @@ class Scheduler {
       // Actually update the YouTube video title
       try {
         await youtubeService.updateVideoTitle(account.accessToken, test.videoId, currentTitle.text);
-        console.log(`Successfully updated video ${test.videoId} to title: "${currentTitle.text}"`);
+        console.log(`✅ Successfully updated video ${test.videoId} to title: "${currentTitle.text}"`);
         
         // Update title activation
         await storage.updateTitleActivation(currentTitle.id, new Date());
+        console.log(`✅ Title activation updated for title ID: ${currentTitle.id}`);
       } catch (error) {
-        console.error('Error updating YouTube title:', error);
+        console.error('❌ Error updating YouTube title:', error);
+        console.error('Error details:', error.message);
         // Try again in 5 minutes if the update failed
+        console.log(`⏰ Rescheduling rotation for test ${testId}, titleOrder ${titleOrder} in 5 minutes`);
         this.scheduleRotation(testId, titleOrder, 5);
         return;
       }
