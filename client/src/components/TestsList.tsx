@@ -323,17 +323,17 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-gray-900">
                           {test.videoTitle || `Video ${test.videoId}`}
                         </h3>
                         <Badge className={getStatusColor(test.status)}>
                           {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
                         </Badge>
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">
+                      <p className="text-gray-600 text-sm mb-2">
                         Video ID: <span className="font-mono">{test.videoId}</span>
                       </p>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-600 text-sm">
                         Rotation: Every {test.rotationIntervalMinutes} minutes • 
                         Started {new Date(test.createdAt).toLocaleDateString()}
                       </p>
