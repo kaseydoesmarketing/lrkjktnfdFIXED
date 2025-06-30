@@ -312,7 +312,7 @@ export default function TestsList({ tests, isLoading, onSelectTest }: TestsListP
           const activeTitles = test.titles.filter(t => t.activatedAt);
           
           return (
-            <Card key={test.id} className="bg-gray-800 border-gray-700">
+            <Card key={test.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-start space-x-3 flex-1">
