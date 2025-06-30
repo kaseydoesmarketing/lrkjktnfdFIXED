@@ -11,7 +11,18 @@ class AuthService {
   private sessionToken: string | null = null;
 
   constructor() {
-    this.sessionToken = localStorage.getItem('sessionToken');
+    this.sessionToken = this.getSessionTokenFromCookie();
+  }
+
+  private getSessionTokenFromCookie(): string | null {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'session-token') {
+        return value;
+      }
+    }
+    return null;
   }
 
   async loginWithGoogle(credentials: {
@@ -56,6 +67,9 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User | null> {
+    // Refresh session token from cookie each time
+    this.sessionToken = this.getSessionTokenFromCookie();
+    
     if (!this.sessionToken) return null;
 
     try {
