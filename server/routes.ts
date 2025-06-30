@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       
       // Get user's account to access YouTube tokens
-      const account = await storage.getAccountByProvider('google', user.email);
+      const account = await storage.getAccountByUserId(user.id, 'google');
       if (!account || !account.accessToken) {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }

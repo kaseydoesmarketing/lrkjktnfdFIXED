@@ -18,6 +18,7 @@ export interface IStorage {
   // Accounts
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
   getAccountByProvider(provider: string, providerAccountId: string): Promise<Account | undefined>;
+  getAccountByUserId(userId: string, provider: string): Promise<Account | undefined>;
   
   // Sessions
   createSession(session: Omit<Session, 'id'>): Promise<Session>;
@@ -92,6 +93,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(accounts)
       .where(and(eq(accounts.provider, provider), eq(accounts.providerAccountId, providerAccountId)));
+    return account || undefined;
+  }
+
+  async getAccountByUserId(userId: string, provider: string): Promise<Account | undefined> {
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)));
     return account || undefined;
   }
 
