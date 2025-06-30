@@ -21,9 +21,18 @@ class Scheduler {
     this.cancelJob(jobId);
     
     const timeout = setTimeout(async () => {
-      console.log(`🚀 [SCHEDULER DEBUG] Executing scheduled job: ${jobId}`);
-      await this.executeRotation(testId, titleOrder);
-      console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} completed and removed from queue`);
+      try {
+        console.log(`🚀 [SCHEDULER DEBUG] Executing scheduled job: ${jobId}`);
+        console.log(`🚀 [SCHEDULER DEBUG] Active jobs before execution: ${this.jobs.size}`);
+        await this.executeRotation(testId, titleOrder);
+        console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} completed and removed from queue`);
+      } catch (error) {
+        console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} failed with error:`, error);
+        console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} error stack:`, error.stack);
+      } finally {
+        this.jobs.delete(jobId);
+        console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} cleanup complete. Remaining jobs: ${this.jobs.size}`);
+      }
     }, delay);
     
     this.jobs.set(jobId, timeout);
