@@ -68,9 +68,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" style={{ backgroundColor: '#f9fafb', color: '#111827', minHeight: '100vh' }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-6 py-4" style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
@@ -90,8 +90,8 @@ export default function Dashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-6">
+          <Card className="bg-green-50 border-green-200" style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <CardContent className="p-6" style={{ padding: '1.5rem' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
