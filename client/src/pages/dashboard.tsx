@@ -1,28 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { authService } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
-import { Bell, Play, Search, Plus, Keyboard, Menu, X, User } from 'lucide-react';
-import StatsCards from '@/components/StatsCards';
-import TestsList from '@/components/TestsList';
-import CreateTestModal from '@/components/CreateTestModal';
-import ResultsDashboard from '@/components/ResultsDashboard';
+import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import newLogo from "@assets/Untitled design (11)_1750353468294.png";
 
 export default function Dashboard() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState('');
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const { toast } = useToast();
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
-    // Check for sessionToken in URL parameters from OAuth redirect
     const urlParams = new URLSearchParams(window.location.search);
     const sessionToken = urlParams.get('sessionToken');
     
@@ -30,30 +23,22 @@ export default function Dashboard() {
       console.log('OAuth login successful, storing session token');
       localStorage.setItem('sessionToken', sessionToken);
       
-      // Clean up URL by removing the token parameter
       const url = new URL(window.location.href);
       url.searchParams.delete('sessionToken');
       window.history.replaceState({}, '', url.pathname);
       
-      // Show success toast
       toast({
         title: "Login Successful",
         description: "Welcome to TitleTesterPro! You're now connected to YouTube.",
       });
     }
     
-    // Force refresh of auth query on dashboard load
     queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
   }, [toast]);
 
   const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],
-    queryFn: () => authService.getCurrentUser(),
-  });
-
-  const { data: tests, isLoading: testsLoading } = useQuery({
-    queryKey: ['/api/tests'],
-    enabled: !!user,
+    enabled: !!localStorage.getItem('sessionToken'),
   });
 
   const { data: stats } = useQuery({
@@ -61,299 +46,255 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Only trigger if not in input field
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+  const { data: tests = [] } = useQuery({
+    queryKey: ['/api/tests'],
+    enabled: !!user,
+  });
 
-      switch (event.key) {
-        case 'n':
-          if (event.ctrlKey || event.metaKey) {
-            event.preventDefault();
-            setIsCreateModalOpen(true);
-            toast({
-              title: 'Keyboard Shortcut',
-              description: 'Opened create test modal',
-            });
-          }
-          break;
-        case '?':
-          event.preventDefault();
-          setShowKeyboardShortcuts(true);
-          break;
-        case 'Escape':
-          setSelectedTestId(null);
-          setShowKeyboardShortcuts(false);
-          setIsMobileMenuOpen(false);
-          break;
-      }
-    };
+  const { data: recentVideos = [] } = useQuery({
+    queryKey: ['/api/videos/recent'],
+    enabled: !!user,
+  });
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toast]);
+  const activeTests = tests.filter((test: any) => test.status === 'active');
+  const completedTests = tests.filter((test: any) => test.status === 'completed');
 
-  const handleLogout = async () => {
-    await authService.logout();
-    queryClient.clear();
-  };
-
-  const selectedTest = tests?.find((test: any) => test.id === selectedTestId);
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Navigation Header */}
-      <nav className="bg-gray-900 border-b border-gray-800 px-4 py-4 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-current" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Thumbnail Tester Dashboard</h1>
+          </div>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <img src={newLogo} alt="TitleTesterPro" className="h-10 lg:h-12" />
-            </div>
-          </div>
-          
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setShowKeyboardShortcuts(true)}
-              title="Keyboard shortcuts (?)"
-            >
-              <Keyboard className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Bell className="w-4 h-4" />
-            </Button>
-            <div className="flex items-center space-x-3">
-              {user?.image && (
-                <img 
-                  src={user.image} 
-                  alt="User avatar" 
-                  className="w-8 h-8 rounded-full" 
-                />
-              )}
-              <span className="text-sm font-medium text-gray-300 hidden xl:block">
-                {user?.name || user?.email}
-              </span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-white"
-              >
-                Logout
-              </Button>
+            <Bell className="w-5 h-5 text-gray-500" />
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pt-4 border-t border-gray-700">
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center space-x-3">
-                {user?.image && (
-                  <img 
-                    src={user.image} 
-                    alt="User avatar" 
-                    className="w-8 h-8 rounded-full" 
-                  />
-                )}
-                <span className="text-sm font-medium text-gray-300">
-                  {user?.name || user?.email}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowKeyboardShortcuts(true)}
-                  className="flex-1 justify-start"
-                >
-                  <Keyboard className="w-4 h-4 mr-2" />
-                  Shortcuts
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Bell className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="text-gray-400 hover:text-gray-200"
-                >
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Dashboard Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-              <p className="text-gray-400">Manage your YouTube title A/B tests and track performance</p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <Button 
-                className="bg-red-500 hover:bg-red-600 text-white px-4 lg:px-6 py-2 rounded-lg font-medium w-full sm:w-auto"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create New Test
-              </Button>
-              <Badge variant="secondary" className="text-xs">
-                Ctrl+N for quick create
-              </Badge>
-            </div>
-          </div>
-
-          {/* Stats Overview */}
-          <StatsCards stats={stats} />
-
-        </div>
-
-        {/* Tests Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-white">Your Title Tests</h2>
-              <p className="text-sm text-gray-400">Manage and monitor your active title optimization tests</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search tests..."
-                  className="pl-8 pr-4 py-2 border border-gray-600 bg-gray-800 text-white rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-                <svg className="w-4 h-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <select className="border border-gray-600 bg-gray-800 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                <option>All Tests</option>
-                <option>Active</option>
-                <option>Paused</option>
-                <option>Completed</option>
-              </select>
-              <Button 
-                onClick={() => setIsCreateModalOpen(true)}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                New Test
-              </Button>
-            </div>
-          </div>
-          
-          <TestsList 
-            tests={tests} 
-            isLoading={testsLoading}
-            onSelectTest={setSelectedTestId}
-          />
-        </div>
-
-        {/* Results Dashboard */}
-        {selectedTest && (
-          <ResultsDashboard 
-            test={selectedTest} 
-            onClose={() => setSelectedTestId(null)}
-          />
-        )}
-      </div>
-
-      {/* Create Test Modal */}
-      <CreateTestModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)}
-      />
-
-      {/* Keyboard Shortcuts Modal */}
-      {showKeyboardShortcuts && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md bg-gray-800 border-gray-700">
-            <CardHeader className="border-b border-gray-700">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-white">Keyboard Shortcuts</CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowKeyboardShortcuts(false)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-green-50 border-green-200">
             <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Create new test</span>
-                  <Badge variant="secondary" className="text-xs">Ctrl + N</Badge>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TestTube className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-600">Active Tests</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{activeTests.length}</div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Show shortcuts</span>
-                  <Badge variant="secondary" className="text-xs">?</Badge>
+                <div className="text-green-600 text-sm font-medium">%18</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-600">Total Views</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{stats?.totalViews || 888}</div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Close modal/details</span>
-                  <Badge variant="secondary" className="text-xs">Esc</Badge>
+                <div className="text-blue-600 text-sm font-medium">%18</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <MousePointer className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-600">Average CTR</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '4.7%'}</div>
                 </div>
-                <div className="pt-4 border-t border-gray-600">
-                  <p className="text-xs text-gray-500">
-                    Shortcuts work when not typing in input fields
-                  </p>
+                <div className="text-purple-600 text-sm font-medium">-2%</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Eye className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-600">Completed</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{completedTests.length}</div>
                 </div>
+                <div className="text-orange-600 text-sm font-medium">+9%</div>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
-      
-      <footer className="bg-gray-800 border-t border-gray-700 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="flex items-center space-x-6">
-              <a href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
-                Privacy Policy
-              </a>
-              <span className="text-gray-600">•</span>
-              <a href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
-                Terms of Service
-              </a>
-            </div>
-            
-            <div className="text-center">
-              <p className="text-sm text-gray-400">
-                © 2025 TitleTesterPro. All rights reserved.
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Contact: <a href="mailto:kaseydoesmarketing@gmail.com" className="hover:text-gray-300">kaseydoesmarketing@gmail.com</a>
-              </p>
-            </div>
+
+        {/* Channel Selector and New Test Button */}
+        <div className="flex items-center justify-between mb-8">
+          <Select value={selectedChannel} onValueChange={setSelectedChannel}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Select YouTube Channel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="channel1">Main Channel</SelectItem>
+              <SelectItem value="channel2">Secondary Channel</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            New Test
+          </Button>
+        </div>
+
+        {/* Video Selection Section */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Select video to test</h2>
+          <div className="space-y-4">
+            {recentVideos.slice(0, 2).map((video: any, index: number) => (
+              <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <img 
+                        src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+                        alt="Video thumbnail" 
+                        className="w-32 h-18 object-cover rounded"
+                      />
+                      <div className="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 rounded">
+                        {video.duration || '4:05'}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 mb-1">{video.title}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <span className="flex items-center">
+                          <Eye className="w-3 h-3 mr-1" />
+                          {video.viewCount || '405'} views
+                        </span>
+                        <span className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {video.publishedAt || '4 days ago'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{video.description || 'What if i told your Diddy\'s walking fart is about Cassie and Diddy, i dreak Todd/k about a better...'}</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
-      </footer>
+
+        {/* Active Test Section */}
+        {activeTests.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                This Diddy Story Proves Cancel Culture is a Lie
+              </h2>
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <RotateCcw className="w-4 h-4" />
+                <span>10 min Rotation</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Title A */}
+              <Card className="border-purple-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-gray-600">Title A</span>
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-4">Y'all Cancel Everybody But Diddy?</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">CTR</span>
+                      <span className="text-sm font-medium">7.4%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Views</span>
+                      <span className="text-sm font-medium">1,182</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Title B */}
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-gray-600">Title B</span>
+                    <Badge className="bg-green-500 text-white text-xs">Current</Badge>
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-4">Nobody Wants to Admit This About Cassie and Diddy</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">CTR</span>
+                      <span className="text-sm font-medium">8.6%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Views</span>
+                      <span className="text-sm font-medium">773</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Title C */}
+              <Card className="border-blue-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-gray-600">Title C</span>
+                    <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">Pending</Badge>
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-4">if Diddy Walks, It's Proof This System Ain't Built for Us</h3>
+                  <div className="text-center py-8">
+                    <Button variant="outline" className="text-blue-600 border-blue-600">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Generate Title With AI
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Title Variants Info */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">Title Variants</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter 3-5 titles to A/B test. TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. Best click-through rate determines the winner.
+              </p>
+              <Button variant="outline" className="text-blue-600 border-blue-600">
+                Cancel test
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
