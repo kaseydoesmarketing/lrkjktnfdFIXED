@@ -29,11 +29,8 @@ export default function Landing() {
             <img src={newLogo} alt="TitleTesterPro" className="h-12" />
           </div>
           <div className="flex items-center space-x-4">
-            <div className="bg-yellow-400 text-black px-3 py-1 rounded font-bold">
-              🔒 PRIVACY POLICY
-            </div>
-            <Link href="/privacy" className="text-sm text-gray-300 hover:text-white transition-colors">
-              Privacy
+            <Link href="/privacy" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+              🔒 Privacy Policy
             </Link>
             <Link href="/login">
               <Button className="bg-red-500 hover:bg-red-600 text-white">
@@ -59,15 +56,7 @@ export default function Landing() {
                 channels.
               </h1>
               
-              <div className="mb-8 p-6 bg-yellow-500 border-4 border-yellow-300 rounded-lg text-center">
-                <h2 className="text-2xl font-bold text-black mb-3">🔒 PRIVACY NOTICE 🔒</h2>
-                <p className="text-black font-semibold">
-                  Your data privacy is our priority. We only access YouTube data you authorize. 
-                </p>
-                <Link href="/privacy" className="inline-block mt-3 px-6 py-2 bg-black text-yellow-400 rounded font-bold hover:bg-gray-800">
-                  READ PRIVACY POLICY
-                </Link>
-              </div>
+
               <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                 Stop guessing which titles work. TitleTesterPro automatically tests your video titles 
                 on real YouTube videos and shows you which ones drive the most views and engagement.
@@ -112,27 +101,6 @@ export default function Landing() {
                 Live Testing
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Privacy Notice Section */}
-      <section className="py-8 px-6 bg-gray-900">
-        <div className="container mx-auto max-w-4xl">
-          <div className="p-6 bg-blue-900/30 border-2 border-blue-400 rounded-xl text-center">
-            <div className="flex items-center justify-center mb-3">
-              <Shield className="w-6 h-6 text-blue-400 mr-3" />
-              <h3 className="text-xl font-bold text-white">Data Privacy & Security</h3>
-            </div>
-            <p className="text-gray-300 mb-4">
-              🔒 Your data privacy is our priority. We only access YouTube analytics data you explicitly authorize. 
-              TitleTesterPro never shares your data with third parties and uses bank-level encryption to protect your information.
-            </p>
-            <Link href="/privacy">
-              <Button variant="outline" className="border-blue-400 text-blue-300 hover:bg-blue-900/50">
-                Read Our Privacy Policy
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
