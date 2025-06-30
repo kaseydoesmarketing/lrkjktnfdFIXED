@@ -1,13 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Youtube, BarChart3, TrendingUp, TestTube } from 'lucide-react';
+import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for error parameters in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    const descriptionParam = urlParams.get('description');
+    
+    if (errorParam) {
+      console.log('Login error detected:', errorParam, descriptionParam);
+      setError(descriptionParam || `Authentication error: ${errorParam}`);
+    }
+  }, []);
 
   const handleGoogleAuth = () => {
     setIsLoading(true);
+    setError(null);
     // Redirect to Google OAuth
     window.location.href = '/api/auth/google';
   };
@@ -80,6 +94,16 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {error && (
+                <div className="bg-red-900/20 border border-red-700 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <p className="text-red-300 text-sm font-medium">Authentication Error</p>
+                  </div>
+                  <p className="text-red-300/80 text-sm mt-1">{error}</p>
+                </div>
+              )}
+              
               <Button
                 onClick={handleGoogleAuth}
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
