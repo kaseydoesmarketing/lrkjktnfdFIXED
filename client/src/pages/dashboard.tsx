@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
-import { Bell, Play, Search, Plus, Keyboard, Menu, X } from 'lucide-react';
+import { Bell, Play, Search, Plus, Keyboard, Menu, X, User } from 'lucide-react';
 import StatsCards from '@/components/StatsCards';
 import TestsList from '@/components/TestsList';
 import CreateTestModal from '@/components/CreateTestModal';
@@ -226,16 +226,65 @@ export default function Dashboard() {
 
           {/* Stats Overview */}
           <StatsCards stats={stats} />
+
+          {/* Video Selection Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <div className="min-w-[200px]">
+                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option>Select YouTube Channel</option>
+                  </select>
+                </div>
+              </div>
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium flex items-center space-x-2"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Test</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
 
 
-        {/* Tests Section */}
+        {/* Video Selection Section */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Select video to test</h2>
+          <div className="space-y-4">
+            {/* Mock video entries - these would come from YouTube API */}
+            <div className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <div className="w-24 h-16 bg-gray-200 rounded flex items-center justify-center">
+                <Play className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Sample Video Title</h3>
+                <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                  <span>405 views</span>
+                  <span>4 days old</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  →
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Tests Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white">Your Title Tests</h2>
-              <p className="text-sm text-gray-400">Manage and monitor your active title optimization tests</p>
+              <h2 className="text-xl font-bold text-gray-900">Active Title Tests</h2>
+              <p className="text-sm text-gray-600">Monitor your ongoing title optimization experiments</p>
             </div>
             <div className="flex items-center space-x-3">
               <div className="relative">
@@ -264,6 +313,98 @@ export default function Dashboard() {
             </div>
           </div>
           
+          {/* Example Title Test Display */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <h3 className="text-lg font-semibold text-gray-900">Sample A/B Test - Video Title Optimization</h3>
+                <span className="text-sm text-gray-500">10 min Rotation</span>
+              </div>
+              <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                Cancel test
+              </Button>
+            </div>
+            
+            {/* Title Variants Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Title A */}
+              <Card className="border-purple-200 bg-purple-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-purple-700">Title A</span>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">Pending</span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">Sample Title Variant A for Testing</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">CTR</span>
+                      <span className="font-medium">7.4%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Views</span>
+                      <span className="font-medium">1,182</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Title B - Current */}
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-700">Title B</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Current</span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">Sample Title Variant B Currently Active</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">CTR</span>
+                      <span className="font-medium">3.6%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Views</span>
+                      <span className="font-medium">773</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Title C */}
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-700">Title C</span>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">Pending</span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">Sample Title Variant C for Testing</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">CTR</span>
+                      <span className="font-medium">-</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Views</span>
+                      <span className="font-medium">-</span>
+                    </div>
+                  </div>
+                  <Button className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white">
+                    + Generate Title With AI
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Test Description */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">Title Variants</h4>
+              <p className="text-sm text-gray-600">
+                Enter 3-5 titles to A/B test. TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. 
+                Best click-through rate determines the winner.
+              </p>
+            </div>
+          </div>
+
           <TestsList 
             tests={tests} 
             isLoading={testsLoading}

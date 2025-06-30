@@ -36,7 +36,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       {/* Active Tests Card */}
       <Card className="bg-green-50 border-green-200 hover:shadow-md transition-shadow">
         <CardContent className="p-4">
