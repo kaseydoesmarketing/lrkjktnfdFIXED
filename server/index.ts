@@ -69,13 +69,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
-    
-    // Test scheduler debugging system on startup (after 10 seconds)
-    setTimeout(async () => {
-      const { scheduler } = await import("./scheduler");
-      console.log(`🧪 [STARTUP DEBUG] Testing scheduler debugging system...`);
-      console.log(`🧪 [STARTUP DEBUG] Triggering rotation for test db0806e1-1779-4b0c-a113-421a969aa6ed, titleOrder: 2`);
-      scheduler.scheduleRotation('db0806e1-1779-4b0c-a113-421a969aa6ed', 2, 0.1);
-    }, 10000);
   });
 })();

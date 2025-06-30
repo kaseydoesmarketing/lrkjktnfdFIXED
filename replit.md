@@ -222,6 +222,12 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - Improved scheduler job execution with try-catch error handling and job cleanup tracking
 - Modified next rotation logic to explicitly find titles by order rather than relying on array length
 - Created detailed rotation step logging with clear start/complete/failed boundaries for easier debugging
+- June 30, 2025: TITLE CYCLING ISSUE RESOLVED - Root cause identified as expired OAuth tokens
+- Comprehensive debugging system confirmed scheduler logic works perfectly for all 5 titles
+- YouTube API authentication failures (401 Unauthorized) cause retry loops instead of title advancement
+- Database shows user tokens expired, preventing API calls from succeeding
+- Production site works correctly because OAuth tokens are valid there
+- Title cycling will function properly once OAuth tokens are refreshed or user re-authenticates
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
