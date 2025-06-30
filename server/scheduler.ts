@@ -51,18 +51,36 @@ class Scheduler {
 
   private async executeRotation(testId: string, titleOrder: number) {
     try {
-      console.log(`🔄 [ROTATION DEBUG] Starting rotation for test ${testId}, titleOrder: ${titleOrder}`);
+      console.log(`\n🔄 [ROTATION DEBUG] ==================== ROTATION STEP ====================`);
+      console.log(`🔄 [ROTATION DEBUG] Test: ${testId} | Executing titleOrder: ${titleOrder}`);
       
       const test = await storage.getTest(testId);
       if (!test || test.status !== 'active') {
         console.log(`❌ [ROTATION DEBUG] Test ${testId} not found or not active. Status: ${test?.status}`);
+        console.log(`🔄 [ROTATION DEBUG] ================= ROTATION ABORTED ===================\n`);
         return;
       }
-      console.log(`✅ [ROTATION DEBUG] Test found and active: ${testId}`);
+      console.log(`✅ [ROTATION DEBUG] Test found and active: ${testId} | Status: ${test.status}`);
 
       const titles = await storage.getTitlesByTestId(testId);
       console.log(`📋 [ROTATION DEBUG] Found ${titles.length} titles for test ${testId}:`);
-      titles.forEach(title => console.log(`   - Order ${title.order}: "${title.text}" (ID: ${title.id})`));
+      titles.forEach(title => console.log(`   - Order ${title.order}: "${title.text}" (ID: ${title.id}, Activated: ${title.activatedAt || 'never'})`));
+      
+      // Verify title orders are sequential and complete
+      const orders = titles.map(t => t.order).sort((a, b) => a - b);
+      const expectedOrders = Array.from({ length: titles.length }, (_, i) => i);
+      const missingOrders = expectedOrders.filter(order => !orders.includes(order));
+      const extraOrders = orders.filter(order => !expectedOrders.includes(order));
+      
+      if (missingOrders.length > 0) {
+        console.warn(`⚠️ [ROTATION DEBUG] Missing title orders: ${missingOrders}`);
+      }
+      if (extraOrders.length > 0) {
+        console.warn(`⚠️ [ROTATION DEBUG] Unexpected title orders: ${extraOrders}`);
+      }
+      if (missingOrders.length === 0 && extraOrders.length === 0) {
+        console.log(`✅ [ROTATION DEBUG] Title order sequence is complete: ${orders.join(', ')}`);
+      }
       
       const currentTitle = titles.find(t => t.order === titleOrder);
       
@@ -108,19 +126,26 @@ class Scheduler {
       console.log(`🔢 [ROTATION DEBUG] Next title order: ${nextTitleOrder}, titles.length: ${titles.length}`);
       console.log(`🔢 [ROTATION DEBUG] Available title orders:`, titles.map(t => t.order).sort((a, b) => a - b));
       
-      if (nextTitleOrder < titles.length) {
+      // Check if there's actually a title with the next order
+      const nextTitle = titles.find(t => t.order === nextTitleOrder);
+      if (nextTitle) {
+        console.log(`✅ [ROTATION DEBUG] Found next title with order ${nextTitleOrder}: "${nextTitle.text}"`);
         console.log(`✅ [ROTATION DEBUG] Scheduling next rotation: test ${testId}, titleOrder ${nextTitleOrder}, delay ${test.rotationIntervalMinutes} minutes`);
         this.scheduleRotation(testId, nextTitleOrder, test.rotationIntervalMinutes);
       } else {
-        console.log(`🏁 [ROTATION DEBUG] All titles completed for test ${testId}. Marking as completed.`);
+        console.log(`🏁 [ROTATION DEBUG] No more titles found after order ${titleOrder}. All titles completed for test ${testId}. Marking as completed.`);
         await storage.updateTestStatus(testId, 'completed');
       }
       
       // Schedule analytics polling for this title
       this.schedulePoll(currentTitle.id);
       
+      console.log(`🔄 [ROTATION DEBUG] ================== ROTATION COMPLETE ==================\n`);
+      
     } catch (error) {
-      console.error('Error executing rotation:', error);
+      console.error('❌ [ROTATION DEBUG] Critical error executing rotation:', error);
+      console.error('❌ [ROTATION DEBUG] Error stack:', error.stack);
+      console.log(`🔄 [ROTATION DEBUG] ================= ROTATION FAILED ===================\n`);
     }
   }
 

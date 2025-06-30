@@ -66,34 +66,48 @@ export class YouTubeService {
   }
 
   async updateVideoTitle(accessToken: string, videoId: string, newTitle: string) {
-    const authClient = googleAuthService.createAuthenticatedClient(accessToken);
-    const youtube = google.youtube({ version: 'v3', auth: authClient });
+    try {
+      console.log(`🎬 [YOUTUBE API] Updating video ${videoId} to title: "${newTitle}"`);
+      
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const youtube = google.youtube({ version: 'v3', auth: authClient });
 
-    // First get current video data
-    const videoResponse = await youtube.videos.list({
-      part: ['snippet'],
-      id: [videoId]
-    });
+      // First get current video data
+      console.log(`🎬 [YOUTUBE API] Fetching current video data for ${videoId}`);
+      const videoResponse = await youtube.videos.list({
+        part: ['snippet'],
+        id: [videoId]
+      });
 
-    if (!videoResponse.data.items?.length) {
-      throw new Error('Video not found');
-    }
-
-    const currentVideo = videoResponse.data.items[0];
-    
-    // Update the title
-    await youtube.videos.update({
-      part: ['snippet'],
-      requestBody: {
-        id: videoId,
-        snippet: {
-          ...currentVideo.snippet,
-          title: newTitle
-        }
+      if (!videoResponse.data.items?.length) {
+        console.error(`❌ [YOUTUBE API] Video ${videoId} not found in YouTube`);
+        throw new Error('Video not found');
       }
-    });
 
-    return { success: true, newTitle };
+      const currentVideo = videoResponse.data.items[0];
+      console.log(`🎬 [YOUTUBE API] Current video title: "${currentVideo.snippet?.title}"`);
+      
+      // Update the title
+      console.log(`🎬 [YOUTUBE API] Sending title update request to YouTube API`);
+      await youtube.videos.update({
+        part: ['snippet'],
+        requestBody: {
+          id: videoId,
+          snippet: {
+            ...currentVideo.snippet,
+            title: newTitle
+          }
+        }
+      });
+
+      console.log(`✅ [YOUTUBE API] Successfully updated video ${videoId} title to: "${newTitle}"`);
+      return { success: true, newTitle };
+    } catch (error: any) {
+      console.error(`❌ [YOUTUBE API] Failed to update video ${videoId}:`, error.message);
+      console.error(`❌ [YOUTUBE API] Error code:`, error.code);
+      console.error(`❌ [YOUTUBE API] Error details:`, error.errors);
+      throw error;
+    }
   }
 
   async getVideoAnalytics(accessToken: string, videoId: string, startDate: string, endDate: string) {
