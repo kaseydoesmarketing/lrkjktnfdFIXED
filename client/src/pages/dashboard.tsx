@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
-import { Bell, Play } from 'lucide-react';
+import { Bell, Play, Search, Plus, Keyboard, Menu, X } from 'lucide-react';
 import StatsCards from '@/components/StatsCards';
 import TestsList from '@/components/TestsList';
 import CreateTestModal from '@/components/CreateTestModal';
 import ResultsDashboard from '@/components/ResultsDashboard';
+import { useToast } from '@/hooks/use-toast';
 import newLogo from "@assets/Untitled design (11)_1750353468294.png";
 
 export default function Dashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const { toast } = useToast();
 
   const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],
@@ -30,6 +35,41 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger if not in input field
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (event.key) {
+        case 'n':
+          if (event.ctrlKey || event.metaKey) {
+            event.preventDefault();
+            setIsCreateModalOpen(true);
+            toast({
+              title: 'Keyboard Shortcut',
+              description: 'Opened create test modal',
+            });
+          }
+          break;
+        case '?':
+          event.preventDefault();
+          setShowKeyboardShortcuts(true);
+          break;
+        case 'Escape':
+          setSelectedTestId(null);
+          setShowKeyboardShortcuts(false);
+          setIsMobileMenuOpen(false);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toast]);
+
   const handleLogout = async () => {
     await authService.logout();
     queryClient.clear();
@@ -44,11 +84,31 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <img src={newLogo} alt="TitleTesterPro" className="h-12" />
+              <img src={newLogo} alt="TitleTesterPro" className="h-10 lg:h-12" />
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowKeyboardShortcuts(true)}
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
             <Button variant="ghost" size="sm">
               <Bell className="w-4 h-4" />
             </Button>
@@ -60,7 +120,7 @@ export default function Dashboard() {
                   className="w-8 h-8 rounded-full" 
                 />
               )}
-              <span className="text-sm font-medium text-gray-300">
+              <span className="text-sm font-medium text-gray-300 hidden xl:block">
                 {user?.name || user?.email}
               </span>
               <Button 
@@ -74,6 +134,48 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden mt-4 pt-4 border-t border-gray-700">
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center space-x-3">
+                {user?.image && (
+                  <img 
+                    src={user.image} 
+                    alt="User avatar" 
+                    className="w-8 h-8 rounded-full" 
+                  />
+                )}
+                <span className="text-sm font-medium text-gray-300">
+                  {user?.name || user?.email}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowKeyboardShortcuts(true)}
+                  className="flex-1 justify-start"
+                >
+                  <Keyboard className="w-4 h-4 mr-2" />
+                  Shortcuts
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <Bell className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
@@ -85,13 +187,17 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
               <p className="text-gray-400">Manage your YouTube title A/B tests and track performance</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <Button 
-                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 lg:px-6 py-2 rounded-lg font-medium w-full sm:w-auto"
                 onClick={() => setIsCreateModalOpen(true)}
               >
+                <Plus className="w-4 h-4 mr-2" />
                 Create New Test
               </Button>
+              <Badge variant="secondary" className="text-xs">
+                Ctrl+N for quick create
+              </Badge>
             </div>
           </div>
 
