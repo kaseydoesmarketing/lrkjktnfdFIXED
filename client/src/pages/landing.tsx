@@ -29,6 +29,9 @@ export default function Landing() {
             <img src={newLogo} alt="TitleTesterPro" className="h-12" />
           </div>
           <div className="flex items-center space-x-4">
+            <div className="bg-yellow-400 text-black px-3 py-1 rounded font-bold">
+              🔒 PRIVACY POLICY
+            </div>
             <Link href="/privacy" className="text-sm text-gray-300 hover:text-white transition-colors">
               Privacy
             </Link>
@@ -55,6 +58,16 @@ export default function Landing() {
                 to grow YouTube<br />
                 channels.
               </h1>
+              
+              <div className="mb-8 p-6 bg-yellow-500 border-4 border-yellow-300 rounded-lg text-center">
+                <h2 className="text-2xl font-bold text-black mb-3">🔒 PRIVACY NOTICE 🔒</h2>
+                <p className="text-black font-semibold">
+                  Your data privacy is our priority. We only access YouTube data you authorize. 
+                </p>
+                <Link href="/privacy" className="inline-block mt-3 px-6 py-2 bg-black text-yellow-400 rounded font-bold hover:bg-gray-800">
+                  READ PRIVACY POLICY
+                </Link>
+              </div>
               <p className="text-xl text-gray-400 mb-8 leading-relaxed">
                 Stop guessing which titles work. TitleTesterPro automatically tests your video titles 
                 on real YouTube videos and shows you which ones drive the most views and engagement.
