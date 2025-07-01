@@ -75,8 +75,11 @@ class AuthService {
     this.sessionToken = localStorageToken || cookieToken;
     
     if (!this.sessionToken) {
+      // For production debugging - don't log tokens in production
+    if (process.env.NODE_ENV !== 'production') {
       console.log('No session token found in localStorage or cookies');
-      return null;
+    }
+    return null;
     }
 
     try {
@@ -97,7 +100,9 @@ class AuthService {
       }
 
       const data = await response.json();
-      console.log('User authenticated successfully:', data.email);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('User authenticated successfully:', data.email);
+      }
       return data;
     } catch (error) {
       console.error('Error getting current user:', error);
