@@ -410,52 +410,24 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Free Tier */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 card-hover">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Creator</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">$0</div>
-                <p className="text-gray-600">Perfect for getting started</p>
-              </div>
-              
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center">
-                  <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">5 A/B tests per month</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">Basic AI title suggestions</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">YouTube integration</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">Email support</span>
-                </li>
-              </ul>
-              
-              <Link href="/login" className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-lg font-medium text-center block transition-colors">
-                Start Free
-              </Link>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Pro Tier - Most Popular */}
             <div className="bg-white border-2 border-blue-500 relative rounded-lg p-8 card-hover shadow-xl">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
               </div>
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Growth</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Pro</h3>
                 <div className="text-4xl font-bold text-gray-900 mb-2">$29</div>
                 <p className="text-gray-600">per month • Perfect for serious creators</p>
                 <div className="mt-2 text-sm text-green-600 font-medium">Most creators see ROI in first week</div>
               </div>
               
               <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <Check className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">5 free A/B tests to start</span>
+                </li>
                 <li className="flex items-center">
                   <Check className="h-5 w-5 text-green-500 mr-3" />
                   <span className="text-gray-700">Unlimited A/B tests</span>
@@ -483,14 +455,14 @@ export default function Home() {
               </ul>
               
               <Link href="/login" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium text-center block transition-colors btn-pulse">
-                Upgrade to Pro
+                Start with Pro
               </Link>
             </div>
 
-            {/* Agency Tier */}
+            {/* Authority Tier */}
             <div className="bg-white border border-gray-200 rounded-lg p-8 card-hover">
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Scale</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Authority</h3>
                 <div className="text-4xl font-bold text-gray-900 mb-2">$99</div>
                 <p className="text-gray-600">per month • For agencies & teams</p>
               </div>
@@ -498,7 +470,7 @@ export default function Home() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">Everything in Growth</span>
+                  <span className="text-gray-700">Everything in Pro</span>
                 </li>
                 <li className="flex items-center">
                   <Check className="h-5 w-5 text-green-500 mr-3" />
@@ -522,8 +494,8 @@ export default function Home() {
                 </li>
               </ul>
               
-              <Link href="/contact" className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-4 rounded-lg font-medium text-center block transition-colors">
-                Contact Sales
+              <Link href="/login" className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-4 rounded-lg font-medium text-center block transition-colors">
+                Upgrade to Authority
               </Link>
             </div>
           </div>
