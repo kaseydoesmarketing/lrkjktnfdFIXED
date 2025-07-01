@@ -196,19 +196,19 @@ export default function Landing() {
 
           {/* Stats Bar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            <div className="space-y-2">
+            <div className="space-y-2 count-up">
               <div className="text-3xl font-bold text-gray-900">2,347,891</div>
               <div className="text-sm text-gray-600">A/B Tests Completed</div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 count-up" style={{animationDelay: '0.2s'}}>
               <div className="text-3xl font-bold text-green-600">47%</div>
               <div className="text-sm text-gray-600">Average CTR Improvement</div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 count-up" style={{animationDelay: '0.4s'}}>
               <div className="text-3xl font-bold text-blue-600">72</div>
               <div className="text-sm text-gray-600">Hours Average Test Duration</div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 count-up" style={{animationDelay: '0.6s'}}>
               <div className="text-3xl font-bold text-purple-600">94%</div>
               <div className="text-sm text-gray-600">Statistical Significance Rate</div>
             </div>
@@ -227,9 +227,9 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <Card className="border border-gray-200 card-hover fade-in">
               <CardContent className="p-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-6 glow">
                   <Bot className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">AI-Powered Title Suggestions</h3>
@@ -256,9 +256,9 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            <Card className="border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <Card className="border border-gray-200 card-hover fade-in" style={{animationDelay: '0.2s'}}>
               <CardContent className="p-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-6 glow" style={{animationDelay: '0.4s'}}>
                   <Zap className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Real-Time A/B Testing</h3>
@@ -287,9 +287,9 @@ export default function Landing() {
               </CardContent>
             </Card>
 
-            <Card className="border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+            <Card className="border border-gray-200 card-hover fade-in" style={{animationDelay: '0.4s'}}>
               <CardContent className="p-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-6 glow" style={{animationDelay: '0.6s'}}>
                   <LinkIcon className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">YouTube Integration</h3>
