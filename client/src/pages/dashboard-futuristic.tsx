@@ -23,7 +23,7 @@ interface Test {
   id: string;
   videoId: string;
   videoTitle: string;
-  status: 'pending' | 'active' | 'paused' | 'completed';
+  status: 'pending' | 'active' | 'paused' | 'completed' | 'cancelled';
   rotationIntervalMinutes: number;
   winnerMetric: string;
   startDate: string;
@@ -71,8 +71,8 @@ export default function DashboardFuturistic() {
   const [testConfig, setTestConfig] = useState({
     rotationIntervalMinutes: 60,
     winnerMetric: 'ctr',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    startDate: new Date().toISOString().slice(0, 16),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
   });
 
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
@@ -708,6 +708,7 @@ export default function DashboardFuturistic() {
                           test.status === 'active' ? 'bg-green-500 animate-pulse' :
                           test.status === 'paused' ? 'bg-yellow-500' :
                           test.status === 'completed' ? 'bg-blue-500' :
+                          test.status === 'cancelled' ? 'bg-red-500' :
                           'bg-gray-400'
                         }`}></div>
                         <h4 className="font-medium text-gray-900">{test.videoTitle}</h4>
@@ -718,6 +719,7 @@ export default function DashboardFuturistic() {
                           test.status === 'active' ? 'bg-green-100 text-green-800' :
                           test.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
                           test.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          test.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
@@ -738,6 +740,15 @@ export default function DashboardFuturistic() {
                             className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium hover:bg-green-200 transition-colors"
                           >
                             Resume
+                          </button>
+                        )}
+                        
+                        {(test.status === 'active' || test.status === 'paused') && (
+                          <button
+                            onClick={() => updateTestStatus(test.id, 'cancelled')}
+                            className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
+                          >
+                            Cancel Test
                           </button>
                         )}
                       </div>
@@ -906,11 +917,47 @@ export default function DashboardFuturistic() {
               {/* Test Configuration */}
               {selectedVideo && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Test Configuration</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">Test Configuration</h4>
+                  
+                  {/* Test Schedule */}
+                  <div className="mb-6">
+                    <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Test Schedule
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Start Date & Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={testConfig.startDate}
+                          onChange={(e) => setTestConfig(prev => ({ ...prev, startDate: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          End Date & Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={testConfig.endDate}
+                          onChange={(e) => setTestConfig(prev => ({ ...prev, endDate: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min={testConfig.startDate || new Date().toISOString().slice(0, 16)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Test Settings */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rotation Interval (minutes)
+                        Rotation Interval
                       </label>
                       <select
                         value={testConfig.rotationIntervalMinutes}
@@ -928,15 +975,16 @@ export default function DashboardFuturistic() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Success Metric
+                        Winner Determination
                       </label>
                       <select
                         value={testConfig.winnerMetric}
                         onChange={(e) => setTestConfig(prev => ({ ...prev, winnerMetric: e.target.value }))}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <option value="ctr">Click-Through Rate (CTR)</option>
-                        <option value="avd">Average View Duration</option>
+                        <option value="ctr">Highest Click-Through Rate (CTR)</option>
+                        <option value="views">Highest Number of Views</option>
+                        <option value="combined">Combined Metrics (CTR + Views)</option>
                       </select>
                     </div>
                   </div>
