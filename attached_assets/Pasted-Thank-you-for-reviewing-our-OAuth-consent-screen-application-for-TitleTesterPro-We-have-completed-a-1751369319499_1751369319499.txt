@@ -1,0 +1,97 @@
+Thank you for reviewing our OAuth consent screen application for TitleTesterPro. We have completed all requested requirements and are submitting our verification materials.
+
+Application Details:
+
+App Name: TitleTesterPro
+Client ID: 618794070994-n4n3b75oktui4efj7671il3jvef23peu.apps.googleusercontent.com
+Domain: titletesterpro.com
+Application URL: https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev
+Verification Materials Provided
+
+
+
+Demo Video: https://youtu.be/-_DbJlgqJcw
+
+Privacy Policy: Published at /privacy with detailed data handling procedures, user rights, and compliance information.
+
+
+
+Terms of Service: Available at /terms outlining user agreements and service conditions.
+
+
+
+Domain Verification: Completed domain ownership verification through Google Search Console.
+
+
+
+Application Purpose:
+TitleTesterPro is a legitimate content creator optimization platform that helps YouTubers improve video performance through A/B title testing. Our application requires YouTube API access to:
+
+Read user's video metadata for title optimization
+Update video titles during controlled A/B testing
+Access analytics data for performance measurement
+Security & Compliance:
+
+All OAuth tokens are encrypted and stored securely
+User data is handled according to published privacy policy
+Application follows Google API Terms of Service
+Limited data collection focused solely on stated functionality
+We have addressed all feedback from the previous review and believe our application now meets all Google verification requirements. The demo video clearly demonstrates the OAuth consent flow and legitimate use of requested scopes.
+
+Please let us know if any additional information or clarification is needed for approval.
+
+
+
+SCOPE JUSTIFICATIONS FOR TITLETESTERPRO
+youtube.readonly - Video Selection & Baseline Data
+Business Need: Users must select existing videos from their channel to create A/B tests
+
+Specific Use: Retrieve user's video list (videos.list API) to populate test creation interface
+Data Accessed: Video titles, descriptions, view counts, publication dates, thumbnails
+Justification: Essential for users to choose which videos to optimize through title testing
+User Benefit: Allows informed selection of underperforming videos that need optimization
+youtube - Automated Title Updates
+Business Need: Core platform functionality requires updating video titles during A/B tests
+
+Specific Use: Automated title rotation using videos.update API every 2-24 hours per user schedule
+Data Modified: Video title field only
+Justification: Primary service offering - automated A/B testing requires write access to rotate title variants
+User Benefit: Hands-off optimization without manual intervention, saving creators significant time
+youtube.force-ssl - Security Compliance
+Business Need: YouTube security requirement for all content modification operations
+
+Specific Use: HTTPS encryption for all API calls involving video updates
+Justification: Mandatory security protocol required by YouTube for applications that modify content
+User Benefit: Protects user data and content from security vulnerabilities
+yt-analytics.readonly - Performance Measurement
+Business Need: Measure A/B test effectiveness through performance metrics
+
+Specific Use: Track impressions, CTR, views, watch time for each title variant
+Data Accessed: Video analytics for date ranges corresponding to each title variant
+Justification: A/B testing is meaningless without performance data to determine winning variants
+User Benefit: Data-driven insights showing which titles drive more engagement and revenue
+userinfo.email & userinfo.profile - User Authentication
+Business Need: Secure user identification and personalized experience
+
+Specific Use: OAuth authentication, account linking, personalized dashboard
+Data Accessed: Email address, name, profile picture
+Justification: Standard authentication scopes for secure login without password storage
+User Benefit: Seamless Google login with personalized dashboard experience
+MINIMAL ACCESS PRINCIPLE
+We request only the minimum scopes needed for core functionality. We specifically DO NOT request:
+
+Comments management
+Live streaming access
+Channel management beyond video titles
+Subscriber data access
+Community posts access
+DATA PROTECTION
+OAuth tokens encrypted with AES-256
+All communications over HTTPS
+No data retention beyond active test periods
+GDPR/CCPA compliant
+Users can revoke access anytime
+Best regards,
+TitleTesterPro Development Team
+Contact: KaseyDoesMarketing@gmail.com
+
