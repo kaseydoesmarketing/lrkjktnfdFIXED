@@ -79,6 +79,7 @@ export default function DashboardFuturistic() {
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Authenticate user
   useEffect(() => {
@@ -146,6 +147,10 @@ export default function DashboardFuturistic() {
           user.subscriptionStatus = subscriptionData.status;
           user.subscriptionTier = subscriptionData.tier;
         }
+        
+        // Check if user is admin
+        const isAdminUser = user.email === 'KaseyDoesMarketing@gmail.com';
+        setIsAdmin(isAdminUser);
         
         setAuthState({
           loading: false,
@@ -631,6 +636,16 @@ export default function DashboardFuturistic() {
                 </div>
               </div>
 
+              {isAdmin && (
+                <a
+                  href="/admin"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-all duration-200 border border-purple-200"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </a>
+              )}
+              
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
