@@ -8,7 +8,7 @@ import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard-video-complete";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import LandingSimple from "@/pages/LandingSimple";
+
 import AuthCallback from "@/pages/auth-callback";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
@@ -47,12 +47,12 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={LandingSimple} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/privacy" component={() => <Privacy />} />
       <Route path="/terms" component={() => <Terms />} />
+      <Route path="/" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );
