@@ -9,7 +9,7 @@ When copying code from this code snippet, ensure you also include this informati
 */
 
 // <important_do_not_delete>
-const DEFAULT_MODEL_STR = "claude-3-5-sonnet-20241022"; // Cost optimized: 40% cheaper than Claude 4.0
+const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
 // </important_do_not_delete>
 
 const anthropic = new Anthropic({
@@ -69,11 +69,11 @@ Format as JSON with this structure:
   try {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL_STR,
-      max_tokens: 2000,
+      max_tokens: 1000, // Reduced from 2000 for cost optimization
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const result = JSON.parse(response.content[0].text);
+    const result = JSON.parse((response.content[0] as any).text);
     return result.suggestions || [];
   } catch (error) {
     console.error('Error generating title variants:', error);
@@ -115,11 +115,11 @@ Format as JSON:
   try {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL_STR,
-      max_tokens: 2000,
+      max_tokens: 1000, // Reduced from 2000 for cost optimization
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const result = JSON.parse(response.content[0].text);
+    const result = JSON.parse((response.content[0] as any).text);
     return {
       suggestions: result.suggestions || [],
       currentTitleScore: result.currentTitleScore || 0,
@@ -152,7 +152,7 @@ Format as JSON with suggestions array.`;
   try {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL_STR,
-      max_tokens: 1500,
+      max_tokens: 800, // Reduced from 1500 for cost optimization
       messages: [{
         role: "user",
         content: [
@@ -172,7 +172,7 @@ Format as JSON with suggestions array.`;
       }]
     });
 
-    const result = JSON.parse(response.content[0].text);
+    const result = JSON.parse((response.content[0] as any).text);
     return result.suggestions || [];
   } catch (error) {
     console.error('Error generating titles from thumbnail:', error);

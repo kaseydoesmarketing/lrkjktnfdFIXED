@@ -15,28 +15,20 @@ class Scheduler {
     const jobId = `rotate-${testId}-${titleOrder}`;
     const delay = delayMinutes * 60 * 1000; // Convert to milliseconds
     
-    console.log(`⏰ [SCHEDULER DEBUG] Scheduling rotation job ${jobId} with delay ${delayMinutes} minutes (${delay}ms)`);
-    
     // Cancel existing job if any
     this.cancelJob(jobId);
     
     const timeout = setTimeout(async () => {
       try {
-        console.log(`🚀 [SCHEDULER DEBUG] Executing scheduled job: ${jobId}`);
-        console.log(`🚀 [SCHEDULER DEBUG] Active jobs before execution: ${this.jobs.size}`);
         await this.executeRotation(testId, titleOrder);
-        console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} completed and removed from queue`);
       } catch (error: any) {
-        console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} failed with error:`, error);
-        console.error(`❌ [SCHEDULER DEBUG] Job ${jobId} error stack:`, error.stack);
+        console.error(`Scheduler job ${jobId} failed:`, error.message);
       } finally {
         this.jobs.delete(jobId);
-        console.log(`🗑️ [SCHEDULER DEBUG] Job ${jobId} cleanup complete. Remaining jobs: ${this.jobs.size}`);
       }
     }, delay);
     
     this.jobs.set(jobId, timeout);
-    console.log(`📋 [SCHEDULER DEBUG] Job ${jobId} added to queue. Total active jobs: ${this.jobs.size}`);
   }
 
   schedulePoll(titleId: string, delayMinutes: number = 15) {
@@ -60,101 +52,48 @@ class Scheduler {
 
   private async executeRotation(testId: string, titleOrder: number) {
     try {
-      console.log(`\n🔄 [ROTATION DEBUG] ==================== ROTATION STEP ====================`);
-      console.log(`🔄 [ROTATION DEBUG] Test: ${testId} | Executing titleOrder: ${titleOrder}`);
-      
       const test = await storage.getTest(testId);
       if (!test || test.status !== 'active') {
-        console.log(`❌ [ROTATION DEBUG] Test ${testId} not found or not active. Status: ${test?.status}`);
-        console.log(`🔄 [ROTATION DEBUG] ================= ROTATION ABORTED ===================\n`);
         return;
       }
-      console.log(`✅ [ROTATION DEBUG] Test found and active: ${testId} | Status: ${test.status}`);
 
       const titles = await storage.getTitlesByTestId(testId);
-      console.log(`📋 [ROTATION DEBUG] Found ${titles.length} titles for test ${testId}:`);
-      titles.forEach(title => console.log(`   - Order ${title.order}: "${title.text}" (ID: ${title.id}, Activated: ${title.activatedAt || 'never'})`));
-      
-      // Verify title orders are sequential and complete
-      const orders = titles.map(t => t.order).sort((a, b) => a - b);
-      const expectedOrders = Array.from({ length: titles.length }, (_, i) => i);
-      const missingOrders = expectedOrders.filter(order => !orders.includes(order));
-      const extraOrders = orders.filter(order => !expectedOrders.includes(order));
-      
-      if (missingOrders.length > 0) {
-        console.warn(`⚠️ [ROTATION DEBUG] Missing title orders: ${missingOrders}`);
-      }
-      if (extraOrders.length > 0) {
-        console.warn(`⚠️ [ROTATION DEBUG] Unexpected title orders: ${extraOrders}`);
-      }
-      if (missingOrders.length === 0 && extraOrders.length === 0) {
-        console.log(`✅ [ROTATION DEBUG] Title order sequence is complete: ${orders.join(', ')}`);
-      }
-      
       const currentTitle = titles.find(t => t.order === titleOrder);
       
       if (!currentTitle) {
-        console.log(`❌ [ROTATION DEBUG] No title found with order ${titleOrder}. Available orders:`, titles.map(t => t.order));
-        console.log(`🏁 [ROTATION DEBUG] Test completed - marking as completed`);
         await storage.updateTestStatus(testId, 'completed');
         return;
       }
 
-      console.log(`📝 [ROTATION DEBUG] Current title (order ${titleOrder}): "${currentTitle.text}" (ID: ${currentTitle.id})`);
-
       // Update the YouTube video title using token refresh system
       try {
-        console.log(`📺 [ROTATION DEBUG] Attempting YouTube API call to update video ${test.videoId} with automatic token refresh`);
         await youtubeService.updateVideoTitle(test.userId, test.videoId, currentTitle.text);
-        console.log(`✅ [ROTATION DEBUG] Successfully updated video ${test.videoId} to title: "${currentTitle.text}"`);
-        
-        // Update title activation
         await storage.updateTitleActivation(currentTitle.id, new Date());
-        console.log(`✅ [ROTATION DEBUG] Title activation updated for title ID: ${currentTitle.id}`);
       } catch (error: any) {
-        console.error('❌ [ROTATION DEBUG] Error updating YouTube title:', error);
-        console.error('❌ [ROTATION DEBUG] Error details:', error.message);
-        
         // Check if it's a token refresh failure
         if (error.message?.includes('authentication') || error.message?.includes('token refresh')) {
-          console.error('❌ [ROTATION DEBUG] Authentication failure - user needs to re-authenticate');
-          // Mark test as paused due to authentication issues
           await storage.updateTestStatus(testId, 'paused');
-          console.log(`⏸️ [ROTATION DEBUG] Test ${testId} paused due to authentication failure`);
           return;
         }
         
         // Try again in 5 minutes for other errors
-        console.log(`⏰ [ROTATION DEBUG] Rescheduling rotation for test ${testId}, titleOrder ${titleOrder} in 5 minutes`);
         this.scheduleRotation(testId, titleOrder, 5);
         return;
       }
       
       // Schedule next rotation
-      const nextTitleOrder = titleOrder + 1;
-      console.log(`🔢 [ROTATION DEBUG] Next title order: ${nextTitleOrder}, titles.length: ${titles.length}`);
-      console.log(`🔢 [ROTATION DEBUG] Available title orders:`, titles.map(t => t.order).sort((a, b) => a - b));
-      
-      // Check if there's actually a title with the next order
-      const nextTitle = titles.find(t => t.order === nextTitleOrder);
+      const nextTitle = titles.find(t => t.order === titleOrder + 1);
       if (nextTitle) {
-        console.log(`✅ [ROTATION DEBUG] Found next title with order ${nextTitleOrder}: "${nextTitle.text}"`);
-        console.log(`✅ [ROTATION DEBUG] Scheduling next rotation: test ${testId}, titleOrder ${nextTitleOrder}, delay ${test.rotationIntervalMinutes} minutes`);
-        this.scheduleRotation(testId, nextTitleOrder, test.rotationIntervalMinutes);
+        this.scheduleRotation(testId, titleOrder + 1, test.rotationIntervalMinutes);
       } else {
-        console.log(`🏁 [ROTATION DEBUG] No more titles found after order ${titleOrder}. All titles completed for test ${testId}. Marking as completed.`);
         await storage.updateTestStatus(testId, 'completed');
       }
       
       // Schedule analytics polling for this title
       this.schedulePoll(currentTitle.id);
       
-      console.log(`🔄 [ROTATION DEBUG] ================== ROTATION COMPLETE ==================\n`);
-      
     } catch (error: any) {
-      console.error('❌ [ROTATION DEBUG] Critical error executing rotation:', error);
-      console.error('❌ [ROTATION DEBUG] Error stack:', error.stack);
-      console.log(`🔄 [ROTATION DEBUG] ================= ROTATION FAILED ===================\n`);
+      console.error('Scheduler rotation error:', error.message);
     }
   }
 
