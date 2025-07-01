@@ -51,7 +51,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/admin" component={SimpleAdmin} />
+      <Route path="/admin">
+        <AuthWrapper>
+          <SimpleAdmin />
+        </AuthWrapper>
+      </Route>
       <Route path="/paywall" component={Paywall} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
