@@ -98,9 +98,9 @@ function DashboardContent() {
         </div>
       </header>
 
-      <div style={{ padding: '1.5rem', maxWidth: '1280px', margin: '0 auto' }}>
+      <div className="p-6 max-w-7xl mx-auto">
         {/* Stats Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Active Tests Card */}
           <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
