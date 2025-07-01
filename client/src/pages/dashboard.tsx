@@ -1,86 +1,53 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { authService } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function DashboardContent() {
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
-  
-  // Safe toast hook with error handling
-  let toast: any;
-  try {
-    toast = useToast().toast;
-  } catch (error) {
-    console.warn('Toast hook not available:', error);
-    toast = () => {}; // No-op fallback
-  }
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const sessionToken = urlParams.get('sessionToken');
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('sessionToken');
+    
+    if (sessionToken) {
+      console.log('OAuth login successful, storing session token');
+      localStorage.setItem('sessionToken', sessionToken);
       
-      if (sessionToken) {
-        console.log('OAuth login successful, storing session token');
-        localStorage.setItem('sessionToken', sessionToken);
-        
-        const url = new URL(window.location.href);
-        url.searchParams.delete('sessionToken');
-        window.history.replaceState({}, '', url.pathname);
-        
-        if (toast) {
-          toast({
-            title: "Login Successful",
-            description: "Welcome to TitleTesterPro! You're now connected to YouTube.",
-          });
-        }
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-    } catch (error) {
-      console.error('Error in dashboard useEffect:', error);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('sessionToken');
+      window.history.replaceState({}, '', url.pathname);
     }
-  }, [toast]);
+    
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+  }, []);
 
-  // Safe queries with error handling
-  const { data: user, error: userError } = useQuery({
+  // Simplified queries to prevent crashes
+  const { data: user } = useQuery({
     queryKey: ['/api/auth/me'],
     enabled: !!localStorage.getItem('sessionToken'),
-    retry: 1,
-    staleTime: 5000,
+    retry: false,
   });
 
-  const { data: stats, error: statsError } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     enabled: !!user,
-    retry: 1,
-    staleTime: 30000,
+    retry: false,
   });
 
-  const { data: tests = [], error: testsError } = useQuery({
+  const { data: tests = [] } = useQuery({
     queryKey: ['/api/tests'],
     enabled: !!user,
-    retry: 1,
-    staleTime: 10000,
+    retry: false,
   });
 
-  const { data: recentVideos = [], error: videosError } = useQuery({
+  const { data: recentVideos = [] } = useQuery({
     queryKey: ['/api/videos/recent'],
     enabled: !!user,
-    retry: 1,
-    staleTime: 60000,
+    retry: false,
   });
-
-  // Log any errors for debugging
-  useEffect(() => {
-    if (userError) console.error('User query error:', userError);
-    if (statsError) console.error('Stats query error:', statsError);
-    if (testsError) console.error('Tests query error:', testsError);
-    if (videosError) console.error('Videos query error:', videosError);
-  }, [userError, statsError, testsError, videosError]);
 
   // Safe data processing with error handling
   const activeTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'active') : [];
@@ -105,27 +72,27 @@ function DashboardContent() {
 
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '32px', height: '32px', border: '4px solid #3b82f6', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', color: '#111827' }}>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '1rem 1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '32px', height: '32px', backgroundColor: '#ef4444', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Play style={{ width: '16px', height: '16px', color: 'white', fill: 'white' }} />
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-white" />
             </div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827' }}>Thumbnail Tester Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">TitleTesterPro Dashboard</h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Bell style={{ width: '20px', height: '20px', color: '#6b7280' }} />
-            <div style={{ width: '32px', height: '32px', backgroundColor: '#d1d5db', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User style={{ width: '16px', height: '16px', color: '#4b5563' }} />
+          <div className="flex items-center gap-4">
+            <Bell className="w-5 h-5 text-gray-500" />
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
             </div>
           </div>
         </div>
@@ -377,53 +344,11 @@ function DashboardContent() {
   );
 }
 
-// Error boundary wrapper component
+// Proper React Error Boundary wrapper
 export default function Dashboard() {
-  try {
-    return <DashboardContent />;
-  } catch (error) {
-    console.error('Dashboard crash prevented:', error);
-    
-    // Fallback UI if dashboard crashes
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f9fafb', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '2rem', 
-          borderRadius: '8px', 
-          border: '1px solid #e5e7eb',
-          textAlign: 'center',
-          maxWidth: '400px'
-        }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
-            TitleTesterPro Dashboard
-          </h1>
-          <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-            Loading your dashboard... If this continues, please refresh the page.
-          </p>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{ 
-              backgroundColor: '#3b82f6', 
-              color: 'white', 
-              padding: '0.5rem 1rem', 
-              borderRadius: '6px', 
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
+  return (
+    <ErrorBoundary>
+      <DashboardContent />
+    </ErrorBoundary>
+  );
 }
