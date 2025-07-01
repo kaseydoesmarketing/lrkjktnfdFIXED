@@ -1,9 +1,5 @@
 import type { Express } from "express";
-import { storage } from "./storage";
-import { anthropicService } from "./anthropicService";
-import { eq, desc, count, avg, sum, sql } from "drizzle-orm";
-import { db } from "./db";
-import { users, tests, titles, analyticsPolls, accounts } from "@shared/schema";
+import { AdminService } from "./adminService";
 
 interface AdminUser {
   id: string;

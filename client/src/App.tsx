@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard-futuristic";
+import AdminDashboard from "@/pages/admin-dashboard";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -50,6 +51,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/paywall" component={Paywall} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />

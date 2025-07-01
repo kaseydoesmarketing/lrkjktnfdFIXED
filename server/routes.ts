@@ -48,6 +48,8 @@ async function requireAuth(req: Request, res: Response, next: Function) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register admin routes
+  registerAdminRoutes(app);
   // Demo login route for immediate dashboard access
   app.post('/api/auth/demo-login', async (req: Request, res: Response) => {
     try {
