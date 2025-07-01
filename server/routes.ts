@@ -788,13 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Handle client-side routing - must be last route
-  app.get('*', (req, res) => {
-    // Only handle non-API routes and non-static file requests
-    if (!req.path.startsWith('/api') && !req.path.includes('.')) {
-      res.sendFile('index.html', { root: './public' });
-    }
-  });
+
 
   const httpServer = createServer(app);
   return httpServer;
