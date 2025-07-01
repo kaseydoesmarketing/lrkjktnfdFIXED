@@ -71,7 +71,7 @@ export default function Home() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/login" className="btn-pulse inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all text-center">
-                  Start Testing Your Titles Free
+                  Start Testing Your Titles Now
                 </Link>
                 <button className="border-gray-300 text-gray-700 px-8 py-4 text-lg font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
                   <Play className="h-5 w-5 mr-2" />
@@ -79,7 +79,7 @@ export default function Home() {
                 </button>
               </div>
 
-              <p className="text-sm text-gray-500">✓ No credit card required • ✓ 5 free tests included • ✓ Setup in 60 seconds</p>
+              <p className="text-sm text-gray-500">✓ No setup fees • ✓ Cancel anytime • ✓ Setup in 60 seconds</p>
             </div>
 
             <div className="relative float">
@@ -426,7 +426,7 @@ export default function Home() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <Check className="h-5 w-5 text-green-500 mr-3" />
-                  <span className="text-gray-700">5 free A/B tests to start</span>
+                  <span className="text-gray-700">A/B tests included</span>
                 </li>
                 <li className="flex items-center">
                   <Check className="h-5 w-5 text-green-500 mr-3" />
