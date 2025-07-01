@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard-futuristic";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import Paywall from "@/pages/paywall";
 
 import AuthCallback from "@/pages/auth-callback";
 import Privacy from "@/pages/privacy";
@@ -49,6 +50,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/paywall" component={Paywall} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/privacy" component={() => <Privacy />} />

@@ -11,6 +11,10 @@ export const users = pgTable("users", {
   youtubeId: text("youtube_id").unique(),
   oauthToken: text("oauth_token"), // Encrypted
   refreshToken: text("refresh_token"), // Encrypted
+  subscriptionStatus: text("subscription_status").default("none"), // "none", "active", "cancelled"
+  subscriptionTier: text("subscription_tier"), // "pro", "authority"
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

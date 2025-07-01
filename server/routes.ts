@@ -681,6 +681,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subscription management endpoints
+  app.post('/api/create-subscription', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { plan } = req.body;
+      const user = (req as any).user;
+      
+      if (!['pro', 'authority'].includes(plan)) {
+        return res.status(400).json({ error: 'Invalid plan selected' });
+      }
+      
+      // For demo purposes, create a mock checkout URL
+      // In production, this would integrate with Stripe
+      const planPrices = { pro: 29, authority: 99 };
+      const price = planPrices[plan];
+      
+      // Simulate subscription creation
+      const subscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const checkoutUrl = `/paywall?plan=${plan}&price=${price}&subscription=${subscriptionId}&demo=true`;
+      
+      res.json({ 
+        checkoutUrl: `${req.protocol}://${req.get('host')}${checkoutUrl}`,
+        subscriptionId,
+        plan,
+        price
+      });
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ error: 'Failed to create subscription' });
+    }
+  });
+
+  // Check subscription status
+  app.get('/api/subscription/status', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      
+      // Check if user has an active subscription
+      // For demo purposes, we'll check localStorage or default to none
+      const subscriptionStatus = user.subscriptionStatus || 'none';
+      const subscriptionTier = user.subscriptionTier || null;
+      
+      res.json({
+        status: subscriptionStatus,
+        tier: subscriptionTier,
+        hasAccess: subscriptionStatus !== 'none'
+      });
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      res.status(500).json({ error: 'Failed to check subscription status' });
+    }
+  });
+
+  // Update subscription status (for demo/testing)
+  app.post('/api/subscription/update', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { status, tier } = req.body;
+      const user = (req as any).user;
+      
+      // Update user subscription status in database
+      await storage.updateUserSubscription(user.id, status, tier);
+      
+      res.json({ 
+        success: true, 
+        status, 
+        tier,
+        message: `Subscription updated to ${tier} plan`
+      });
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      res.status(500).json({ error: 'Failed to update subscription' });
+    }
+  });
+
+  // Middleware to check subscription access for protected routes
+  async function requireSubscription(req: Request, res: Response, next: Function) {
+    try {
+      const user = (req as any).user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const subscriptionStatus = user.subscriptionStatus || 'none';
+      
+      if (subscriptionStatus === 'none') {
+        return res.status(402).json({ 
+          error: 'Subscription required',
+          message: 'Please upgrade to a paid plan to access this feature',
+          redirectUrl: '/paywall'
+        });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Subscription check error:', error);
+      res.status(500).json({ error: 'Subscription verification failed' });
+    }
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }

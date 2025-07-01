@@ -282,6 +282,32 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(titles, eq(titleSummaries.titleId, titles.id))
       .where(eq(titles.testId, testId));
   }
+
+  // Subscription management
+  async updateUserSubscription(userId: string, status: string, tier: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        subscriptionStatus: status,
+        subscriptionTier: tier
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserSubscription(userId: string): Promise<{ status: string | null, tier: string | null } | null> {
+    const [user] = await db
+      .select({
+        subscriptionStatus: users.subscriptionStatus,
+        subscriptionTier: users.subscriptionTier
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return user ? {
+      status: user.subscriptionStatus,
+      tier: user.subscriptionTier
+    } : null;
+  }
 }
 
 export const storage = new DatabaseStorage();
