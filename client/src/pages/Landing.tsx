@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'wouter';
 import { Play, ArrowRight, Check, Star, TrendingUp, Zap, Bot, Link as LinkIcon, Users, BarChart3, Target, Clock, Award, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
