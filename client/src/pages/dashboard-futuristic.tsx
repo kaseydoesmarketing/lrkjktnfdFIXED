@@ -84,21 +84,47 @@ export default function DashboardFuturistic() {
   useEffect(() => {
     const authenticateUser = async () => {
       try {
-        const token = localStorage.getItem('sessionToken');
+        console.log('🔍 Dashboard: Starting authentication check...');
+        
+        // Check for sessionToken in URL params first (from OAuth callback)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('sessionToken');
+        
+        console.log('📍 URL sessionToken found:', !!urlToken);
+        
+        if (urlToken) {
+          console.log('💾 Storing sessionToken from URL...');
+          localStorage.setItem('sessionToken', urlToken);
+          window.history.replaceState({}, '', '/dashboard');
+        }
+        
+        // Get token from localStorage or URL
+        const token = urlToken || localStorage.getItem('sessionToken');
+        console.log('🔑 Final token available:', !!token);
+        
         if (!token) {
+          console.log('❌ No token found, redirecting to login...');
           window.location.href = '/login';
           return;
         }
 
+        console.log('🌐 Making authentication request...');
         const response = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
+        console.log('📡 Auth response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Authentication failed');
+          console.log('❌ Auth response not OK:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.log('❌ Auth error details:', errorText);
+          throw new Error(`Authentication failed: ${response.status} ${response.statusText}`);
         }
 
         const user = await response.json();
+        console.log('✅ Authentication successful:', user.email);
+        
         setAuthState({
           loading: false,
           authenticated: true,
@@ -106,6 +132,7 @@ export default function DashboardFuturistic() {
           error: null
         });
       } catch (error) {
+        console.error('💥 Authentication error:', error);
         setAuthState({
           loading: false,
           authenticated: false,
@@ -113,7 +140,11 @@ export default function DashboardFuturistic() {
           error: error instanceof Error ? error.message : 'Authentication failed'
         });
         localStorage.removeItem('sessionToken');
-        window.location.href = '/login';
+        
+        // Add delay to prevent redirect loops
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
       }
     };
 
@@ -301,6 +332,60 @@ export default function DashboardFuturistic() {
           </div>
           <p className="text-gray-600 font-medium">Initializing TitleTesterPro</p>
           <p className="text-gray-400 text-sm mt-1">Preparing your dashboard...</p>
+          
+          {/* Debug information */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg max-w-md mx-auto text-left text-xs">
+            <p className="font-medium text-gray-700 mb-2">Debug Information:</p>
+            <p className="text-gray-600">• Checking authentication status...</p>
+            <p className="text-gray-600">• Validating session token...</p>
+            <p className="text-gray-600">• Loading user profile...</p>
+            <p className="text-gray-500 mt-2">This should take just a moment.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry option
+  if (authState.error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Authentication Error</h2>
+          <p className="text-gray-600 mb-6">{authState.error}</p>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Retry Authentication
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('sessionToken');
+                window.location.href = '/login';
+              }}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Return to Login
+            </button>
+          </div>
+          
+          {/* Debug information */}
+          <details className="mt-6 text-left">
+            <summary className="text-sm text-gray-500 cursor-pointer">Debug Details</summary>
+            <div className="mt-2 p-3 bg-gray-50 rounded text-xs text-gray-600">
+              <p>Error: {authState.error}</p>
+              <p>Token in localStorage: {!!localStorage.getItem('sessionToken')}</p>
+              <p>Current URL: {window.location.href}</p>
+            </div>
+          </details>
         </div>
       </div>
     );
