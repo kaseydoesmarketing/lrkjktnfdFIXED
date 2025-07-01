@@ -47,6 +47,10 @@ export interface IStorage {
   createTitleSummary(summary: InsertTitleSummary): Promise<TitleSummary>;
   getTitleSummaryByTitleId(titleId: string): Promise<TitleSummary | undefined>;
   getTitleSummariesByTestId(testId: string): Promise<TitleSummary[]>;
+  
+  // Admin methods
+  getAllUsers(): Promise<User[]>;
+  getAllTests(): Promise<Test[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -307,6 +311,14 @@ export class DatabaseStorage implements IStorage {
       status: user.subscriptionStatus,
       tier: user.subscriptionTier
     } : null;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getAllTests(): Promise<Test[]> {
+    return await db.select().from(tests).orderBy(desc(tests.createdAt));
   }
 }
 
