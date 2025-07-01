@@ -14,11 +14,13 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery({
     queryKey: ['/api/auth/me'],
     queryFn: () => authService.getCurrentUser(),
     retry: false,
   });
+
+  console.log('AuthWrapper - user:', user, 'isLoading:', isLoading, 'error:', error);
 
   if (isLoading) {
     return (
@@ -28,10 +30,17 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (error) {
+    console.log('AuthWrapper error, redirecting to login:', error);
     return <Login />;
   }
 
+  if (!user) {
+    console.log('No user found, showing login');
+    return <Login />;
+  }
+
+  console.log('User authenticated, showing dashboard');
   return <>{children}</>;
 }
 

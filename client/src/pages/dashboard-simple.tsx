@@ -5,45 +5,89 @@ import { Bell, Play, Plus, User, TestTube, TrendingUp, MousePointer, Eye } from 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function SimpleDashboardContent() {
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionToken = urlParams.get('sessionToken');
     
     if (sessionToken) {
+      console.log('Found sessionToken in URL, storing it');
       localStorage.setItem('sessionToken', sessionToken);
       const url = new URL(window.location.href);
       url.searchParams.delete('sessionToken');
       window.history.replaceState({}, '', url.pathname);
     }
     
+    // Always invalidate auth query and mark as ready
     queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    setIsReady(true);
   }, []);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['/api/auth/me'],
-    enabled: !!localStorage.getItem('sessionToken'),
+    enabled: isReady,
     retry: false,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['/api/dashboard/stats'],
-    enabled: !!user,
+    enabled: !!user && isReady,
     retry: false,
   });
 
   const { data: tests = [] } = useQuery({
     queryKey: ['/api/tests'],
-    enabled: !!user,
+    enabled: !!user && isReady,
     retry: false,
   });
 
-  if (!user) {
+  // Handle loading states properly
+  if (!isReady || userLoading) {
+    console.log('Dashboard loading - isReady:', isReady, 'userLoading:', userLoading);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
+
+  // Handle authentication errors
+  if (userError) {
+    console.log('User authentication error:', userError);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg border max-w-md text-center">
+          <h1 className="text-xl font-semibold text-red-600 mb-4">Authentication Error</h1>
+          <p className="text-gray-600 mb-6">Please refresh the page and try logging in again.</p>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('sessionToken');
+              window.location.href = '/login';
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user found, redirect to login
+  if (!user) {
+    console.log('No user found, should redirect to login');
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 100);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  console.log('Dashboard rendering with user:', user?.email);
 
   const activeTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'active') : [];
   const completedTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'completed') : [];

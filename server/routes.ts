@@ -12,24 +12,36 @@ import { z } from "zod";
 async function requireAuth(req: Request, res: Response, next: Function) {
   const sessionToken = req.cookies['session-token'] || req.headers.authorization?.replace('Bearer ', '');
   
+  console.log('Auth middleware - checking token:', sessionToken ? 'present' : 'missing');
+  
   if (!sessionToken) {
+    console.log('No session token provided');
     return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
     const session = await storage.getSession(sessionToken);
-    if (!session || session.expires < new Date()) {
-      return res.status(401).json({ error: 'Invalid or expired session' });
+    if (!session) {
+      console.log('Session not found in database');
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+
+    if (session.expires < new Date()) {
+      console.log('Session expired:', session.expires);
+      return res.status(401).json({ error: 'Session expired' });
     }
 
     const user = await storage.getUser(session.userId);
     if (!user) {
+      console.log('User not found for session');
       return res.status(401).json({ error: 'User not found' });
     }
 
+    console.log('Authentication successful for user:', user.email);
     (req as any).user = user;
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     return res.status(500).json({ error: 'Authentication error' });
   }
 }

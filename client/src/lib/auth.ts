@@ -67,32 +67,44 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User | null> {
-    // Refresh session token from cookie each time
-    this.sessionToken = this.getSessionTokenFromCookie();
+    // Check both cookie and localStorage for session token
+    const cookieToken = this.getSessionTokenFromCookie();
+    const localStorageToken = localStorage.getItem('sessionToken');
     
-    if (!this.sessionToken) return null;
+    // Use localStorage token if available, fallback to cookie
+    this.sessionToken = localStorageToken || cookieToken;
+    
+    if (!this.sessionToken) {
+      console.log('No session token found in localStorage or cookies');
+      return null;
+    }
 
     try {
       const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${this.sessionToken}`,
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
         if (response.status === 401) {
+          console.log('Authentication failed, clearing tokens');
           this.logout();
           return null;
         }
-        throw new Error('Failed to get user');
+        throw new Error(`Failed to get user: ${response.status}`);
       }
 
       const data = await response.json();
-      // API returns user directly, not wrapped in user property
+      console.log('User authenticated successfully:', data.email);
       return data;
     } catch (error) {
       console.error('Error getting current user:', error);
-      // Don't logout on network errors, only on auth errors
+      // Only logout on authentication errors, not network errors
+      if (error instanceof Error && error.message.includes('401')) {
+        this.logout();
+      }
       return null;
     }
   }
