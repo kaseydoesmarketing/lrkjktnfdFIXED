@@ -1,0 +1,76 @@
+CRITICAL DASHBOARD DEBUG MISSION
+PROBLEM SUMMARY
+The dashboard was working perfectly before a recent revamp. Now it briefly appears then disappears into a white background. OAuth and video data pulling are affected. This needs a COMPLETE solution NOW.
+
+YOUR SYSTEMATIC DEBUG PROTOCOL
+PHASE 1: IMMEDIATE DIAGNOSTIC
+Browser Console Analysis
+Check for JavaScript errors, warnings, and failed network requests
+Look for React/framework-specific errors
+Document any 401/403 OAuth-related errors
+Screenshot all console output
+Network Tab Investigation
+Identify failed API calls, especially OAuth and video data endpoints
+Check response codes and response bodies
+Look for CORS issues or authentication failures
+Document timing of successful vs failed requests
+PHASE 2: CODE COMPARISON ANALYSIS
+Git Diff Deep Dive
+Compare the working pre-revamp commit with current broken state
+Focus on: authentication logic, API calls, component lifecycle, routing
+Identify ALL changes to OAuth flow, video data fetching, and dashboard rendering
+Dependency Changes
+Check package.json changes between working and broken versions
+Look for version conflicts, especially auth libraries, UI frameworks
+Verify all dependencies are properly installed and compatible
+PHASE 3: AUTHENTICATION FLOW AUDIT
+OAuth Implementation Review
+Trace the complete OAuth flow from login to token refresh
+Check token storage (localStorage, cookies, memory)
+Verify token expiration handling and refresh logic
+Test OAuth flow isolation in a minimal environment
+API Authorization Testing
+Test each video data API endpoint independently
+Verify headers, tokens, and authentication are properly attached
+Check for changed API endpoints or authentication requirements
+PHASE 4: RENDERING PIPELINE INVESTIGATION
+Component Lifecycle Analysis
+Add detailed logging to dashboard component mount/unmount cycles
+Check for premature component destruction
+Identify what triggers the white background state
+Look for conditional rendering logic that might be failing
+State Management Audit
+Review global state, Redux/Context changes
+Check for state clearing or reset that causes re-renders
+Verify data persistence between component re-renders
+PHASE 5: SYSTEMATIC TESTING
+Isolation Testing
+Create minimal dashboard component without revamp changes
+Gradually add revamp features until the issue reproduces
+Test in different browsers and clear cache/cookies
+Performance Monitoring
+Check for memory leaks or performance issues causing crashes
+Monitor component render times and API response times
+Look for infinite loops or excessive re-rendering
+PHASE 6: DEFINITIVE SOLUTION
+Root Cause Documentation
+Document the exact cause with code snippets
+Explain the sequence of events leading to the white background
+Provide before/after code comparison
+Implementation & Verification
+Implement the fix with detailed comments
+Test thoroughly across all scenarios (fresh login, token refresh, etc.)
+Verify OAuth and video data functionality is restored
+Confirm the dashboard remains stable under various conditions
+DELIVERABLES REQUIRED
+Complete diagnostic report with screenshots
+Exact root cause explanation
+Working code fix with explanations
+Testing verification results
+Prevention measures for future revamps
+SUCCESS CRITERIA
+✅ Dashboard loads and remains stable ✅ OAuth flow works flawlessly
+✅ Video data pulls correctly ✅ No white background disappearing ✅ Solution tested across browsers ✅ Code is production-ready
+
+PRIORITY: CRITICAL - Solve this completely and permanently. No partial fixes.
+
