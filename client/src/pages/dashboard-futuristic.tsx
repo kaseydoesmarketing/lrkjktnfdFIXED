@@ -148,8 +148,8 @@ export default function DashboardFuturistic() {
           user.subscriptionTier = subscriptionData.tier;
         }
         
-        // Check if user is admin
-        const isAdminUser = user.email === 'KaseyDoesMarketing@gmail.com';
+        // Check if user is admin (case-insensitive)
+        const isAdminUser = user.email?.toLowerCase() === 'kaseydoesmarketing@gmail.com';
         setIsAdmin(isAdminUser);
         
         setAuthState({

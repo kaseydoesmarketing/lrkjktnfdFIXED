@@ -5,6 +5,7 @@ import { storage } from "./storage";
 function isAdmin(userEmail: string): boolean {
   const adminEmails = [
     'KaseyDoesMarketing@gmail.com',
+    'kaseydoesmarketing@gmail.com', // Add lowercase version
     'admin@titletesterpro.com'
   ];
   return adminEmails.includes(userEmail);
