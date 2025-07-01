@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { testId } = req.params;
       const { status } = req.body;
       
-      if (!['active', 'paused'].includes(status)) {
+      if (!['active', 'paused', 'cancelled', 'completed'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
       }
 
