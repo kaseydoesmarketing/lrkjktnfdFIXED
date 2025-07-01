@@ -102,16 +102,16 @@ function DashboardContent() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Active Tests Card */}
-          <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <TestTube style={{ width: '16px', height: '16px', color: '#16a34a' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#16a34a' }}>Active Tests</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <TestTube className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">Active Tests</span>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{activeTests.length}</div>
+                <div className="text-2xl font-bold text-gray-900">{activeTests.length}</div>
               </div>
-              <div style={{ color: '#16a34a', fontSize: '0.875rem', fontWeight: '500' }}>+18%</div>
+              <div className="text-green-600 text-sm font-medium">+18%</div>
             </div>
           </div>
 
