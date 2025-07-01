@@ -31,7 +31,7 @@ class Scheduler {
     this.jobs.set(jobId, timeout);
   }
 
-  schedulePoll(titleId: string, delayMinutes: number = 15) {
+  schedulePoll(titleId: string, delayMinutes: number = 60) { // Increased from 15 to 60 minutes for cost optimization
     const jobId = `poll-${titleId}`;
     const delay = delayMinutes * 60 * 1000;
     
@@ -106,8 +106,8 @@ class Scheduler {
 
       const test = await storage.getTest(title.testId);
       if (!test || test.status === 'paused') {
-        // Reschedule if paused
-        this.schedulePoll(titleId, 15);
+        // Reschedule if paused (now with longer interval)
+        this.schedulePoll(titleId, 60);
         return;
       }
 
