@@ -677,7 +677,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(response);
     } catch (error) {
       console.error('🔧 [DEBUG ROUTE] Error in debug rotation:', error);
-      return res.status(500).json({ error: 'Failed to trigger debug rotation', details: error.message });
+      return res.status(500).json({ 
+        error: 'Failed to trigger debug rotation', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -693,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For demo purposes, create a mock checkout URL
       // In production, this would integrate with Stripe
-      const planPrices = { pro: 29, authority: 99 };
+      const planPrices: { [key: string]: number } = { pro: 29, authority: 99 };
       const price = planPrices[plan];
       
       // Simulate subscription creation

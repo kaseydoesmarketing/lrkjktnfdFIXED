@@ -26,7 +26,7 @@ export default function Paywall() {
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'authority'>('pro');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check authentication status
+  // Check authentication status and handle demo subscription completion
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -34,6 +34,36 @@ export default function Paywall() {
         if (!token) {
           window.location.href = '/login';
           return;
+        }
+
+        // Check if this is a demo subscription completion
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDemo = urlParams.get('demo');
+        const plan = urlParams.get('plan');
+        
+        if (isDemo && plan) {
+          console.log('🎉 Demo subscription completion detected:', plan);
+          
+          // Update user subscription status
+          const subscriptionResponse = await fetch('/api/subscription/update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              status: 'active', 
+              tier: plan 
+            })
+          });
+          
+          if (subscriptionResponse.ok) {
+            console.log('✅ Subscription activated successfully');
+            // Clean up URL and redirect to dashboard
+            window.history.replaceState({}, '', '/dashboard');
+            window.location.href = '/dashboard';
+            return;
+          }
         }
 
         const response = await fetch('/api/auth/me', {

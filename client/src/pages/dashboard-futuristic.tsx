@@ -125,6 +125,28 @@ export default function DashboardFuturistic() {
         const user = await response.json();
         console.log('✅ Authentication successful:', user.email);
         
+        // Check subscription status
+        console.log('🔍 Checking subscription status...');
+        const subscriptionResponse = await fetch('/api/subscription/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (subscriptionResponse.ok) {
+          const subscriptionData = await subscriptionResponse.json();
+          console.log('📊 Subscription status:', subscriptionData);
+          
+          // If user doesn't have an active subscription, redirect to paywall
+          if (!subscriptionData.hasAccess) {
+            console.log('🚫 No active subscription, redirecting to paywall...');
+            window.location.href = '/paywall';
+            return;
+          }
+          
+          // Update user with subscription info
+          user.subscriptionStatus = subscriptionData.status;
+          user.subscriptionTier = subscriptionData.tier;
+        }
+        
         setAuthState({
           loading: false,
           authenticated: true,

@@ -19,16 +19,17 @@ export default function Home() {
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
               <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors">Success Stories</a>
+              <Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link>
               <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
               <Link href="/login" className="btn-pulse bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                Start Testing Titles Free
+                Start Pro Plan
               </Link>
             </nav>
 
             <div className="flex items-center space-x-4 md:hidden">
               <Link href="/login" className="text-gray-600">Login</Link>
               <Link href="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
-                Start Free
+                Start Pro
               </Link>
             </div>
           </div>
