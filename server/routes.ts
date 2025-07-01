@@ -5,6 +5,7 @@ import { scheduler } from "./scheduler";
 import { authService } from "./auth";
 import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
+import { registerAdminRoutes } from "./adminRoutes";
 import { insertTestSchema, insertTitleSchema } from "@shared/schema";
 import { z } from "zod";
 
