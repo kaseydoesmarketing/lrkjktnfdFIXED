@@ -8,7 +8,7 @@ import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard-video-complete";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
+import Landing from "@/pages/Landing";
 import AuthCallback from "@/pages/auth-callback";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
