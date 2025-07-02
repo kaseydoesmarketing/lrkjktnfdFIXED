@@ -39,15 +39,18 @@ export interface IStorage {
   getTitle(id: string): Promise<Title | undefined>;
   createTitle(title: InsertTitle): Promise<Title>;
   updateTitleActivation(id: string, activatedAt: Date): Promise<Title>;
+  deleteTitlesByTestId(testId: string): Promise<void>;
   
   // Analytics
   createAnalyticsPoll(poll: InsertAnalyticsPoll): Promise<AnalyticsPoll>;
   getAnalyticsPollsByTitleId(titleId: string): Promise<AnalyticsPoll[]>;
+  deleteAnalyticsPollsByTitleId(titleId: string): Promise<void>;
   
   // Summaries
   createTitleSummary(summary: InsertTitleSummary): Promise<TitleSummary>;
   getTitleSummaryByTitleId(titleId: string): Promise<TitleSummary | undefined>;
   getTitleSummariesByTestId(testId: string): Promise<TitleSummary[]>;
+  deleteTitleSummary(titleId: string): Promise<void>;
   
   // Subscription methods
   updateUserSubscription(userId: string, status: string, tier: string | null): Promise<User>;
@@ -185,6 +188,15 @@ export class DatabaseStorage implements IStorage {
     return test;
   }
 
+  async updateTest(id: string, updates: Partial<Test>): Promise<Test> {
+    const [test] = await db
+      .update(tests)
+      .set(updates)
+      .where(eq(tests.id, id))
+      .returning();
+    return test;
+  }
+
   async deleteTest(id: string): Promise<void> {
     // Delete in order to respect foreign key constraints
     // First get all titles for this test
@@ -240,6 +252,10 @@ export class DatabaseStorage implements IStorage {
     return title;
   }
 
+  async deleteTitlesByTestId(testId: string): Promise<void> {
+    await db.delete(titles).where(eq(titles.testId, testId));
+  }
+
   // Analytics
   async createAnalyticsPoll(insertPoll: InsertAnalyticsPoll): Promise<AnalyticsPoll> {
     const id = crypto.randomUUID();
@@ -256,6 +272,10 @@ export class DatabaseStorage implements IStorage {
       .from(analyticsPolls)
       .where(eq(analyticsPolls.titleId, titleId))
       .orderBy(desc(analyticsPolls.polledAt));
+  }
+
+  async deleteAnalyticsPollsByTitleId(titleId: string): Promise<void> {
+    await db.delete(analyticsPolls).where(eq(analyticsPolls.titleId, titleId));
   }
 
   // Summaries
@@ -290,6 +310,10 @@ export class DatabaseStorage implements IStorage {
       .from(titleSummaries)
       .innerJoin(titles, eq(titleSummaries.titleId, titles.id))
       .where(eq(titles.testId, testId));
+  }
+
+  async deleteTitleSummary(titleId: string): Promise<void> {
+    await db.delete(titleSummaries).where(eq(titleSummaries.titleId, titleId));
   }
 
   // Subscription management
