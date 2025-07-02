@@ -39,6 +39,13 @@ interface User {
   subscriptionStatus?: string;
 }
 
+interface AccuracyStatus {
+  accuracy: string;
+  instructions: string;
+  enabled: boolean;
+  enableUrl?: string;
+}
+
 interface Stats {
   activeTests: number;
   totalViews: number;
@@ -566,6 +573,12 @@ export default function DashboardProduction() {
     retry: false,
   });
 
+  const { data: accuracyStatus } = useQuery<AccuracyStatus>({
+    queryKey: ['/api/analytics/accuracy-status'],
+    enabled: !!user,
+    retry: false,
+  });
+
   // Test management mutations
   const testActionMutation = useMutation({
     mutationFn: async ({ testId, action }: { testId: string; action: string }) => {
@@ -755,6 +768,40 @@ export default function DashboardProduction() {
           </div>
         </div>
       </header>
+
+      {/* Data Accuracy Status Banner */}
+      {accuracyStatus && !accuracyStatus.enabled && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-amber-600 mt-0.5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-amber-800">
+                  Data Accuracy: {accuracyStatus.accuracy}
+                </h3>
+                <div className="mt-2 text-sm text-amber-700">
+                  <p>{accuracyStatus.instructions.split('\n')[0]}</p>
+                  {accuracyStatus.enableUrl && (
+                    <div className="mt-3">
+                      <a
+                        href={accuracyStatus.enableUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                        <span>Enable YouTube Analytics API</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Overview */}
