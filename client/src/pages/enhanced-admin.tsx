@@ -284,6 +284,31 @@ function EnhancedTestManagement() {
     }
   };
 
+  const handleCancelTest = async (testId: string, videoTitle: string) => {
+    if (!confirm(`Are you sure you want to cancel and delete the test "${videoTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/tests/${testId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Test cancelled successfully: ${result.message}`);
+        fetchTests(); // Refresh the tests list
+      } else {
+        const error = await response.json();
+        alert(`Failed to cancel test: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling test:', error);
+      alert('Error cancelling test');
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading tests...</div>;
   }
@@ -341,6 +366,13 @@ function EnhancedTestManagement() {
                 onClick={() => handleViewFullReport(test.id)}
               >
                 View Full Report
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={() => handleCancelTest(test.id, test.videoTitle)}
+              >
+                Cancel Test
               </Button>
             </div>
           </div>

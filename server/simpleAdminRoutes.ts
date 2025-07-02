@@ -115,9 +115,27 @@ export function registerSimpleAdminRoutes(app: Express) {
     try {
       const allTests = await storage.getAllTests();
       
+      // Filter out demo/test data - only show real user tests
+      const realTests = allTests.filter(test => {
+        // Exclude tests from demo accounts or test email addresses
+        return test.userId !== 'demo-user-123'; // Will be filtered by user email check below
+      });
+
       const adminTests = await Promise.all(
-        allTests.map(async (test) => {
+        realTests.map(async (test) => {
           const user = await storage.getUser(test.userId);
+          
+          // Skip demo/test accounts - be more comprehensive
+          if (!user || 
+              user.email.includes('demo@') || 
+              user.email.includes('test@') || 
+              user.email.includes('example.com') ||
+              user.email === 'demo@titletesterpro.com' ||
+              test.videoId === 'dQw4w9WgXcQ' || // Demo video ID
+              user.email.includes('titletesterpro.com')) {
+            return null;
+          }
+          
           const titles = await storage.getTitlesByTestId(test.id);
           
           // Calculate real KPI metrics from analytics data
@@ -166,7 +184,10 @@ export function registerSimpleAdminRoutes(app: Express) {
         })
       );
 
-      res.json(adminTests);
+      // Filter out null results (demo accounts that were skipped)
+      const filteredTests = adminTests.filter(test => test !== null);
+
+      res.json(filteredTests);
     } catch (error) {
       console.error('Error getting tests:', error);
       res.status(500).json({ error: 'Failed to get tests' });
@@ -256,6 +277,30 @@ export function registerSimpleAdminRoutes(app: Express) {
     } catch (error) {
       console.error('Error generating full report:', error);
       res.status(500).json({ error: 'Failed to generate full report' });
+    }
+  });
+
+  // Cancel/Delete test (admin only)
+  app.delete('/api/admin/tests/:testId', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      
+      const test = await storage.getTest(testId);
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+      
+      // Delete the test completely (this will cascade to delete titles and analytics)
+      await storage.deleteTest(testId);
+      
+      res.json({ 
+        success: true, 
+        message: `Test "${test.videoTitle}" has been cancelled and removed`,
+        testId: testId
+      });
+    } catch (error) {
+      console.error('Error cancelling test:', error);
+      res.status(500).json({ error: 'Failed to cancel test' });
     }
   });
 
