@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { scheduler } from "./scheduler";
@@ -6,7 +6,7 @@ import { authService } from "./auth";
 import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { registerAdminRoutes } from "./adminRoutes";
-import { insertTestSchema, insertTitleSchema } from "@shared/schema";
+import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import Anthropic from '@anthropic-ai/sdk';
@@ -48,41 +48,75 @@ OPTIMIZATION REQUIREMENTS:
 
 Generate titles that balance emotional appeal with content accuracy for maximum CTR and viewer satisfaction.`;
 
-// Session middleware
-async function requireAuth(req: Request, res: Response, next: Function) {
-  const sessionToken = req.cookies['session-token'] || req.headers.authorization?.replace('Bearer ', '');
+// Enhanced authentication middleware with proper TypeScript typing
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
+
+async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const sessionToken = req.cookies['session-token'];
   
   console.log('Auth middleware - checking token:', sessionToken ? 'present' : 'missing');
   
   if (!sessionToken) {
     console.log('No session token provided');
-    return res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ 
+      error: 'Authentication required',
+      code: 'NO_SESSION_TOKEN',
+      timestamp: new Date().toISOString()
+    });
+    return;
   }
 
   try {
     const session = await storage.getSession(sessionToken);
     if (!session) {
       console.log('Session not found in database');
-      return res.status(401).json({ error: 'Invalid session' });
+      res.status(401).json({ 
+        error: 'Invalid session',
+        code: 'INVALID_SESSION',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
 
     if (session.expires < new Date()) {
       console.log('Session expired:', session.expires);
-      return res.status(401).json({ error: 'Session expired' });
+      // Clear the expired cookie
+      res.clearCookie('session-token');
+      res.status(401).json({ 
+        error: 'Session expired',
+        code: 'SESSION_EXPIRED',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
 
     const user = await storage.getUser(session.userId);
     if (!user) {
       console.log('User not found for session');
-      return res.status(401).json({ error: 'User not found' });
+      res.status(401).json({ 
+        error: 'User not found',
+        code: 'USER_NOT_FOUND',
+        timestamp: new Date().toISOString()
+      });
+      return;
     }
 
     console.log('Authentication successful for user:', user.email);
-    (req as any).user = user;
+    req.user = user;
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    return res.status(500).json({ error: 'Authentication error' });
+    res.status(500).json({ 
+      error: 'Authentication error',
+      code: 'AUTH_ERROR',
+      timestamp: new Date().toISOString()
+    });
   }
 }
 
@@ -249,16 +283,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log('OAuth flow completed successfully, redirecting to dashboard...');
-      // Set session token as cookie and redirect with token for localStorage
+      // Set secure session cookie - no longer accessible to JavaScript
       res.cookie('session-token', sessionToken, {
-        httpOnly: false, // Allow frontend access
-        secure: true,
-        sameSite: 'strict',
+        httpOnly: true, // Prevent XSS attacks
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: 'strict', // CSRF protection
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
       
-      // Redirect to dashboard with token in URL so frontend can store it
-      res.redirect(`/dashboard?sessionToken=${encodeURIComponent(sessionToken)}`);
+      // Redirect to dashboard without token in URL for security
+      res.redirect('/dashboard');
     } catch (error) {
       console.error('Error in OAuth callback:', error);
       console.error('Full error details:', error);

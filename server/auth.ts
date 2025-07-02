@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -5,15 +7,39 @@ export interface AuthUser {
   image?: string;
 }
 
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here!'; // 32 bytes
+const ALGORITHM = 'aes-256-cbc';
+const IV_LENGTH = 16;
+
 export function encryptToken(token: string): string {
-  // In a real implementation, use proper encryption
-  // For now, using base64 encoding as placeholder
-  return Buffer.from(token).toString('base64');
+  if (!token) return '';
+  
+  try {
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+    let encrypted = cipher.update(token, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
+  } catch (error) {
+    console.error('Token encryption failed:', error);
+    throw new Error('Token encryption failed');
+  }
 }
 
 export function decryptToken(encryptedToken: string): string {
-  // Decrypt the token - placeholder implementation
-  return Buffer.from(encryptedToken, 'base64').toString();
+  if (!encryptedToken) return '';
+  
+  try {
+    const [ivHex, encryptedHex] = encryptedToken.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Token decryption failed:', error);
+    throw new Error('Token decryption failed');
+  }
 }
 
 export function generateSessionToken(): string {

@@ -2,10 +2,55 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import cors from "cors";
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(express.json());
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for Vite dev server
+  crossOriginEmbedderPolicy: false,
+}));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://titletesterpro.com', /\.replit\.app$/] 
+    : true,
+  credentials: true,
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: 15 * 60 // seconds
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes only
+app.use('/api/', limiter);
+
+// Stricter rate limiting for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit auth attempts
+  message: {
+    error: 'Too many authentication attempts, please try again later.',
+    retryAfter: 15 * 60
+  },
+});
+
+app.use('/api/auth/', authLimiter);
+
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
@@ -42,12 +87,33 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Centralized error handling middleware
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    const requestId = req.headers['x-request-id'] || 'unknown';
+    
+    // Log error details (excluding sensitive info)
+    console.error(`[Error ${requestId}] ${req.method} ${req.path}:`, {
+      status,
+      message: message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
 
-    res.status(status).json({ message });
-    throw err;
+    // Standardized error response
+    const errorResponse: any = {
+      error: true,
+      message: status === 500 ? 'Internal server error' : message,
+      code: err.code || 'UNKNOWN_ERROR',
+      timestamp: new Date().toISOString()
+    };
+
+    // Only include stack trace in development
+    if (process.env.NODE_ENV === 'development' && err.stack) {
+      errorResponse.stack = err.stack;
+    }
+
+    res.status(status).json(errorResponse);
   });
 
   // importantly only setup vite in development and after
