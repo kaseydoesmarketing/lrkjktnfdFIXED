@@ -373,17 +373,40 @@ export default function DashboardFuturistic() {
 
   const updateTestStatus = async (testId: string, status: string) => {
     try {
-      const response = await fetch(`/api/tests/${testId}/status`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      });
+      // If cancelling a test, delete it completely instead of just changing status
+      if (status === 'cancelled') {
+        const response = await fetch(`/api/tests/${testId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
 
-      if (response.ok) {
-        setTests(prev => prev.map(test => test.id === testId ? { ...test, status: status as Test['status'] } : test));
+        if (response.ok) {
+          // Remove the test from the UI completely
+          setTests(prev => prev.filter(test => test.id !== testId));
+          
+          // Refresh stats to reflect the removal
+          const statsResponse = await fetch('/api/dashboard/stats', {
+            credentials: 'include'
+          });
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            setStats(statsData);
+          }
+        }
+      } else {
+        // For other status changes (pause/resume), update normally
+        const response = await fetch(`/api/tests/${testId}/status`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status })
+        });
+
+        if (response.ok) {
+          setTests(prev => prev.map(test => test.id === testId ? { ...test, status: status as Test['status'] } : test));
+        }
       }
     } catch (error) {
       console.error('Error updating test status:', error);
@@ -916,7 +939,7 @@ export default function DashboardFuturistic() {
                   <p className="text-gray-600">Loading your tests...</p>
                 </div>
               </div>
-            ) : tests.length === 0 ? (
+            ) : tests.filter(test => test.status !== 'cancelled').length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <TestTube className="w-8 h-8 text-gray-400" />
@@ -932,7 +955,7 @@ export default function DashboardFuturistic() {
               </div>
             ) : (
               <div className="space-y-4">
-                {tests.map((test) => (
+                {tests.filter(test => test.status !== 'cancelled').map((test) => (
                   <div
                     key={test.id}
                     className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-colors border border-gray-200"
@@ -980,10 +1003,14 @@ export default function DashboardFuturistic() {
                         
                         {(test.status === 'active' || test.status === 'paused') && (
                           <button
-                            onClick={() => updateTestStatus(test.id, 'cancelled')}
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this test? This will permanently remove the test and all its data. This action cannot be undone.')) {
+                                updateTestStatus(test.id, 'cancelled');
+                              }
+                            }}
                             className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium hover:bg-red-200 transition-colors"
                           >
-                            Cancel Test
+                            Delete Test
                           </button>
                         )}
                       </div>
