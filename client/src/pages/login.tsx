@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle, Key } from 'lucide-react';
+
+import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFounderLogin, setShowFounderLogin] = useState(false);
-  const [founderEmail, setFounderEmail] = useState('kaseydoesmarketing@gmail.com');
-  const [founderPassword, setFounderPassword] = useState('');
+
 
   useEffect(() => {
     // Check for error parameters in URL
@@ -23,10 +21,7 @@ export default function Login() {
       setError(descriptionParam || `Authentication error: ${errorParam}`);
     }
     
-    // Show founder login only with specific founder parameter for security
-    if (founderParam === 'kasey2024') {
-      setShowFounderLogin(true);
-    }
+
   }, []);
 
   const handleGoogleAuth = () => {
@@ -36,36 +31,7 @@ export default function Login() {
     window.location.href = '/api/auth/google';
   };
 
-  const handleFounderLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('/api/auth/founder-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: founderEmail,
-          password: founderPassword,
-        }),
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('sessionToken', data.sessionToken);
-        window.location.href = '/dashboard';
-      } else {
-        setError('Invalid founder credentials. Please try again.');
-      }
-    } catch (error) {
-      console.error('Founder login error:', error);
-      setError('Founder login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
 
 
@@ -154,45 +120,7 @@ export default function Login() {
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
 
-              {showFounderLogin && (
-                <div className="space-y-3 border-t border-gray-700 pt-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Key className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm font-medium text-yellow-400">Kasey - Founder Access</span>
-                  </div>
-                  
-                  <Input
-                    type="email"
-                    placeholder="kaseydoesmarketing@gmail.com"
-                    value={founderEmail}
-                    onChange={(e) => setFounderEmail(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    readOnly
-                  />
-                  
-                  <Input
-                    type="password"
-                    placeholder="Founder password"
-                    value={founderPassword}
-                    onChange={(e) => setFounderPassword(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleFounderLogin();
-                      }
-                    }}
-                  />
-                  
-                  <Button
-                    onClick={handleFounderLogin}
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    disabled={isLoading || !founderEmail || !founderPassword}
-                  >
-                    <Key className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Logging in...' : 'Founder Login'}
-                  </Button>
-                </div>
-              )}
+
 
 
 
