@@ -609,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             id: "dQw4w9WgXcQ",
             title: "Never Gonna Give You Up",
-            thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+            thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
             duration: "3:33",
             publishedAt: "2009-10-25T06:57:33Z",
             viewCount: 1400000000
@@ -617,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             id: "jNQXAC9IVRw", 
             title: "Me at the zoo",
-            thumbnail: "https://i.ytimg.com/vi/jNQXAC9IVRw/mqdefault.jpg",
+            thumbnailUrl: "https://i.ytimg.com/vi/jNQXAC9IVRw/mqdefault.jpg",
             duration: "0:19",
             publishedAt: "2005-04-23T23:31:52Z",
             viewCount: 280000000
@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             id: "9bZkp7q19f0",
             title: "PSY - GANGNAM STYLE",
-            thumbnail: "https://i.ytimg.com/vi/9bZkp7q19f0/mqdefault.jpg", 
+            thumbnailUrl: "https://i.ytimg.com/vi/9bZkp7q19f0/mqdefault.jpg", 
             duration: "4:12",
             publishedAt: "2012-07-15T08:34:21Z",
             viewCount: 4800000000
@@ -647,7 +647,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Fetch videos using automatic token refresh system
         const videos = await youtubeService.getChannelVideos(user.id, 50);
-        res.json(videos);
+        
+        // Map thumbnail field to thumbnailUrl for frontend consistency
+        const videosWithThumbnailUrl = videos.map(video => ({
+          ...video,
+          thumbnailUrl: video.thumbnail || `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`
+        }));
+        
+        res.json(videosWithThumbnailUrl);
       } catch (apiError: any) {
         
         // If token refresh fails completely, offer re-authentication
