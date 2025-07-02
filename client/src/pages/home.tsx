@@ -455,7 +455,7 @@ export default function Home() {
                 </li>
               </ul>
               
-              <Link href="/login" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium text-center block transition-colors btn-pulse">
+              <Link href="/paywall" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium text-center block transition-colors btn-pulse">
                 Start with Pro
               </Link>
             </div>
@@ -495,7 +495,7 @@ export default function Home() {
                 </li>
               </ul>
               
-              <Link href="/login" className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-4 rounded-lg font-medium text-center block transition-colors">
+              <Link href="/paywall" className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-4 rounded-lg font-medium text-center block transition-colors">
                 Upgrade to Authority
               </Link>
             </div>
@@ -569,7 +569,7 @@ export default function Home() {
               </div>
               <div className="flex items-center">
                 <Check className="h-5 w-5 text-green-400 mr-3" />
-                <span>5 free A/B tests included</span>
+                <span>Professional A/B testing included</span>
               </div>
               <div className="flex items-center">
                 <Check className="h-5 w-5 text-green-400 mr-3" />
@@ -579,8 +579,8 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login" className="btn-pulse bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-medium rounded-lg shadow-lg transition-colors">
-              Start Testing Your Titles Free
+            <Link href="/paywall" className="btn-pulse bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-medium rounded-lg shadow-lg transition-colors">
+              Start Optimizing Your Titles Now
             </Link>
             <button className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-medium rounded-lg border-2 transition-colors flex items-center justify-center">
               <Play className="h-5 w-5 mr-2" />
