@@ -863,47 +863,47 @@ export default function DashboardFixed() {
 
       {/* Create Test Modal - Will show real YouTube thumbnails and accurate CTR */}
       <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Create New A/B Test</DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2 border-gray-200 shadow-2xl">
+          <DialogHeader className="bg-white border-b border-gray-100 pb-4">
+            <DialogTitle className="text-xl font-bold text-gray-900">Create New A/B Test</DialogTitle>
             <p className="text-gray-600">Select a video and configure your title testing parameters</p>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-6 bg-white p-6">
             {/* Video Selection with Real Thumbnails */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Select Video</Label>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <Label className="text-sm font-medium text-gray-900 mb-3 block">Select Video</Label>
               {videosLoading ? (
-                <div className="flex items-center justify-center p-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <div className="flex items-center justify-center p-12 border-2 border-dashed border-gray-300 rounded-lg bg-white">
                   <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
-                    <p className="text-gray-600">Loading your YouTube videos...</p>
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-700 font-medium">Loading your YouTube videos...</p>
                   </div>
                 </div>
               ) : videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-white">
                   {videos.map((video: Video) => (
                     <div
                       key={video.id}
                       onClick={() => setSelectedVideo(video)}
-                      className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                      className={`cursor-pointer rounded-lg border-2 p-3 transition-all bg-white shadow-sm ${
                         selectedVideo?.id === video.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-300 hover:border-blue-300 hover:bg-blue-25 hover:shadow-md'
                       }`}
                     >
                       <div className="flex space-x-3">
                         <img
                           src={video.thumbnail}
                           alt={video.title}
-                          className="w-24 h-16 object-cover rounded"
+                          className="w-24 h-16 object-cover rounded border border-gray-200"
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-gray-900 text-sm truncate">{video.title}</h4>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-xs text-gray-500">{formatNumber(video.viewCount)} views</span>
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{formatNumber(video.viewCount)} views</span>
                             <span className="text-xs text-gray-500">•</span>
-                            <span className="text-xs text-gray-500">{video.duration}</span>
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{video.duration}</span>
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             {formatTimeAgo(video.publishedAt)}
@@ -914,17 +914,17 @@ export default function DashboardFixed() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <div className="text-center p-12 border-2 border-dashed border-gray-300 rounded-lg bg-white">
                   <Video className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600">No videos found. Please check your YouTube channel connection.</p>
+                  <p className="text-gray-700 font-medium">No videos found. Please check your YouTube channel connection.</p>
                 </div>
               )}
             </div>
 
             {/* Title Variants */}
             {selectedVideo && (
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Title Variants (2-5 required)
                 </Label>
                 <div className="space-y-3">
@@ -938,10 +938,10 @@ export default function DashboardFixed() {
                           newTitles[index] = e.target.value;
                           setTitleInputs(newTitles);
                         }}
-                        className="pr-16"
+                        className="pr-16 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                         maxLength={100}
                       />
-                      <div className="absolute right-3 top-3 text-xs text-gray-400">
+                      <div className="absolute right-3 top-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {title.length}/100
                       </div>
                     </div>
@@ -952,92 +952,98 @@ export default function DashboardFixed() {
 
             {/* Test Configuration */}
             {selectedVideo && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Rotation Interval
-                  </Label>
-                  <Select
-                    value={testConfig.rotationIntervalMinutes.toString()}
-                    onValueChange={(value) => 
-                      setTestConfig({...testConfig, rotationIntervalMinutes: parseInt(value)})
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                      <SelectItem value="480">8 hours</SelectItem>
-                      <SelectItem value="720">12 hours</SelectItem>
-                      <SelectItem value="1440">24 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <Label className="text-sm font-medium text-gray-900 mb-4 block">Test Configuration</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900 mb-2 block">
+                      Rotation Interval
+                    </Label>
+                    <Select
+                      value={testConfig.rotationIntervalMinutes.toString()}
+                      onValueChange={(value) => 
+                        setTestConfig({...testConfig, rotationIntervalMinutes: parseInt(value)})
+                      }
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-300">
+                        <SelectItem value="60">1 hour</SelectItem>
+                        <SelectItem value="120">2 hours</SelectItem>
+                        <SelectItem value="240">4 hours</SelectItem>
+                        <SelectItem value="480">8 hours</SelectItem>
+                        <SelectItem value="720">12 hours</SelectItem>
+                        <SelectItem value="1440">24 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Winner Determination
-                  </Label>
-                  <Select
-                    value={testConfig.winnerMetric}
-                    onValueChange={(value) => 
-                      setTestConfig({...testConfig, winnerMetric: value})
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ctr">Highest CTR</SelectItem>
-                      <SelectItem value="views">Highest Views</SelectItem>
-                      <SelectItem value="combined">Combined Metrics</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900 mb-2 block">
+                      Winner Determination
+                    </Label>
+                    <Select
+                      value={testConfig.winnerMetric}
+                      onValueChange={(value) => 
+                        setTestConfig({...testConfig, winnerMetric: value})
+                      }
+                    >
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-300">
+                        <SelectItem value="ctr">Highest CTR</SelectItem>
+                        <SelectItem value="views">Highest Views</SelectItem>
+                        <SelectItem value="combined">Combined Metrics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Start Date
-                  </Label>
-                  <Input
-                    type="datetime-local"
-                    value={testConfig.startDate}
-                    onChange={(e) => 
-                      setTestConfig({...testConfig, startDate: e.target.value})
-                    }
-                  />
-                </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900 mb-2 block">
+                      Start Date
+                    </Label>
+                    <Input
+                      type="datetime-local"
+                      value={testConfig.startDate}
+                      onChange={(e) => 
+                        setTestConfig({...testConfig, startDate: e.target.value})
+                      }
+                      className="bg-white border-gray-300 text-gray-900"
+                    />
+                  </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    End Date
-                  </Label>
-                  <Input
-                    type="datetime-local"
-                    value={testConfig.endDate}
-                    onChange={(e) => 
-                      setTestConfig({...testConfig, endDate: e.target.value})
-                    }
-                  />
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900 mb-2 block">
+                      End Date
+                    </Label>
+                    <Input
+                      type="datetime-local"
+                      value={testConfig.endDate}
+                      onChange={(e) => 
+                        setTestConfig({...testConfig, endDate: e.target.value})
+                      }
+                      className="bg-white border-gray-300 text-gray-900"
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 bg-white">
               <Button
                 variant="outline"
                 onClick={() => setShowCreateTest(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateTest}
                 disabled={!selectedVideo || titleInputs.filter(t => t.trim()).length < 2 || createTest.isPending}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg"
               >
                 {createTest.isPending ? (
                   <>
