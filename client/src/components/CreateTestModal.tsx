@@ -185,17 +185,17 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
             </TabsList>
             
             <TabsContent value="select" className="mt-4">
-              <VideoSelector 
+              <FuturisticVideoSelector 
                 onSelectVideo={handleVideoSelect}
                 selectedVideoId={selectedVideo?.id}
               />
               {selectedVideo && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
                     <strong>Selected:</strong> {selectedVideo.title}
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Video ID: {selectedVideo.id}
+                  <p className="text-xs text-blue-600 mt-1">
+                    Ready to create A/B test with this video
                   </p>
                 </div>
               )}
