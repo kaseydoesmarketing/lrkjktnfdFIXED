@@ -47,7 +47,6 @@ interface Video {
     contentCategory: string;
     suggestedImprovements: string[];
     viralPotential: 'Low' | 'Medium' | 'High';
-    recommendedTestVariants?: string[];
   };
 }
 
@@ -226,77 +225,30 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
   const generateAIInsights = async (videoId: string) => {
     setIsAnalyzing(videoId);
     
-    try {
-      const video = videos.find(v => v.id === videoId);
-      if (!video) return;
-
-      // Call Claude AI analysis endpoint
-      const response = await fetch('/api/analyze-video', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          videoId: video.id,
-          title: video.title,
-          description: video.description,
-          viewCount: video.viewCount,
-          duration: video.duration,
-          publishedAt: video.publishedAt
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze video');
-      }
-
-      const result = await response.json();
-      const analysis = result.analysis;
-      
-      const updatedVideos = videos.map(v => {
-        if (v.id === videoId) {
-          return {
-            ...v,
-            aiInsights: {
-              titleOptimizationScore: analysis.titleOptimizationScore,
-              thumbnailScore: analysis.thumbnailScore,
-              contentCategory: analysis.contentCategory,
-              suggestedImprovements: analysis.suggestedImprovements,
-              viralPotential: analysis.viralPotential as 'Low' | 'Medium' | 'High',
-              recommendedTestVariants: analysis.recommendedTestVariants
-            }
-          };
-        }
-        return v;
-      });
-      
-      setVideos(updatedVideos);
-    } catch (error) {
-      console.error('Failed to generate AI insights:', error);
-      // Fallback to demo data on error
-      const updatedVideos = videos.map(video => {
-        if (video.id === videoId && !video.aiInsights) {
-          return {
-            ...video,
-            aiInsights: {
-              titleOptimizationScore: Math.floor(Math.random() * 30) + 70,
-              thumbnailScore: Math.floor(Math.random() * 25) + 65,
-              contentCategory: 'General',
-              suggestedImprovements: [
-                'Consider adding emotional trigger words',
-                'Test shorter title variants for mobile',
-                'Add specific numbers or statistics'
-              ],
-              viralPotential: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High'
-            }
-          };
-        }
-        return video;
-      });
-      setVideos(updatedVideos);
-    }
+    // Simulate AI analysis with Claude
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
+    const updatedVideos = videos.map(video => {
+      if (video.id === videoId && !video.aiInsights) {
+        return {
+          ...video,
+          aiInsights: {
+            titleOptimizationScore: Math.floor(Math.random() * 30) + 70,
+            thumbnailScore: Math.floor(Math.random() * 25) + 65,
+            contentCategory: 'Entertainment',
+            suggestedImprovements: [
+              'Consider adding emotional trigger words',
+              'Test shorter title variants for mobile',
+              'Thumbnail could use more vibrant colors'
+            ],
+            viralPotential: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High'
+          }
+        };
+      }
+      return video;
+    });
+    
+    setVideos(updatedVideos);
     setIsAnalyzing(null);
   };
 

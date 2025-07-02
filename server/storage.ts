@@ -29,10 +29,8 @@ export interface IStorage {
   // Tests
   getTestsByUserId(userId: string): Promise<Test[]>;
   getTest(id: string): Promise<Test | undefined>;
-  getTestById(id: string): Promise<Test | undefined>;
   createTest(test: InsertTest): Promise<Test>;
   updateTestStatus(id: string, status: string): Promise<Test>;
-  updateTestCurrentTitle(id: string, currentTitle: string): Promise<Test>;
   deleteTest(id: string): Promise<void>;
   
   // Titles
@@ -49,7 +47,6 @@ export interface IStorage {
   createTitleSummary(summary: InsertTitleSummary): Promise<TitleSummary>;
   getTitleSummaryByTitleId(titleId: string): Promise<TitleSummary | undefined>;
   getTitleSummariesByTestId(testId: string): Promise<TitleSummary[]>;
-  getTestAnalytics(testId: string): Promise<any>;
   
   // Subscription methods
   updateUserSubscription(userId: string, status: string, tier: string | null): Promise<User>;
@@ -178,24 +175,10 @@ export class DatabaseStorage implements IStorage {
     return test;
   }
 
-  async getTestById(id: string): Promise<Test | undefined> {
-    const [test] = await db.select().from(tests).where(eq(tests.id, id));
-    return test || undefined;
-  }
-
   async updateTestStatus(id: string, status: string): Promise<Test> {
     const [test] = await db
       .update(tests)
       .set({ status })
-      .where(eq(tests.id, id))
-      .returning();
-    return test;
-  }
-
-  async updateTestCurrentTitle(id: string, currentTitle: string): Promise<Test> {
-    const [test] = await db
-      .update(tests)
-      .set({ currentTitle })
       .where(eq(tests.id, id))
       .returning();
     return test;
@@ -299,33 +282,13 @@ export class DatabaseStorage implements IStorage {
         titleId: titleSummaries.titleId,
         totalViews: titleSummaries.totalViews,
         totalImpressions: titleSummaries.totalImpressions,
-        averageCtr: titleSummaries.finalCtr,
-        averageViewDuration: titleSummaries.finalAvd,
+        finalCtr: titleSummaries.finalCtr,
+        finalAvd: titleSummaries.finalAvd,
         completedAt: titleSummaries.completedAt,
       })
       .from(titleSummaries)
       .innerJoin(titles, eq(titleSummaries.titleId, titles.id))
       .where(eq(titles.testId, testId));
-  }
-
-  async getTestAnalytics(testId: string): Promise<any> {
-    // Get aggregated analytics for the test
-    const summaries = await this.getTitleSummariesByTestId(testId);
-    
-    if (summaries.length === 0) {
-      return null;
-    }
-
-    // Calculate averages across all titles
-    const totalViews = summaries.reduce((sum, s) => sum + s.totalViews, 0);
-    const avgCtr = summaries.reduce((sum, s) => sum + s.averageCtr, 0) / summaries.length;
-    const avgViewDuration = summaries.reduce((sum, s) => sum + s.averageViewDuration, 0) / summaries.length;
-
-    return {
-      totalViews,
-      averageCtr: avgCtr,
-      averageViewDuration: avgViewDuration
-    };
   }
 
   // Subscription management
