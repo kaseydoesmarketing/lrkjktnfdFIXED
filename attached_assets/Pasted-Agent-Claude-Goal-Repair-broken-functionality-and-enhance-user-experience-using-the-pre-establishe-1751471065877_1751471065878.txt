@@ -1,0 +1,81 @@
+Agent: Claude
+Goal: Repair broken functionality and enhance user experience using the pre-established visual brand. Make the interface aesthetically pleasing and intuitive for content creators.
+
+🛠️ Functional Fixes & Enhancements
+1. Active Test Section (Top Metrics Area)
+✅ Redesign and restructure as follows:
+
+This section must reflect real data from each currently Active Test only.
+
+Each Active Test should be an expandable card (accordion-style).
+
+When expanded, it must include the following details per test:
+
+✅ Total Views
+
+✅ Average CTR
+
+✅ Average View Duration
+
+✅ Current Title Being Shown
+
+✅ Complete Change Log:
+
+Timestamp of every title switch
+
+Title used at each interval
+
+Duration each title was active
+
+Performance data per title
+
+➡️ Data should update in real time or with a 24-hour refresh interval, like SEMrush-style analytics.
+
+2. Separation of Sections
+Clearly separate the “Active Test” area from the “Video Library.”
+
+Use color, padding, or containers to make the distinction obvious.
+
+This prevents clutter and enhances user clarity between:
+
+Active Campaign Analytics
+
+Video Assets & History
+
+🧹 Remove Broken UI Elements
+❌ Remove the “Create Test” button in the Video Library (far right) — it is non-functional.
+
+❌ Fix or remove the “Logout” button — currently does not work. It must either:
+
+Properly end the user session and redirect to the login page
+
+Or be disabled until functionality is complete
+
+🎨 Design Guidelines for Claude
+Use existing design themes already present in TitleTesterPro:
+
+Gradient buttons
+
+Soft shadows
+
+Modular card design
+
+High-contrast stat blocks
+
+The new expandable ActiveTest block should feel like a creator analytics tool — inspired by tools like TubeBuddy, SEMrush, and Notion.
+
+Keep the style fun but professional and focused, optimized for YouTube creators and marketers.
+
+✅ Output Format:
+Claude should return a:
+
+Figma-compatible UI concept OR
+
+Component-ready design spec with:
+
+Structure (divs, accordions, cards)
+
+Styling (colors, fonts, shadows)
+
+Suggested layout grids
+
