@@ -18,7 +18,8 @@ import {
   MousePointer,
   PlaySquare,
   Trash2,
-  Video
+  Video,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -376,6 +377,71 @@ const ActiveTestCard = ({ test, onTestAction, user }: { test: Test; onTestAction
                 </div>
               </div>
 
+            </div>
+
+            {/* Rotation Logs */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <RotateCcw className="w-5 h-5 text-gray-600" />
+                <h4 className="font-semibold text-gray-900">Title Rotation History</h4>
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                  {rotationLogs.length} rotations
+                </span>
+              </div>
+              
+              {rotationLogs && rotationLogs.length > 0 ? (
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {rotationLogs.map((log: any, index: number) => {
+                    const timeSinceActivation = log.activatedAt 
+                      ? Math.floor((Date.now() - new Date(log.activatedAt).getTime()) / (1000 * 60))
+                      : 0;
+                    
+                    return (
+                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+                              #{log.order}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {log.activatedAt ? new Date(log.activatedAt).toLocaleString() : 'Not activated'}
+                            </span>
+                          </div>
+                          <div className="font-medium text-gray-900 text-sm mb-1">
+                            "{log.title}"
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {log.activatedAt ? (
+                              timeSinceActivation < 60 
+                                ? `Active ${timeSinceActivation} minutes ago`
+                                : `Active ${Math.floor(timeSinceActivation / 60)} hours ago`
+                            ) : (
+                              'Waiting for activation'
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatNumber(totalViews)} views
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {safeToFixed(averageCtr, 1)}% CTR
+                          </div>
+                          <div className="text-xs text-purple-600">
+                            {Math.floor(averageViewDuration / 60)}:{String(Math.floor(averageViewDuration % 60)).padStart(2, '0')} avg
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <RotateCcw className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="font-medium">No title rotations yet</p>
+                  <p className="text-sm">Title changes will appear here as your test progresses</p>
+                </div>
+              )}
             </div>
 
             {/* Test Actions */}
