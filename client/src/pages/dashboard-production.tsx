@@ -593,7 +593,10 @@ export default function DashboardProduction() {
                 </div>
                 <span className="text-sm text-gray-700 hidden sm:block">{user?.name}</span>
                 {user?.email === 'kaseydoesmarketing@gmail.com' && (
-                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold border border-yellow-300 shadow-lg animate-pulse">
+                  <Badge 
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold border border-yellow-300 shadow-lg animate-pulse cursor-pointer hover:from-yellow-500 hover:to-yellow-700 transition-all duration-200"
+                    onClick={() => window.location.href = '/admin'}
+                  >
                     ✨ Founder
                   </Badge>
                 )}
