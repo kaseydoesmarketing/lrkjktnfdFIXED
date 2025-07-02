@@ -30,7 +30,6 @@ class Scheduler {
       try {
         await this.executeRotation(testId, titleOrder);
       } catch (error: any) {
-        console.error(`Scheduler job ${jobId} failed:`, error.message);
       } finally {
         this.jobs.delete(jobId);
       }
@@ -59,7 +58,6 @@ class Scheduler {
   }
 
   private async cleanupOrphanedJobs() {
-    console.log(`🧹 [SCHEDULER CLEANUP] Starting job cleanup, current jobs: ${this.jobs.size}`);
     
     const jobsToCleanup: string[] = [];
     
@@ -79,7 +77,6 @@ class Scheduler {
     // Clean up identified orphaned jobs
     jobsToCleanup.forEach(jobId => this.cancelJob(jobId));
     
-    console.log(`🧹 [SCHEDULER CLEANUP] Cleaned up ${jobsToCleanup.length} orphaned jobs`);
   }
 
   shutdown() {
@@ -133,7 +130,6 @@ class Scheduler {
       this.schedulePoll(currentTitle.id);
       
     } catch (error: any) {
-      console.error('Scheduler rotation error:', error.message);
     }
   }
 
@@ -179,7 +175,6 @@ class Scheduler {
           averageViewDuration: analytics.averageViewDuration,
         });
       } catch (error) {
-        console.error('Error fetching YouTube analytics:', error);
         // Skip this poll if analytics fail - don't create fake data
         return;
       }
@@ -194,7 +189,6 @@ class Scheduler {
       }
       
     } catch (error) {
-      console.error('Error executing poll:', error);
     }
   }
 }

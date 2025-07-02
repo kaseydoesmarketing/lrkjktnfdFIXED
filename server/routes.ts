@@ -86,10 +86,9 @@ declare global {
 async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const sessionToken = req.cookies['session-token'];
   
-  console.log('Auth middleware - checking token:', sessionToken ? 'present' : 'missing');
+  // Authentication check
   
   if (!sessionToken) {
-    console.log('No session token provided');
     res.status(401).json({ 
       error: 'Authentication required',
       code: 'NO_SESSION_TOKEN',
@@ -101,7 +100,6 @@ async function requireAuth(req: Request, res: Response, next: NextFunction): Pro
   try {
     const session = await storage.getSession(sessionToken);
     if (!session) {
-      console.log('Session not found in database');
       res.status(401).json({ 
         error: 'Invalid session',
         code: 'INVALID_SESSION',
@@ -111,7 +109,6 @@ async function requireAuth(req: Request, res: Response, next: NextFunction): Pro
     }
 
     if (session.expires < new Date()) {
-      console.log('Session expired:', session.expires);
       // Clear the expired cookie
       res.clearCookie('session-token');
       res.status(401).json({ 
@@ -124,7 +121,6 @@ async function requireAuth(req: Request, res: Response, next: NextFunction): Pro
 
     const user = await storage.getUser(session.userId);
     if (!user) {
-      console.log('User not found for session');
       res.status(401).json({ 
         error: 'User not found',
         code: 'USER_NOT_FOUND',
@@ -133,11 +129,9 @@ async function requireAuth(req: Request, res: Response, next: NextFunction): Pro
       return;
     }
 
-    console.log('Authentication successful for user:', user.email);
     req.user = user;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
     res.status(500).json({ 
       error: 'Authentication error',
       code: 'AUTH_ERROR',
@@ -187,7 +181,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, user, sessionToken });
     } catch (error) {
-      console.error('Demo login error:', error);
       res.status(500).json({ error: 'Demo login failed' });
     }
   });
@@ -225,24 +218,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Always ensure OAuth works for production
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        console.error('CRITICAL: Missing OAuth credentials for production');
         return res.status(500).json({ 
           error: 'OAuth not configured', 
           message: 'Contact administrator - missing Google OAuth credentials' 
         });
       }
       
-      console.log('Starting OAuth flow with client ID ending in:', process.env.GOOGLE_CLIENT_ID?.slice(-10));
       const authUrl = googleAuthService.getAuthUrl();
-      console.log('Generated OAuth URL:', authUrl);
       
       // Add note about OAuth app verification status
-      console.log('Note: If OAuth fails, check Google Cloud Console OAuth consent screen status');
-      console.log('App may need verification or publishing for external users');
       
       res.redirect(authUrl);
     } catch (error) {
-      console.error('OAuth initialization error:', error);
       // Fallback to demo mode if OAuth fails
       res.redirect('/login?demo=true&error=oauth_failed');
     }
@@ -250,20 +237,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/callback/google', async (req: Request, res: Response) => {
     try {
-      console.log('OAuth callback received with query:', req.query);
-      console.log('OAuth callback received with full URL:', req.url);
-      console.log('OAuth callback headers:', req.headers);
       
       const { code, error, error_description } = req.query;
       const errorStr = typeof error === 'string' ? error : '';
       const errorDescStr = typeof error_description === 'string' ? error_description : '';
       
       if (error) {
-        console.error('OAuth error:', errorStr, errorDescStr);
         
         // Handle redirect_uri_mismatch with intelligent fallback
         if (errorStr === 'redirect_uri_mismatch' || errorDescStr.includes('redirect_uri_mismatch')) {
-          console.log('🔧 OAUTH FIX: redirect_uri_mismatch detected - activating development authentication bypass');
           
           // Create development user automatically
           try {
@@ -292,11 +274,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               maxAge: 30 * 24 * 60 * 60 * 1000
             });
             
-            console.log('🔧 OAUTH FIX: Development authentication successful, redirecting to dashboard');
             return res.redirect('/dashboard?dev=true');
             
           } catch (devError) {
-            console.error('Development authentication fallback failed:', devError);
           }
         }
         
@@ -304,8 +284,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (!code || typeof code !== 'string') {
-        console.error('No authorization code provided');
-        console.log('Full request query params:', Object.keys(req.query));
         return res.redirect('/login?error=no_code&description=No authorization code received from Google');
       }
 
@@ -324,25 +302,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         youtubeChannel = await googleAuthService.getYouTubeChannel(tokens.access_token);
       } catch (error) {
-        console.error('Error getting YouTube channel:', error);
         // Continue without YouTube channel info
       }
 
-      console.log('Creating or updating user...');
       // Create or update user
       let user = await storage.getUserByEmail(userInfo.email);
       
       if (!user) {
-        console.log('Creating new user...');
         user = await storage.createUser({
           email: userInfo.email,
           name: userInfo.name || userInfo.email.split('@')[0],
           image: userInfo.picture,
           youtubeId: youtubeChannel?.id,
         });
-        console.log('User created:', user.id);
       } else {
-        console.log('Updating existing user:', user.id);
         user = await storage.updateUser(user.id, {
           name: userInfo.name || user.name,
           image: userInfo.picture || user.image,
@@ -350,11 +323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log('Storing account tokens...');
       // Store or update account tokens
       const existingAccount = await storage.getAccountByProvider('google', userInfo.id);
       if (!existingAccount) {
-        console.log('Creating new account record...');
         await storage.createAccount({
           userId: user.id,
           type: 'oauth',
@@ -370,7 +341,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log('Creating session...');
       // Create session
       const sessionToken = authService.generateSessionToken();
       const expiresAt = new Date();
@@ -382,7 +352,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires: expiresAt,
       });
 
-      console.log('OAuth flow completed successfully, redirecting to dashboard...');
       // Set secure session cookie - no longer accessible to JavaScript
       res.cookie('session-token', sessionToken, {
         httpOnly: true, // Prevent XSS attacks
@@ -394,8 +363,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to dashboard without token in URL for security
       res.redirect('/dashboard');
     } catch (error) {
-      console.error('Error in OAuth callback:', error);
-      console.error('Full error details:', error);
       res.redirect('/login?error=oauth_failed');
     }
   });
@@ -445,7 +412,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ user, sessionToken });
     } catch (error) {
-      console.error('Auth error:', error);
       res.status(500).json({ error: 'Authentication failed' });
     }
   });
@@ -483,22 +449,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(testsWithTitles);
     } catch (error) {
-      console.error('Error fetching tests:', error);
       res.status(500).json({ error: 'Failed to fetch tests' });
     }
   });
 
   app.post('/api/tests', requireAuth, async (req: Request, res: Response) => {
     try {
-      console.log('=== SERVER: Received test creation request ===');
-      console.log('Request body:', JSON.stringify(req.body, null, 2));
-      console.log('User ID:', req.user?.id);
       
       // Validate input with comprehensive schema
       const validationResult = createTestValidation.safeParse(req.body);
       
       if (!validationResult.success) {
-        console.error('Validation failed:', validationResult.error.errors);
         return res.status(400).json({ 
           error: 'Validation failed',
           details: validationResult.error.errors,
@@ -507,7 +468,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log('Validation successful, proceeding with test creation');
 
       const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric, startDate, endDate } = validationResult.data;
 
@@ -541,7 +501,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ ...test, titles });
     } catch (error) {
-      console.error('Error creating test:', error);
       res.status(500).json({ error: 'Failed to create test' });
     }
   });
@@ -572,7 +531,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(test);
     } catch (error) {
-      console.error('Error updating test status:', error);
       res.status(500).json({ error: 'Failed to update test status' });
     }
   });
@@ -600,7 +558,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true });
     } catch (error) {
-      console.error('Error deleting test:', error);
       res.status(500).json({ error: 'Failed to delete test' });
     }
   });
@@ -632,7 +589,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         summaries,
       });
     } catch (error) {
-      console.error('Error fetching test results:', error);
       res.status(500).json({ error: 'Failed to fetch test results' });
     }
   });
@@ -676,7 +632,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         ];
         
-        console.log('📺 [DEV MODE] Serving demo videos for development user');
         return res.json(demoVideos);
       }
 
@@ -694,7 +649,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const videos = await youtubeService.getChannelVideos(user.id, 50);
         res.json(videos);
       } catch (apiError: any) {
-        console.log('YouTube API failed, checking for token refresh issues...');
         
         // If token refresh fails completely, offer re-authentication
         if (apiError.message?.includes('invalid_grant') || apiError.message?.includes('Authentication failed')) {
@@ -717,7 +671,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw apiError; // Re-throw to main catch block
       }
     } catch (error) {
-      console.error('Error fetching recent videos:', error);
       res.status(500).json({ 
         error: 'Failed to fetch videos from YouTube', 
         message: 'Please try again or contact support if this continues.' 
@@ -748,7 +701,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ message: 'Logged out successfully' });
     } catch (error) {
-      console.error('Logout error:', error);
       res.status(500).json({ error: 'Logout failed' });
     }
   });
@@ -803,7 +755,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedTests, // Only truly completed tests
       });
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
   });
@@ -867,7 +818,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('Error collecting analytics:', error);
       res.status(500).json({ error: 'Failed to collect analytics' });
     }
   });
@@ -894,7 +844,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Test paused successfully' });
     } catch (error) {
-      console.error('Error pausing test:', error);
       res.status(500).json({ error: 'Failed to pause test' });
     }
   });
@@ -926,7 +875,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Test resumed successfully' });
     } catch (error) {
-      console.error('Error resuming test:', error);
       res.status(500).json({ error: 'Failed to resume test' });
     }
   });
@@ -975,7 +923,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Test completed successfully' });
     } catch (error) {
-      console.error('Error completing test:', error);
       res.status(500).json({ error: 'Failed to complete test' });
     }
   });
@@ -998,7 +945,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Test deleted successfully' });
     } catch (error) {
-      console.error('Error deleting test:', error);
       res.status(500).json({ error: 'Failed to delete test' });
     }
   });
@@ -1029,36 +975,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, message: 'Test deleted permanently' });
     } catch (error) {
-      console.error('Error deleting test:', error);
       res.status(500).json({ error: 'Failed to delete test' });
     }
   });
 
   // Debug route to test rotation system (no auth required for debugging)
   app.get('/api/debug-rotation/:testId/:titleOrder', async (req: Request, res: Response) => {
-    console.log(`🔧 [DEBUG ROUTE] Route handler called for ${req.path}`);
     try {
       const { testId, titleOrder } = req.params;
       const order = parseInt(titleOrder);
 
-      console.log(`🔧 [DEBUG ROUTE] Parsed testId: ${testId}, titleOrder: ${order}`);
 
       const test = await storage.getTest(testId);
       if (!test) {
-        console.log(`🔧 [DEBUG ROUTE] Test not found: ${testId}`);
         return res.status(404).json({ error: 'Test not found' });
       }
 
-      console.log(`🔧 [DEBUG ROUTE] Test found: ${test.id}, status: ${test.status}`);
       
       // Get titles for debugging
       const titles = await storage.getTitlesByTestId(testId);
-      console.log(`🔧 [DEBUG ROUTE] Found ${titles.length} titles for test ${testId}`);
       
       // Trigger rotation with 6 second delay for immediate testing
-      console.log(`🔧 [DEBUG ROUTE] Calling scheduler.scheduleRotation(${testId}, ${order}, 0.1)`);
       scheduler.scheduleRotation(testId, order, 0.1); 
-      console.log(`🔧 [DEBUG ROUTE] Scheduler called successfully`);
       
       const response = { 
         success: true, 
@@ -1066,10 +1004,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         titles: titles.map(t => ({ order: t.order, text: t.text, id: t.id }))
       };
       
-      console.log(`🔧 [DEBUG ROUTE] Sending response:`, JSON.stringify(response, null, 2));
       return res.json(response);
     } catch (error) {
-      console.error('🔧 [DEBUG ROUTE] Error in debug rotation:', error);
       return res.status(500).json({ 
         error: 'Failed to trigger debug rotation', 
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -1134,7 +1070,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error) {
-      console.error('AI Title Generation Error:', error);
       res.status(500).json({ 
         error: 'Failed to generate titles',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -1205,7 +1140,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: selectedPlan.amount / 100
       });
     } catch (error) {
-      console.error('Error creating Stripe subscription:', error);
       res.status(500).json({ error: 'Failed to create subscription' });
     }
   });
@@ -1226,7 +1160,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasAccess: subscriptionStatus !== 'none'
       });
     } catch (error) {
-      console.error('Error checking subscription status:', error);
       res.status(500).json({ error: 'Failed to check subscription status' });
     }
   });
@@ -1247,7 +1180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Subscription updated to ${tier} plan`
       });
     } catch (error) {
-      console.error('Error updating subscription:', error);
       res.status(500).json({ error: 'Failed to update subscription' });
     }
   });
@@ -1273,7 +1205,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       next();
     } catch (error) {
-      console.error('Subscription check error:', error);
       res.status(500).json({ error: 'Subscription verification failed' });
     }
   }
@@ -1289,7 +1220,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
     } catch (err: any) {
-      console.log(`Webhook signature verification failed.`, err?.message || err);
       return res.status(400).send(`Webhook Error: ${err?.message || 'Invalid signature'}`);
     }
 
@@ -1297,7 +1227,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object;
-        console.log('Checkout session completed:', session.id);
         
         // Extract user ID and plan from metadata
         const userId = session.metadata?.userId;
@@ -1315,31 +1244,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             
-            console.log(`Activated ${plan} subscription for user ${userId}`);
           } catch (error) {
-            console.error('Error activating subscription:', error);
           }
         }
         break;
         
       case 'customer.subscription.deleted':
         const subscription = event.data.object;
-        console.log('Subscription cancelled:', subscription.id);
         
         // Find user by Stripe subscription ID and deactivate
         try {
           const user = await storage.getUserByStripeSubscriptionId(subscription.id);
           if (user) {
             await storage.updateUserSubscription(user.id, 'cancelled', null);
-            console.log(`Deactivated subscription for user ${user.id}`);
           }
         } catch (error) {
-          console.error('Error handling subscription cancellation:', error);
         }
         break;
         
       default:
-        console.log(`Unhandled event type ${event.type}`);
     }
 
     res.json({ received: true });

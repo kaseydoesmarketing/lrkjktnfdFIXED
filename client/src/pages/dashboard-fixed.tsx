@@ -382,10 +382,6 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                           borderRadius: '8px',
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                         }}
-                        formatter={(value: any, name: any) => [
-                          name === 'views' ? formatNumber(Number(value)) : `${Number(value).toFixed(2)}%`,
-                          name === 'views' ? 'Views' : 'CTR'
-                        ]}
                       />
                       <Bar 
                         dataKey="views" 

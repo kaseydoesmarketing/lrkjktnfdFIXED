@@ -19,7 +19,6 @@ export class YouTubeService {
     userId: string,
     operation: (accessToken: string) => Promise<T>
   ): Promise<T> {
-    console.log(`🔑 [TOKEN REFRESH] Starting operation for user ${userId}`);
     
     const account = await storage.getAccountByUserId(userId, 'google');
     if (!account) {
@@ -32,19 +31,15 @@ export class YouTubeService {
 
     try {
       // Try the operation with current access token
-      console.log(`🔑 [TOKEN REFRESH] Attempting operation with current access token`);
       return await operation(account.accessToken);
     } catch (error: any) {
-      console.log(`🔑 [TOKEN REFRESH] Operation failed:`, error.message);
       
       // Check if error is authentication-related (401 Unauthorized)
       if (error.code === 401 || error.status === 401 || error.message?.includes('authentication')) {
-        console.log(`🔑 [TOKEN REFRESH] Authentication error detected, attempting token refresh`);
         
         try {
           // Refresh the access token
           const refreshedTokens = await googleAuthService.refreshAccessToken(account.refreshToken);
-          console.log(`🔑 [TOKEN REFRESH] Successfully refreshed tokens`);
           
           // Calculate new expiry time (tokens typically expire in 1 hour)
           const expiresAt = refreshedTokens.expiry_date || (Date.now() + 3600 * 1000);
@@ -56,12 +51,10 @@ export class YouTubeService {
             expiresAt
           });
           
-          console.log(`🔑 [TOKEN REFRESH] Tokens updated in database, retrying operation`);
           
           // Retry the operation with fresh access token
           return await operation(refreshedTokens.access_token!);
         } catch (refreshError: any) {
-          console.error(`🔑 [TOKEN REFRESH] Failed to refresh tokens:`, refreshError.message);
           throw new Error(`Authentication failed and token refresh unsuccessful: ${refreshError.message}`);
         }
       } else {
@@ -72,7 +65,6 @@ export class YouTubeService {
   }
 
   async getChannelVideos(userId: string, maxResults: number = 50) {
-    console.log(`📺 [YOUTUBE API] Getting channel videos for user ${userId} (limit: ${maxResults})`);
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
@@ -140,7 +132,6 @@ export class YouTubeService {
         }
       }
 
-      console.log(`📺 [YOUTUBE API] Successfully fetched ${videoDetails.length} videos for user ${userId}`);
 
       return videoDetails.map((video: any) => ({
         id: video.id!,
@@ -158,29 +149,24 @@ export class YouTubeService {
   }
 
   async updateVideoTitle(userId: string, videoId: string, newTitle: string) {
-    console.log(`🎬 [YOUTUBE API] Updating video ${videoId} to title: "${newTitle}" for user ${userId}`);
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
       // First get current video data
-      console.log(`🎬 [YOUTUBE API] Fetching current video data for ${videoId}`);
       const videoResponse = await youtube.videos.list({
         part: ['snippet'],
         id: [videoId]
       });
 
       if (!videoResponse.data.items?.length) {
-        console.error(`❌ [YOUTUBE API] Video ${videoId} not found in YouTube`);
         throw new Error('Video not found');
       }
 
       const currentVideo = videoResponse.data.items[0];
-      console.log(`🎬 [YOUTUBE API] Current video title: "${currentVideo.snippet?.title}"`);
       
       // Update the title
-      console.log(`🎬 [YOUTUBE API] Sending title update request to YouTube API`);
       await youtube.videos.update({
         part: ['snippet'],
         requestBody: {
@@ -192,13 +178,11 @@ export class YouTubeService {
         }
       });
 
-      console.log(`✅ [YOUTUBE API] Successfully updated video ${videoId} title to: "${newTitle}"`);
       return { success: true, newTitle };
     });
   }
 
   async getVideoAnalytics(userId: string, videoId: string, startDate: string, endDate: string) {
-    console.log(`📊 [YOUTUBE ANALYTICS] Getting analytics for video ${videoId} (${startDate} to ${endDate}) for user ${userId}`);
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
@@ -219,7 +203,6 @@ export class YouTubeService {
 
         if (!analyticsResponse.data.rows || analyticsResponse.data.rows.length === 0) {
           // Fallback to Data API if Analytics API fails
-          console.log('No analytics data found, falling back to basic statistics');
           return await this.getBasicVideoStats(accessToken, videoId);
         }
 
@@ -251,7 +234,6 @@ export class YouTubeService {
         };
 
       } catch (error) {
-        console.error('YouTube Analytics API error:', error);
         // Fallback to basic statistics if Analytics API fails
         return await this.getBasicVideoStats(accessToken, videoId);
       }

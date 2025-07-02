@@ -29,15 +29,9 @@ export class GoogleAuthService {
       }
     }
       
-    console.log('OAuth redirect URI:', redirectUri);
-    console.log('Google Client ID configured:', !!process.env.GOOGLE_CLIENT_ID);
-    console.log('REPLIT_DOMAINS env var:', process.env.REPLIT_DOMAINS);
-    console.log('OAUTH_REDIRECT_URI env var:', process.env.OAUTH_REDIRECT_URI);
-    console.log('Detected replotDomain:', replotDomain);
     
     // Validate OAuth configuration
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.error('CRITICAL: Missing Google OAuth credentials!');
       throw new Error('Google OAuth not configured');
     }
       
@@ -67,7 +61,6 @@ export class GoogleAuthService {
       response_type: 'code'
     });
 
-    console.log('Generated full YouTube OAuth URL:', authUrl);
     return authUrl;
   }
 
