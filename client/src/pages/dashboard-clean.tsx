@@ -535,6 +535,145 @@ export default function DashboardClean() {
             </div>
           </div>
         </div>
+
+        {/* Create Test Modal */}
+        <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Create A/B Test</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Selected Video Display */}
+              {selectedVideo && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Selected Video</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+                      {selectedVideo.thumbnail ? (
+                        <img 
+                          src={selectedVideo.thumbnail} 
+                          alt={selectedVideo.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <PlayCircle className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-gray-900 line-clamp-2">{selectedVideo.title}</p>
+                      <p className="text-xs text-gray-500">{formatNumber(selectedVideo.viewCount)} views</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Title Variants */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">Title Variants (Enter 2-5 alternatives)</Label>
+                <div className="space-y-3">
+                  {titleInputs.map((title, index) => (
+                    <div key={index}>
+                      <Label className="text-sm text-gray-600 mb-1 block">Title {index + 1}</Label>
+                      <Input
+                        value={title}
+                        onChange={(e) => {
+                          const newTitles = [...titleInputs];
+                          newTitles[index] = e.target.value;
+                          setTitleInputs(newTitles);
+                        }}
+                        placeholder={`Enter title variant ${index + 1}${index < 2 ? ' (required)' : ' (optional)'}`}
+                        className="w-full"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Test Configuration */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
+                  <Select 
+                    value={testConfig.rotationIntervalMinutes.toString()} 
+                    onValueChange={(value) => setTestConfig(prev => ({...prev, rotationIntervalMinutes: parseInt(value)}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                      <SelectItem value="180">3 hours</SelectItem>
+                      <SelectItem value="360">6 hours</SelectItem>
+                      <SelectItem value="720">12 hours</SelectItem>
+                      <SelectItem value="1440">24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Winner Metric</Label>
+                  <Select 
+                    value={testConfig.winnerMetric} 
+                    onValueChange={(value) => setTestConfig(prev => ({...prev, winnerMetric: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ctr">Click-Through Rate (CTR)</SelectItem>
+                      <SelectItem value="views">Total Views</SelectItem>
+                      <SelectItem value="combined">Combined Metrics</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Test Duration */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Start Date</Label>
+                  <Input
+                    type="datetime-local"
+                    value={testConfig.startDate}
+                    onChange={(e) => setTestConfig(prev => ({...prev, startDate: e.target.value}))}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">End Date</Label>
+                  <Input
+                    type="datetime-local"
+                    value={testConfig.endDate}
+                    onChange={(e) => setTestConfig(prev => ({...prev, endDate: e.target.value}))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateTest(false);
+                  setSelectedVideo(null);
+                  setTitleInputs(['', '', '', '', '']);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateTest}
+                disabled={createTest.isPending || !selectedVideo}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {createTest.isPending ? 'Creating Test...' : 'Create Test'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
