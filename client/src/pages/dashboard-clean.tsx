@@ -125,7 +125,7 @@ export default function DashboardClean() {
     enabled: !!user
   });
 
-  const { data: videos = [] } = useQuery({
+  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
     queryKey: ['/api/videos/recent'],
     queryFn: async () => {
       const response = await fetch('/api/videos/recent', { credentials: 'include' });
