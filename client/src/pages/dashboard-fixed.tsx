@@ -47,6 +47,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+// import { ErrorBoundary, ChartErrorBoundary } from '@/components/ErrorBoundary';
 
 interface User {
   id: string;
@@ -341,6 +342,7 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                       />
                     </AreaChart>
                   </ResponsiveContainer>
+
                 </div>
               </div>
 
@@ -351,15 +353,17 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                   <h4 className="font-semibold text-gray-900">Title Performance Comparison</h4>
                 </div>
                 <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={analytics.rotationLogs.map((log, index) => ({
-                        name: `T${index + 1}`,
-                        fullName: log.titleText?.length > 30 ? log.titleText.substring(0, 30) + '...' : log.titleText,
-                        views: log.viewsAtRotation || 0,
-                        ctr: log.ctrAtRotation || 0
-                      }))}
-                    >
+                  <ChartErrorBoundary>
+                    {analytics.rotationLogs.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={analytics.rotationLogs.map((log, index) => ({
+                            name: `T${index + 1}`,
+                            fullName: log.titleText?.length > 30 ? log.titleText.substring(0, 30) + '...' : log.titleText,
+                            views: log.viewsAtRotation || 0,
+                            ctr: log.ctrAtRotation || 0
+                          }))}
+                        >
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis 
                         dataKey="name" 

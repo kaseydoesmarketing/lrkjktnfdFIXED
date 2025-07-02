@@ -1,4 +1,6 @@
-import { Component, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
@@ -11,37 +13,45 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  public state: State = {
+    hasError: false
+  };
 
-  static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('Dashboard Error Boundary caught an error:', error, errorInfo);
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log error in production monitoring (replace console with actual logging service)
+    if (process.env.NODE_ENV === 'production') {
+      // Send to error tracking service like Sentry
+    }
   }
 
-  render() {
+  private handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
+  public render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg border max-w-md text-center">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">
-              TitleTesterPro Dashboard
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Something went wrong. Please refresh the page to continue.
-            </p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Refresh Page
-            </button>
-          </div>
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      return (
+        <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h2>
+          <p className="text-gray-600 text-center mb-4 max-w-md">
+            An unexpected error occurred. Please try refreshing or contact support if this continues.
+          </p>
+          <Button 
+            onClick={this.handleReset}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </Button>
         </div>
       );
     }
@@ -49,3 +59,19 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+// Wrapper for charts specifically
+export const ChartErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ErrorBoundary
+    fallback={
+      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="text-center">
+          <AlertTriangle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Chart unavailable</p>
+        </div>
+      </div>
+    }
+  >
+    {children}
+  </ErrorBoundary>
+);
