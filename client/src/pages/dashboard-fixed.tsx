@@ -46,6 +46,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 interface User {
   id: string;
@@ -277,6 +278,257 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                 {analytics.nextRotationIn > 0 
                   ? `In ${analytics.nextRotationIn} minutes` 
                   : 'Calculating next rotation...'}
+              </div>
+            </div>
+
+            {/* Interactive Performance Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              
+              {/* CTR Trend Chart */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-gray-900">CTR Performance Trend</h4>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={analytics.rotationLogs.map((log, index) => ({
+                        name: `Title ${index + 1}`,
+                        ctr: log.ctrAtRotation || 0,
+                        views: log.viewsAtRotation || 0,
+                        duration: log.durationMinutes || 0
+                      }))}
+                    >
+                      <defs>
+                        <linearGradient id="ctrGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="#6B7280"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        stroke="#6B7280"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `${value}%`}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                        formatter={(value) => [`${Number(value).toFixed(2)}%`, 'CTR']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="ctr"
+                        stroke="#3B82F6"
+                        strokeWidth={3}
+                        fill="url(#ctrGradient)"
+                        animationBegin={0}
+                        animationDuration={1500}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Title Performance Comparison */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <BarChart3 className="w-5 h-5 text-green-600" />
+                  <h4 className="font-semibold text-gray-900">Title Performance Comparison</h4>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={analytics.rotationLogs.map((log, index) => ({
+                        name: `T${index + 1}`,
+                        fullName: log.titleText?.length > 30 ? log.titleText.substring(0, 30) + '...' : log.titleText,
+                        views: log.viewsAtRotation || 0,
+                        ctr: log.ctrAtRotation || 0
+                      }))}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="#6B7280"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis 
+                        stroke="#6B7280"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => formatNumber(value)}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                        formatter={(value, name) => [
+                          name === 'views' ? formatNumber(Number(value)) : `${Number(value).toFixed(2)}%`,
+                          name === 'views' ? 'Views' : 'CTR'
+                        ]}
+                        labelFormatter={(label, payload) => {
+                          const data = payload?.[0]?.payload;
+                          return data?.fullName || label;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="views" 
+                        fill="#10B981" 
+                        radius={[4, 4, 0, 0]}
+                        animationBegin={300}
+                        animationDuration={1200}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Real-time Analytics Dashboard */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <Activity className="w-5 h-5 text-purple-600" />
+                <h4 className="font-semibold text-gray-900">Real-time Performance Analytics</h4>
+              </div>
+              
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                {/* Performance Distribution Pie Chart */}
+                <div className="xl:col-span-1">
+                  <h5 className="font-medium text-gray-700 mb-3">Title Performance Share</h5>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={analytics.rotationLogs.map((log, index) => ({
+                            name: `Title ${index + 1}`,
+                            value: log.viewsAtRotation || 0,
+                            color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={70}
+                          fill="#8884d8"
+                          dataKey="value"
+                          animationBegin={0}
+                          animationDuration={1000}
+                        >
+                          {analytics.rotationLogs.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value) => [formatNumber(Number(value)), 'Views']}
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Time-based Performance Line Chart */}
+                <div className="xl:col-span-2">
+                  <h5 className="font-medium text-gray-700 mb-3">Performance Over Time</h5>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={analytics.rotationLogs.map((log, index) => ({
+                          time: `${Math.floor(index * 60 / 60)}h`,
+                          ctr: log.ctrAtRotation || 0,
+                          views: (log.viewsAtRotation || 0) / 1000,
+                          engagement: ((log.ctrAtRotation || 0) * (log.viewsAtRotation || 0)) / 10000
+                        }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="time" 
+                          stroke="#6B7280"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          stroke="#6B7280"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                          formatter={(value, name) => [
+                            name === 'ctr' ? `${Number(value).toFixed(2)}%` : 
+                            name === 'views' ? `${(Number(value) * 1000).toLocaleString()}` :
+                            Number(value).toFixed(2),
+                            name === 'ctr' ? 'CTR' : 
+                            name === 'views' ? 'Views' : 'Engagement Score'
+                          ]}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="ctr" 
+                          stroke="#3B82F6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                          animationBegin={0}
+                          animationDuration={2000}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="views" 
+                          stroke="#10B981" 
+                          strokeWidth={3}
+                          dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                          animationBegin={500}
+                          animationDuration={2000}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="engagement" 
+                          stroke="#8B5CF6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
+                          animationBegin={1000}
+                          animationDuration={2000}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
               </div>
             </div>
 
