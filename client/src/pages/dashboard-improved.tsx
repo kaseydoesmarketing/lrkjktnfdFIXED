@@ -100,7 +100,6 @@ interface Momentum {
 }
 
 export default function DashboardImproved() {
-  const [authState, setAuthState] = useState({ loading: true, user: null as User | null, error: null as string | null });
   const [showCreateTest, setShowCreateTest] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [testConfig, setTestConfig] = useState({
@@ -115,30 +114,11 @@ export default function DashboardImproved() {
   const [filterStatus, setFilterStatus] = useState('all');
   const { toast } = useToast();
 
-  // Authentication check
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me', { 
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setAuthState({ loading: false, user: userData, error: null });
-        } else {
-          throw new Error('Authentication failed');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setAuthState({ loading: false, user: null, error: 'Authentication required' });
-        window.location.href = '/login';
-      }
-    };
-
-    checkAuth();
-  }, []);
+  // Get user from the existing auth system
+  const { data: user } = useQuery({
+    queryKey: ['/api/auth/me'],
+    queryFn: () => fetch('/api/auth/me', { credentials: 'include' }).then(res => res.json()),
+  });
 
   // Data queries
   const { data: stats } = useQuery({

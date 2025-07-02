@@ -50,7 +50,11 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard">
+        <AuthWrapper>
+          <Dashboard />
+        </AuthWrapper>
+      </Route>
       <Route path="/admin">
         <AuthWrapper>
           <EnhancedAdmin />
