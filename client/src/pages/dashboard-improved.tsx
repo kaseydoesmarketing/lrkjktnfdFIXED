@@ -392,7 +392,7 @@ export default function DashboardImproved() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Avg CTR</p>
-              <p className="text-2xl font-bold text-gray-900">{(stats?.avgCtr || 0).toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-gray-900">{((stats?.avgCtr ?? 0) || 0).toFixed(1)}%</p>
             </div>
           </div>
 
