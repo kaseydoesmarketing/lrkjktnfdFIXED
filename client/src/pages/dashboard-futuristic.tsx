@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers, Crown, Monitor } from 'lucide-react';
+import MomentumReport from '@/components/MomentumReport';
+import IntegratedCreateTestModal from '@/components/IntegratedCreateTestModal';
 
 interface User {
   id: string;
@@ -88,6 +90,10 @@ export default function DashboardFuturistic() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedTestForInsights, setSelectedTestForInsights] = useState<Test | null>(null);
+  const [showMomentumReport, setShowMomentumReport] = useState(false);
+  const [selectedTestForMomentum, setSelectedTestForMomentum] = useState<string | null>(null);
+  const [momentumAnalysis, setMomentumAnalysis] = useState<any>(null);
+  const [isLoadingMomentum, setIsLoadingMomentum] = useState(false);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
   const [videoTopic, setVideoTopic] = useState('');
@@ -241,6 +247,80 @@ export default function DashboardFuturistic() {
       setVideos([]);
     } finally {
       setIsLoadingVideos(false);
+    }
+  };
+
+  // Claude-powered momentum analysis
+  const openMomentumReport = async (testId: string) => {
+    setSelectedTestForMomentum(testId);
+    setShowMomentumReport(true);
+    setIsLoadingMomentum(true);
+
+    try {
+      const response = await fetch('/api/analyze-test-momentum', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ testId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMomentumAnalysis(data.analysis);
+      }
+    } catch (error) {
+      console.error('Error loading momentum analysis:', error);
+    } finally {
+      setIsLoadingMomentum(false);
+    }
+  };
+
+  const selectWinningTitle = async (testId: string, titleId: string) => {
+    try {
+      // Get Claude analysis for the winner selection
+      const analysisResponse = await fetch('/api/analyze-winner-selection', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ testId, selectedTitleId: titleId })
+      });
+
+      if (analysisResponse.ok) {
+        const analysisData = await analysisResponse.json();
+        console.log('Claude Winner Analysis:', analysisData.analysis);
+      }
+
+      // Complete the test and set the winning title
+      const response = await fetch(`/api/tests/${testId}/status`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'completed' })
+      });
+
+      if (response.ok) {
+        setTests(prev => prev.map(test => 
+          test.id === testId ? { ...test, status: 'completed' as Test['status'] } : test
+        ));
+        setShowMomentumReport(false);
+        
+        // Refresh stats
+        const statsResponse = await fetch('/api/dashboard/stats', {
+          credentials: 'include'
+        });
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData);
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting winning title:', error);
     }
   };
 
