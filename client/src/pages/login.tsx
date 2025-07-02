@@ -8,7 +8,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFounderLogin, setShowFounderLogin] = useState(false);
-  const [founderEmail, setFounderEmail] = useState('');
+  const [founderEmail, setFounderEmail] = useState('kaseydoesmarketing@gmail.com');
   const [founderPassword, setFounderPassword] = useState('');
 
   useEffect(() => {
@@ -23,8 +23,8 @@ export default function Login() {
       setError(descriptionParam || `Authentication error: ${errorParam}`);
     }
     
-    // Show founder login if ?founder=true in URL or if user clicks specific sequence
-    if (founderParam === 'true') {
+    // Show founder login only with specific founder parameter for security
+    if (founderParam === 'kasey2024') {
       setShowFounderLogin(true);
     }
   }, []);
@@ -158,15 +158,16 @@ export default function Login() {
                 <div className="space-y-3 border-t border-gray-700 pt-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <Key className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm font-medium text-yellow-400">Founder Access</span>
+                    <span className="text-sm font-medium text-yellow-400">Kasey - Founder Access</span>
                   </div>
                   
                   <Input
                     type="email"
-                    placeholder="Founder email"
+                    placeholder="kaseydoesmarketing@gmail.com"
                     value={founderEmail}
                     onChange={(e) => setFounderEmail(e.target.value)}
                     className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    readOnly
                   />
                   
                   <Input
@@ -193,16 +194,7 @@ export default function Login() {
                 </div>
               )}
 
-              {!showFounderLogin && (
-                <div className="text-center">
-                  <button
-                    onClick={() => setShowFounderLogin(true)}
-                    className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
-                  >
-                    Founder Access
-                  </button>
-                </div>
-              )}
+
 
             </div>
 
