@@ -8,14 +8,9 @@ async function throwIfResNotOk(res: Response) {
 }
 
 function getAuthHeaders(): HeadersInit {
-  const sessionToken = localStorage.getItem('sessionToken');
-  const headers: HeadersInit = {};
-  
-  if (sessionToken) {
-    headers['Authorization'] = `Bearer ${sessionToken}`;
-  }
-  
-  return headers;
+  // Server uses httpOnly cookies for authentication, not Authorization headers
+  // Authentication is handled automatically via credentials: "include"
+  return {};
 }
 
 export async function apiRequest(

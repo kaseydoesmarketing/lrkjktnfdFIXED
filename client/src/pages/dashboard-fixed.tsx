@@ -481,10 +481,19 @@ export default function DashboardFixed() {
     }
   });
 
-  const handleLogout = () => {
-    // Clear session data and redirect to clean logout
-    localStorage.removeItem('sessionToken');
-    window.location.href = '/api/auth/logout';
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear server-side session
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout API failed:', error);
+    }
+    
+    // Always redirect to login regardless of API response
+    window.location.href = '/login';
   };
 
   const handleTestAction = (testId: string, action: string) => {
