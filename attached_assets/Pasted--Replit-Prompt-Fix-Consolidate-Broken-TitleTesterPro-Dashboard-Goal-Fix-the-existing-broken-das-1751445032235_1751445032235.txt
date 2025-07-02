@@ -1,0 +1,74 @@
+✅ Replit Prompt: Fix & Consolidate Broken TitleTesterPro Dashboard
+Goal:
+Fix the existing broken dashboard and consolidate all title tools into a single, functional “Create Title Campaign” system. Do not add new tools. Do not redesign from scratch. Focus only on repairing, integrating, and streamlining the current workflow.
+
+🔧 Fix/Remove the Following:
+AI Analysis Box
+
+✅ Remove this section entirely.
+
+🔁 Replace it with a YouTube video data display showing:
+
+Total views
+
+Video length
+
+Original YouTube title
+
+Title Rotation Interval
+
+❌ Remove the 30-minute interval option completely. Only allow relevant rotation durations if needed later.
+
+Demo Data at Top
+
+❌ Delete all placeholder/demo stats from the top of the dashboard.
+
+🔁 Replace with real-time data only, updated every 24 hours via API or scheduled data fetch.
+
+🧩 Consolidate Into One Tool: “Create Title Campaign”
+Merge these into a single experience:
+
+Create AI Test
+
+Momentum Report
+
+AI Titles Generator
+
+Result = one seamless Create Title Campaign workflow.
+
+🎯 New Unified Workflow Requirements:
+Claude’s Role
+
+✅ Claude should only generate title suggestions based on the existing title framework.
+
+❌ Claude should not be used for A/B testing logic or campaign setup.
+
+Drag-and-Drop Interface
+
+Allow users to drag Claude-generated titles into a title variant list for testing.
+
+Remove Tool Labels
+
+Momentum Report, AI Titles, and Create Test should no longer be shown as separate tools.
+
+Entire experience is now under the “Create Title Campaign” umbrella — no separate names.
+
+Campaign Functionality
+
+Automatically attach the Momentum Report to each active/published campaign.
+
+Claude-generated titles should also remain connected to each campaign for reuse.
+
+Authority accounts should be able to swap title variants in/out at any time with live updates.
+
+Campaigns should be managed in real time, clearly showing current title, views, CTR, and AVD metrics.
+
+⚠️ Critical Notes:
+🔨 None of the current tools are working — rebuild and reconnect all broken functionality.
+
+❌ Do not redesign the UI — keep the current visual aesthetic and layout (see attached screenshots).
+
+✅ Ensure backend pulls only real, updated YouTube analytics data every 24 hours.
+
+✅ Entire experience should feel like one single campaign system, not a patchwork of disconnected widgets.
+
