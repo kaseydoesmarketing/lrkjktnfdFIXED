@@ -145,6 +145,71 @@ import { registerSimpleAdminRoutes } from "./simpleAdminRoutes";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes
   registerSimpleAdminRoutes(app);
+  // Founder login for kaseydoesmarketing@gmail.com
+  app.post('/api/auth/founder-login', async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Verify founder credentials
+      if (email !== 'kaseydoesmarketing@gmail.com' || password !== 'founder2024') {
+        return res.status(401).json({ error: 'Invalid founder credentials' });
+      }
+
+      // Create or get founder user
+      let user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        user = await storage.createUser({
+          email,
+          name: 'Kasey (Founder)',
+          image: null,
+          youtubeId: null,
+          subscriptionTier: 'authority',
+          subscriptionStatus: 'active'
+        });
+      } else {
+        // Ensure founder has authority subscription
+        user = await storage.updateUser(user.id, {
+          subscriptionTier: 'authority',
+          subscriptionStatus: 'active'
+        });
+      }
+
+      // Create session
+      const sessionToken = authService.generateSessionToken();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+      await storage.createSession({
+        sessionToken,
+        userId: user.id,
+        expiresAt,
+      });
+
+      // Set secure session cookie
+      res.cookie('session-token', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+
+      res.json({ 
+        success: true, 
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus
+        },
+        sessionToken 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Founder login failed' });
+    }
+  });
+
   // Demo login route for immediate dashboard access
   app.post('/api/auth/demo-login', async (req: Request, res: Response) => {
     try {
@@ -600,8 +665,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // No demo data in dashboard - all users see only authentic data
       
-      // Check if this is a development user without OAuth tokens
-      const isDevelopmentUser = user.email === 'dev@titletesterpro.com' || user.email === 'demo@titletesterpro.com';
+      // Check if this is a development user or founder without OAuth tokens
+      const isDevelopmentUser = user.email === 'dev@titletesterpro.com' || 
+                                user.email === 'demo@titletesterpro.com' ||
+                                user.email === 'kaseydoesmarketing@gmail.com';
       
       if (isDevelopmentUser) {
         // Provide realistic demo data for development/testing
