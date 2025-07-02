@@ -1025,13 +1025,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentTitle = title.text;
           }
           
-          // Get analytics data for this title
+          // Get analytics data for this title (use most recent poll to avoid duplication)
           const polls = await storage.getAnalyticsPollsByTitleId(title.id);
-          for (const poll of polls) {
-            totalViews += poll.views;
-            totalImpressions += poll.impressions;
-            totalCtr += poll.ctr;
-            totalViewDuration += poll.averageViewDuration;
+          if (polls.length > 0) {
+            // Sort polls by polled_at descending and use the most recent one
+            const latestPoll = polls.sort((a, b) => b.polledAt.getTime() - a.polledAt.getTime())[0];
+            totalViews += latestPoll.views;
+            totalImpressions += latestPoll.impressions;
+            totalCtr += latestPoll.ctr;
+            totalViewDuration += latestPoll.averageViewDuration;
             dataPoints++;
           }
         }
