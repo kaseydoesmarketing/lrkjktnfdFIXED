@@ -904,7 +904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if YouTube Analytics API is available
       try {
         const { google } = await import('googleapis');
-        const googleAuthService = await import('./googleAuthService');
+        const googleAuthService = await import('./googleAuth');
         
         const authClient = googleAuthService.googleAuthService.createAuthenticatedClient(user.oauthToken);
         const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
@@ -950,6 +950,76 @@ Current system provides realistic metrics based on video engagement patterns.`,
       }
     } catch (error) {
       res.status(500).json({ error: 'Failed to check accuracy status' });
+    }
+  });
+
+  // Force refresh OAuth tokens with YouTube Analytics API access
+  app.post('/api/auth/refresh-tokens', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      
+      if (!user.refreshToken) {
+        return res.status(400).json({ 
+          error: 'No refresh token available. Please re-authenticate with Google.',
+          requiresReauth: true
+        });
+      }
+
+      // Force token refresh with YouTube Analytics scope
+      const refreshedTokens = await youtubeService.forceRefreshTokens(user.refreshToken);
+      
+      if (!refreshedTokens) {
+        return res.status(400).json({ 
+          error: 'Token refresh failed. Please re-authenticate with Google.',
+          requiresReauth: true
+        });
+      }
+
+      // Update user with fresh tokens
+      await storage.updateUserTokens(user.id, {
+        oauthToken: refreshedTokens.access_token!,
+        refreshToken: refreshedTokens.refresh_token || user.refreshToken
+      });
+
+      // Test YouTube Analytics API access with fresh tokens
+      try {
+        const { google } = await import('googleapis');
+        const googleAuthService = await import('./googleAuth');
+        
+        const authClient = googleAuthService.googleAuthService.createAuthenticatedClient(refreshedTokens.access_token!);
+        const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
+        
+        // Test if we can make a simple query
+        await youtubeAnalytics.reports.query({
+          ids: 'channel==MINE',
+          startDate: '2025-07-01',
+          endDate: '2025-07-02',
+          metrics: 'views'
+        });
+        
+        res.json({
+          success: true,
+          message: 'Tokens refreshed successfully - YouTube Analytics API is now enabled!',
+          analyticsEnabled: true,
+          accuracy: 'YouTube Studio Exact Match'
+        });
+        
+      } catch (analyticsError) {
+        res.json({
+          success: true,
+          message: 'Tokens refreshed but YouTube Analytics API still requires setup',
+          analyticsEnabled: false,
+          accuracy: 'Enhanced Data API (Highly Accurate)',
+          instructions: 'YouTube Analytics API may need a few more minutes to activate after enabling in Google Cloud Console'
+        });
+      }
+
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({ 
+        error: 'Failed to refresh tokens. Please re-authenticate with Google.',
+        requiresReauth: true
+      });
     }
   });
 
