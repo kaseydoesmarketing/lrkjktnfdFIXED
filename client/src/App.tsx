@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard-futuristic";
-import SimpleAdmin from "@/pages/simple-admin";
+import EnhancedAdmin from "@/pages/enhanced-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -53,7 +53,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin">
         <AuthWrapper>
-          <SimpleAdmin />
+          <EnhancedAdmin />
         </AuthWrapper>
       </Route>
       <Route path="/paywall" component={Paywall} />

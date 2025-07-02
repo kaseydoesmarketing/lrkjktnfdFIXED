@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers } from 'lucide-react';
+import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers } from 'lucide-react';
 
 interface User {
   id: string;
@@ -28,6 +28,11 @@ interface Test {
   winnerMetric: string;
   startDate: string;
   endDate: string;
+  analytics?: {
+    averageCtr: number;
+    averageViewDuration: number;
+    totalViews: number;
+  };
   createdAt: string;
   titles: Title[];
 }
@@ -784,63 +789,98 @@ export default function DashboardFuturistic() {
             </div>
           </div>
 
-          {/* AI Insights Card */}
+          {/* Momentum Report Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-green-600 to-teal-600 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">AI Insights</h3>
-                  <p className="text-purple-100">Powered by advanced analytics</p>
+                  <h3 className="text-xl font-bold mb-2">Momentum Report</h3>
+                  <p className="text-green-100">Real-time performance analytics</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Bot className="w-6 h-6" />
+                  <TrendingUp className="w-6 h-6" />
                 </div>
               </div>
             </div>
             
             <div className="p-6">
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Title Performance</span>
-                  <span className="text-green-600 font-medium">Excellent</span>
+              {selectedTestForInsights ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-lg font-bold text-blue-600">
+                        {selectedTestForInsights.analytics ? 
+                          `${(selectedTestForInsights.analytics.averageCtr * 100).toFixed(1)}%` : 
+                          '0.0%'}
+                      </div>
+                      <div className="text-xs text-gray-600">CTR</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">
+                        {selectedTestForInsights.analytics ? 
+                          `${Math.round(selectedTestForInsights.analytics.averageViewDuration)}s` : 
+                          '0s'}
+                      </div>
+                      <div className="text-xs text-gray-600">AVD</div>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-lg font-bold text-purple-600">
+                        {selectedTestForInsights.analytics ? 
+                          selectedTestForInsights.analytics.totalViews.toLocaleString() : 
+                          '0'}
+                      </div>
+                      <div className="text-xs text-gray-600">Views</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="text-sm text-gray-600 mb-2">Select a test to view detailed analytics:</div>
+                    <select
+                      value={selectedTestForInsights?.id || ''}
+                      onChange={(e) => {
+                        const test = tests.find(t => t.id === e.target.value);
+                        setSelectedTestForInsights(test || null);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="">Choose a test...</option>
+                      {tests.map(test => (
+                        <option key={test.id} value={test.id}>
+                          {test.videoTitle || 'Untitled Test'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setShowInsightsModal(true)}
+                    className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    <span>View Full Report</span>
+                  </button>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">CTR Optimization</span>
-                  <span className="text-blue-600 font-medium">+47% Above Average</span>
+              ) : (
+                <div className="text-center py-8">
+                  <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">Select a test to view momentum analytics</p>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const test = tests.find(t => t.id === e.target.value);
+                      setSelectedTestForInsights(test || null);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  >
+                    <option value="">Choose a test...</option>
+                    {tests.map(test => (
+                      <option key={test.id} value={test.id}>
+                        {test.videoTitle || 'Untitled Test'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Next Recommendation</span>
-                  <span className="text-purple-600 font-medium">Test Emotional Hooks</span>
-                </div>
-              </div>
-              
-              <div className="space-y-3 mb-4">
-                <div className="text-sm text-gray-600 mb-2">Select a test to view detailed insights:</div>
-                <select
-                  value={selectedTestForInsights?.id || ''}
-                  onChange={(e) => {
-                    const test = tests.find(t => t.id === e.target.value);
-                    setSelectedTestForInsights(test || null);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="">Choose a test...</option>
-                  {tests.map(test => (
-                    <option key={test.id} value={test.id}>
-                      {test.videoTitle || 'Untitled Test'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <button 
-                onClick={() => setShowInsightsModal(true)}
-                disabled={!selectedTestForInsights}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
-              >
-                <Activity className="w-5 h-5" />
-                <span>View Full Report</span>
-              </button>
+              )}
             </div>
           </div>
         </div>
@@ -1304,11 +1344,11 @@ export default function DashboardFuturistic() {
       {showInsightsModal && selectedTestForInsights && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-green-600 to-teal-600 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold">AI Insights Report</h3>
-                  <p className="text-purple-100 mt-1">{selectedTestForInsights.videoTitle}</p>
+                  <h3 className="text-xl font-bold">Momentum Report</h3>
+                  <p className="text-green-100 mt-1">{selectedTestForInsights.videoTitle}</p>
                 </div>
                 <button
                   onClick={() => setShowInsightsModal(false)}
