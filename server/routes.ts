@@ -8,6 +8,15 @@ import { youtubeService } from "./youtubeService";
 import { registerAdminRoutes } from "./adminRoutes";
 import { insertTestSchema, insertTitleSchema } from "@shared/schema";
 import { z } from "zod";
+import Stripe from "stripe";
+
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-05-28.basil",
+});
 
 // Session middleware
 async function requireAuth(req: Request, res: Response, next: Function) {
@@ -689,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Subscription management endpoints
+  // Create Stripe subscription checkout session
   app.post('/api/create-subscription', requireAuth, async (req: Request, res: Response) => {
     try {
       const { plan } = req.body;
@@ -699,23 +708,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid plan selected' });
       }
       
-      // For demo purposes, create a mock checkout URL
-      // In production, this would integrate with Stripe
-      const planPrices: { [key: string]: number } = { pro: 29, authority: 99 };
-      const price = planPrices[plan];
+      // Create or get Stripe customer
+      let stripeCustomerId = user.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+        });
+        stripeCustomerId = customer.id;
+        await storage.updateUser(user.id, { stripeCustomerId });
+      }
       
-      // Simulate subscription creation
-      const subscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const checkoutUrl = `/paywall?plan=${plan}&price=${price}&subscription=${subscriptionId}&demo=true`;
+      // Define plan prices (in cents for Stripe)
+      const planPrices: { [key: string]: { amount: number; name: string } } = {
+        pro: { amount: 2900, name: 'TitleTesterPro - Pro Plan' },
+        authority: { amount: 9900, name: 'TitleTesterPro - Authority Plan' }
+      };
+      
+      const selectedPlan = planPrices[plan];
+      
+      // Create Stripe checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        mode: 'subscription',
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: selectedPlan.name,
+              description: `Monthly subscription to ${selectedPlan.name}`,
+            },
+            unit_amount: selectedPlan.amount,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        }],
+        metadata: {
+          userId: user.id,
+          plan: plan,
+        },
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success&plan=${plan}`,
+        cancel_url: `${req.protocol}://${req.get('host')}/paywall?payment=cancelled`,
+      });
       
       res.json({ 
-        checkoutUrl: `${req.protocol}://${req.get('host')}${checkoutUrl}`,
-        subscriptionId,
+        checkoutUrl: session.url,
+        sessionId: session.id,
         plan,
-        price
+        price: selectedPlan.amount / 100
       });
     } catch (error) {
-      console.error('Error creating subscription:', error);
+      console.error('Error creating Stripe subscription:', error);
       res.status(500).json({ error: 'Failed to create subscription' });
     }
   });
@@ -788,7 +834,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Stripe webhook handler
+  app.post('/api/stripe/webhook', async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
 
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || '');
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object;
+        console.log('Checkout session completed:', session.id);
+        
+        // Extract user ID and plan from metadata
+        const userId = session.metadata?.userId;
+        const plan = session.metadata?.plan;
+        
+        if (userId && plan) {
+          try {
+            // Update user subscription status
+            await storage.updateUserSubscription(userId, 'active', plan);
+            
+            // Store Stripe subscription ID if available
+            if (session.subscription) {
+              await storage.updateUser(userId, { 
+                stripeSubscriptionId: session.subscription as string 
+              });
+            }
+            
+            console.log(`Activated ${plan} subscription for user ${userId}`);
+          } catch (error) {
+            console.error('Error activating subscription:', error);
+          }
+        }
+        break;
+        
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object;
+        console.log('Subscription cancelled:', subscription.id);
+        
+        // Find user by Stripe subscription ID and deactivate
+        try {
+          const user = await storage.getUserByStripeSubscriptionId(subscription.id);
+          if (user) {
+            await storage.updateUserSubscription(user.id, 'cancelled', null);
+            console.log(`Deactivated subscription for user ${user.id}`);
+          }
+        } catch (error) {
+          console.error('Error handling subscription cancellation:', error);
+        }
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
+  });
 
   const httpServer = createServer(app);
   return httpServer;
