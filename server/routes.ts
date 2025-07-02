@@ -19,6 +19,35 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-05-28.basil",
 });
 
+// Initialize Anthropic for AI title generation
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// YouTube Title Mastery Framework prompt
+const TITLE_MASTERY_PROMPT = `You are an expert YouTube title optimization specialist using the YouTube Title Mastery 2024-2025 Algorithm Framework. Generate 5 high-converting YouTube titles based on these proven strategies:
+
+CORE PRINCIPLES:
+- Mobile-first optimization (40-45 characters visible)
+- Psychological triggers: curiosity gaps, fear/urgency, authority positioning
+- Semantic consistency for algorithmic alignment
+- Numbers and specifics (odd numbers perform 15% better)
+- Question-based titles outperform statements by 12%
+
+PSYCHOLOGICAL TRIGGERS HIERARCHY:
+1. Curiosity gaps: "secret," "hidden," "nobody knows" (+30-45% CTR)
+2. Fear/urgency: warning language, time-sensitive phrasing (+25-40% CTR)
+3. Authority: "expert," "ultimate," "proven" (+20-35% CTR)
+4. Specificity: exact numbers, dollar amounts, percentages
+
+OPTIMIZATION REQUIREMENTS:
+- Character count: 50-70 total (sweet spot for visibility)
+- First 30 characters carry disproportionate weight
+- Keywords within first 40 characters improve searchability by 35%
+- Avoid misleading promises (algorithmic suppression risk)
+
+Generate titles that balance emotional appeal with content accuracy for maximum CTR and viewer satisfaction.`;
+
 // Session middleware
 async function requireAuth(req: Request, res: Response, next: Function) {
   const sessionToken = req.cookies['session-token'] || req.headers.authorization?.replace('Bearer ', '');
@@ -694,6 +723,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('🔧 [DEBUG ROUTE] Error in debug rotation:', error);
       return res.status(500).json({ 
         error: 'Failed to trigger debug rotation', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // AI Title Generation Endpoint (Authority Plan Exclusive)
+  app.post('/api/generate-titles', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      const { topic, framework } = req.body;
+
+      // Check if user has Authority subscription
+      const subscription = await storage.getUserSubscription(user.id);
+      if (!subscription || subscription.tier !== 'authority' || subscription.status !== 'active') {
+        return res.status(403).json({ 
+          error: 'AI Title Generation is exclusive to Authority Plan subscribers',
+          upgrade: true
+        });
+      }
+
+      if (!topic || !topic.trim()) {
+        return res.status(400).json({ error: 'Video topic is required' });
+      }
+
+      // Use the YouTube Title Mastery Framework with Claude Sonnet 4
+      const message = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 800,
+        system: TITLE_MASTERY_PROMPT,
+        messages: [{
+          role: "user",
+          content: `Generate 5 optimized YouTube titles for this topic: "${topic}"
+
+          Focus on:
+          - High CTR potential using psychological triggers
+          - Mobile-optimized length (40-60 characters)
+          - Semantic consistency and accuracy
+          - Numbers, specifics, and emotional hooks
+          - 2024-2025 algorithm alignment
+
+          Return only the titles, one per line, without numbering or bullets.`
+        }]
+      });
+
+      const content = message.content[0];
+      if (content.type === 'text') {
+        const titles = content.text
+          .split('\n')
+          .map(title => title.trim())
+          .filter(title => title.length > 0)
+          .slice(0, 5); // Ensure max 5 titles
+
+        res.json({ 
+          titles,
+          framework: 'YouTube Title Mastery 2024-2025',
+          generated_at: new Date().toISOString()
+        });
+      } else {
+        throw new Error('Unexpected response format from AI');
+      }
+
+    } catch (error) {
+      console.error('AI Title Generation Error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate titles',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
