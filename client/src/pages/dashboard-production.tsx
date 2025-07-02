@@ -17,7 +17,8 @@ import {
   BarChart3,
   MousePointer,
   PlaySquare,
-  Trash2
+  Trash2,
+  Video
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
