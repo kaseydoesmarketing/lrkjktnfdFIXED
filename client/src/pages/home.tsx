@@ -26,9 +26,10 @@ export default function Home() {
               </Link>
             </nav>
 
-            <div className="flex items-center space-x-4 md:hidden">
-              <Link href="/login" className="text-gray-600">Login</Link>
-              <Link href="/paywall" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+            {/* Mobile Navigation - Thumb-friendly */}
+            <div className="flex items-center space-x-3 md:hidden">
+              <Link href="/login" className="text-gray-600 text-sm">Login</Link>
+              <Link href="/paywall" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium min-w-[88px] text-center">
                 Start Pro
               </Link>
             </div>
@@ -70,13 +71,18 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Mobile-First CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/paywall" className="btn-pulse inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all text-center">
+                <Link 
+                  href="/paywall" 
+                  className="btn-pulse inline-block bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all text-center min-h-[56px] flex items-center justify-center active:scale-95 transform"
+                >
                   Start Testing Your Titles Now
                 </Link>
-                <button className="border-gray-300 text-gray-700 px-8 py-4 text-lg font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">
+                <button className="border border-gray-300 text-gray-700 px-8 py-4 text-lg font-medium rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-all flex items-center justify-center min-h-[56px] active:scale-95 transform">
                   <Play className="h-5 w-5 mr-2" />
-                  Watch 2-Min Demo
+                  <span className="hidden sm:inline">Watch 2-Min Demo</span>
+                  <span className="sm:hidden">Demo</span>
                 </button>
               </div>
 

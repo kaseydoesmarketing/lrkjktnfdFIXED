@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers, Crown } from 'lucide-react';
+import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers, Crown, Monitor } from 'lucide-react';
 
 interface User {
   id: string;
@@ -1221,13 +1221,25 @@ export default function DashboardFuturistic() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">Title Variants</h4>
-                    <button
-                      onClick={addTitleInput}
-                      disabled={titleInputs.length >= 5}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400"
-                    >
-                      + Add Variant ({titleInputs.length}/5)
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => {
+                          setPreviewTitle(titleInputs[0] || '');
+                          setShowMobilePreview(true);
+                        }}
+                        className="text-purple-600 hover:text-purple-700 text-sm font-medium flex items-center space-x-1"
+                      >
+                        <Monitor className="w-4 h-4" />
+                        <span className="hidden sm:inline">Mobile Preview</span>
+                      </button>
+                      <button
+                        onClick={addTitleInput}
+                        disabled={titleInputs.length >= 5}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:text-gray-400"
+                      >
+                        + Add Variant ({titleInputs.length}/5)
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="space-y-3">
