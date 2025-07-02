@@ -21,14 +21,14 @@ export default function Home() {
               <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors">Success Stories</a>
               <Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link>
               <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
-              <Link href="/login" className="btn-pulse bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+              <Link href="/paywall" className="btn-pulse bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                 Start Pro Plan
               </Link>
             </nav>
 
             <div className="flex items-center space-x-4 md:hidden">
               <Link href="/login" className="text-gray-600">Login</Link>
-              <Link href="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+              <Link href="/paywall" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 Start Pro
               </Link>
             </div>
@@ -71,7 +71,7 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/login" className="btn-pulse inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all text-center">
+                <Link href="/paywall" className="btn-pulse inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all text-center">
                   Start Testing Your Titles Now
                 </Link>
                 <button className="border-gray-300 text-gray-700 px-8 py-4 text-lg font-medium rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center">

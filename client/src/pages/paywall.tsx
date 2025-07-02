@@ -1,431 +1,262 @@
-import React, { useState, useEffect } from 'react';
-import { Check, Zap, Crown, TrendingUp, Target, BarChart3, Shield, Sparkles, ArrowRight, Star } from 'lucide-react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  subscriptionStatus?: 'none' | 'pro' | 'authority';
-  subscriptionTier?: string;
-}
-
-interface AuthState {
-  loading: boolean;
-  authenticated: boolean;
-  user: User | null;
-  error: string | null;
-}
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Check, Crown, Star, Shield, Zap, TrendingUp, Users, Globe, BarChart } from 'lucide-react';
 
 export default function Paywall() {
-  const [authState, setAuthState] = useState<AuthState>({
-    loading: true,
-    authenticated: false,
-    user: null,
-    error: null
-  });
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'authority'>('pro');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
 
-  // Check authentication status and handle demo subscription completion
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('sessionToken');
-        if (!token) {
-          window.location.href = '/login';
-          return;
-        }
+  const plans = [
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: 29,
+      icon: Shield,
+      color: 'bg-gradient-to-br from-green-500 to-emerald-600',
+      popular: false,
+      features: [
+        'Up to 5 concurrent A/B tests',
+        'Advanced analytics & reporting',
+        'Smart title recommendations',
+        'YouTube API integration',
+        'Email support',
+        'Performance insights',
+        'CTR optimization tools'
+      ]
+    },
+    {
+      id: 'authority',
+      name: 'Authority',
+      price: 99,
+      icon: Crown,
+      color: 'bg-gradient-to-br from-purple-600 to-indigo-700',
+      popular: true,
+      features: [
+        'Unlimited A/B tests',
+        'Advanced AI title generation',
+        'Priority support',
+        'Custom analytics dashboard',
+        'Bulk test management',
+        'API access',
+        'Team collaboration tools',
+        'White-label reporting',
+        'Advanced integrations'
+      ]
+    }
+  ];
 
-        // Check if this is a demo subscription completion
-        const urlParams = new URLSearchParams(window.location.search);
-        const isDemo = urlParams.get('demo');
-        const plan = urlParams.get('plan');
-        
-        if (isDemo && plan) {
-          console.log('🎉 Demo subscription completion detected:', plan);
-          
-          // Update user subscription status
-          const subscriptionResponse = await fetch('/api/subscription/update', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ 
-              status: 'active', 
-              tier: plan 
-            })
-          });
-          
-          if (subscriptionResponse.ok) {
-            console.log('✅ Subscription activated successfully');
-            // Clean up URL and redirect to dashboard
-            window.history.replaceState({}, '', '/dashboard');
-            window.location.href = '/dashboard';
-            return;
-          }
-        }
+  const handleSubscribe = async (planId: string) => {
+    setLoading(true);
+    setSelectedPlan(planId);
 
-        const response = await fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const user = await response.json();
-          setAuthState({
-            loading: false,
-            authenticated: true,
-            user,
-            error: null
-          });
-
-          // If user already has a subscription, redirect to dashboard
-          if (user.subscriptionStatus && user.subscriptionStatus !== 'none') {
-            window.location.href = '/dashboard';
-            return;
-          }
-        } else {
-          throw new Error('Authentication failed');
-        }
-      } catch (error) {
-        setAuthState({
-          loading: false,
-          authenticated: false,
-          user: null,
-          error: error instanceof Error ? error.message : 'Authentication failed'
-        });
-        localStorage.removeItem('sessionToken');
-        window.location.href = '/login';
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const handleSubscribe = async (plan: 'pro' | 'authority') => {
-    setIsProcessing(true);
     try {
       const token = localStorage.getItem('sessionToken');
+      if (!token) {
+        setLocation('/login');
+        return;
+      }
+
       const response = await fetch('/api/create-subscription', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({ plan: planId })
       });
 
       if (response.ok) {
         const { checkoutUrl } = await response.json();
+        // Redirect to Stripe Checkout
         window.location.href = checkoutUrl;
       } else {
-        throw new Error('Failed to create subscription');
+        alert('Failed to create subscription. Please try again.');
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      alert('Failed to start subscription process. Please try again.');
+      alert('An error occurred. Please try again.');
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
+      setSelectedPlan(null);
     }
   };
 
-  const plans = [
-    {
-      id: 'pro' as const,
-      name: 'Pro',
-      price: 29,
-      description: 'Perfect for growing creators',
-      icon: Zap,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'from-blue-50 to-cyan-50',
-      borderColor: 'border-blue-200',
-      features: [
-        'Up to 10 A/B tests per month',
-        'Real-time performance analytics',
-        'YouTube API integration',
-        'CTR optimization insights',
-        'Title performance tracking',
-        'Email support',
-        'Mobile app access',
-        'Export test results'
-      ],
-      limits: {
-        tests: '10 tests/month',
-        videos: 'Unlimited videos',
-        analytics: 'Real-time data',
-        support: 'Email support'
-      }
-    },
-    {
-      id: 'authority' as const,
-      name: 'Authority',
-      price: 99,
-      description: 'For serious content creators',
-      icon: Crown,
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'from-purple-50 to-pink-50',
-      borderColor: 'border-purple-200',
-      popular: true,
-      features: [
-        'Unlimited A/B tests',
-        'Advanced AI-powered insights',
-        'Priority YouTube API access',
-        'Custom success metrics',
-        'Automated title rotation',
-        'Priority support & onboarding',
-        'Team collaboration features',
-        'White-label reporting',
-        'Custom integrations',
-        'Advanced analytics dashboard',
-        'Competitor analysis',
-        'Bulk test management'
-      ],
-      limits: {
-        tests: 'Unlimited tests',
-        videos: 'Unlimited videos',
-        analytics: 'Advanced AI insights',
-        support: 'Priority support'
-      }
-    }
-  ];
-
-  if (authState.loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-200 rounded-full animate-spin border-t-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading subscription options...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">TitleTesterPro</h1>
-                <p className="text-xs text-gray-500 -mt-1">AI-Powered Title Optimization</p>
-              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                TitleTesterPro
+              </span>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">Welcome, {authState.user?.name || authState.user?.email?.split('@')[0]}</p>
-              <p className="text-xs text-gray-500">Choose your plan to continue</p>
-            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation('/dashboard')}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Back to Dashboard
+            </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full text-sm font-medium text-blue-800 mb-8">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Premium Title Optimization Platform
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Choose Your
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Growth Plan</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+              Unlock Your YouTube Potential
+            </span>
           </h1>
-          
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Join thousands of creators who've increased their CTR by 47% with AI-powered title testing.
-            Start optimizing your YouTube titles today.
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Join 15,000+ creators who've increased their CTR by an average of 47% using our 
+            AI-powered title optimization platform. Choose your plan and start growing today.
           </p>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-            {[
-              { label: 'Active Creators', value: '15,000+', icon: Target },
-              { label: 'Titles Tested', value: '2.3M+', icon: BarChart3 },
-              { label: 'Avg CTR Increase', value: '47%', icon: TrendingUp },
-              { label: 'Success Rate', value: '94%', icon: Star }
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.label}</p>
-              </div>
-            ))}
+          
+          {/* Social Proof */}
+          <div className="flex items-center justify-center space-x-8 mt-8">
+            <div className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">15,000+ Creators</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <BarChart className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-medium text-gray-700">2.3M+ Titles Tested</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              <span className="text-sm font-medium text-gray-700">47% Avg CTR Increase</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Pricing Plans */}
-      <div className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Professional Plans for Serious Creators
-            </h2>
-            <p className="text-lg text-gray-600">
-              No free plans. Premium tools for premium results.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative bg-gradient-to-br ${plan.bgColor} rounded-2xl border-2 ${
-                  plan.popular ? 'border-purple-300 shadow-lg scale-105' : plan.borderColor
-                } p-8 transition-all duration-300 hover:shadow-xl`}
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {plans.map((plan) => {
+            const IconComponent = plan.icon;
+            return (
+              <Card 
+                key={plan.id} 
+                className={`relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
+                  plan.popular ? 'ring-2 ring-purple-500 ring-opacity-50' : ''
+                }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full text-sm font-bold">
-                      Most Popular
+                  <div className="absolute top-0 left-0 right-0">
+                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-center py-2 text-sm font-semibold">
+                      ⭐ Most Popular Choice
                     </div>
                   </div>
                 )}
-
-                <div className="text-center mb-8">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <plan.icon className="w-8 h-8 text-white" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-4">{plan.description}</p>
-                  
-                  <div className="flex items-center justify-center mb-2">
-                    <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                    <span className="text-lg text-gray-600 ml-2">/month</span>
-                  </div>
-                  <p className="text-sm text-gray-500">Billed monthly • Cancel anytime</p>
-                </div>
-
-                {/* Plan Limits */}
-                <div className="bg-white/50 rounded-xl p-4 mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Plan Includes:</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-gray-600">Tests:</span>
-                      <span className="font-medium text-gray-900 ml-1">{plan.limits.tests}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Videos:</span>
-                      <span className="font-medium text-gray-900 ml-1">{plan.limits.videos}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Analytics:</span>
-                      <span className="font-medium text-gray-900 ml-1">{plan.limits.analytics}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Support:</span>
-                      <span className="font-medium text-gray-900 ml-1">{plan.limits.support}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="space-y-3 mb-8">
-                  {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-center">
-                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        <Check className="w-3 h-3 text-white" />
+                
+                <CardHeader className={`${plan.popular ? 'pt-12' : 'pt-6'} pb-4`}>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center space-x-3">
+                      <div className={`w-12 h-12 ${plan.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                        <IconComponent className="w-6 h-6 text-white" />
                       </div>
-                      <span className="text-gray-700 text-sm">{feature}</span>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                        <p className="text-sm text-gray-500">Perfect for growing creators</p>
+                      </div>
+                    </CardTitle>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                      <span className="text-gray-500 ml-2">/month</span>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-sm text-gray-500 mt-1">Billed monthly, cancel anytime</p>
+                  </div>
+                </CardHeader>
 
-                {/* CTA Button */}
-                <button
-                  onClick={() => handleSubscribe(plan.id)}
-                  disabled={isProcessing}
-                  className={`w-full bg-gradient-to-r ${plan.color} text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Start {plan.name} Plan</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
+                <CardContent className="space-y-6">
+                  {/* Features */}
+                  <div className="space-y-3">
+                    {plan.features.map((feature, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                {plan.id === 'authority' && (
-                  <p className="text-center text-sm text-gray-600 mt-3">
-                    Includes priority onboarding call
+                  {/* CTA Button */}
+                  <Button
+                    onClick={() => handleSubscribe(plan.id)}
+                    disabled={loading}
+                    className={`w-full py-4 text-lg font-semibold transition-all duration-300 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl'
+                    }`}
+                  >
+                    {loading && selectedPlan === plan.id ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-5 h-5" />
+                        <span>Start {plan.name} Plan</span>
+                      </div>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    Secure payment powered by Stripe • Cancel anytime
                   </p>
-                )}
-              </div>
-            ))}
-          </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-          {/* Security & Trust */}
-          <div className="text-center mt-16">
-            <div className="inline-flex items-center space-x-6 bg-gray-50 rounded-2xl px-8 py-4">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Secure Payment</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-                <span className="text-sm font-medium text-gray-700">30-Day Guarantee</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Crown className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Premium Support</span>
-              </div>
-            </div>
-            
-            <p className="text-sm text-gray-500 mt-4">
-              Trusted by 15,000+ creators worldwide. 
-              <a href="/privacy" className="text-blue-600 hover:underline ml-1">Privacy Policy</a> • 
-              <a href="/terms" className="text-blue-600 hover:underline ml-1">Terms of Service</a>
-            </p>
+        {/* Trust Signals */}
+        <div className="mt-16 text-center">
+          <p className="text-sm text-gray-500 mb-6">Trusted by creators worldwide</p>
+          <div className="flex flex-wrap items-center justify-center space-x-8 opacity-60">
+            <Globe className="w-8 h-8 text-gray-400" />
+            <Shield className="w-8 h-8 text-gray-400" />
+            <TrendingUp className="w-8 h-8 text-gray-400" />
+            <BarChart className="w-8 h-8 text-gray-400" />
           </div>
         </div>
-      </div>
 
-      {/* FAQ Section */}
-      <div className="bg-gray-50 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+        {/* FAQ Section */}
+        <div className="mt-20">
+          <h3 className="text-2xl font-bold text-center mb-10 text-gray-900">
             Frequently Asked Questions
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              {
-                question: "Why no free plan?",
-                answer: "We focus on delivering premium results for serious creators. Our paid plans ensure we can provide the highest quality YouTube API access, AI insights, and dedicated support."
-              },
-              {
-                question: "Can I cancel anytime?",
-                answer: "Yes, you can cancel your subscription at any time. Your access will continue until the end of your current billing period."
-              },
-              {
-                question: "Do you offer refunds?",
-                answer: "We offer a 30-day money-back guarantee. If you're not satisfied with the results, contact us for a full refund."
-              },
-              {
-                question: "How does the YouTube integration work?",
-                answer: "We use official YouTube APIs with OAuth authentication. Your account credentials are securely encrypted and we never store your YouTube password."
-              }
-            ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600 text-sm">{faq.answer}</p>
-              </div>
-            ))}
+          </h3>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Can I cancel anytime?</h4>
+              <p className="text-gray-600 text-sm">Yes, you can cancel your subscription at any time. No long-term contracts or cancellation fees.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">How quickly will I see results?</h4>
+              <p className="text-gray-600 text-sm">Most creators see CTR improvements within the first week of A/B testing their titles.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Is my YouTube account safe?</h4>
+              <p className="text-gray-600 text-sm">Absolutely. We use OAuth authentication and never store your YouTube password. Your account security is our priority.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Do you offer refunds?</h4>
+              <p className="text-gray-600 text-sm">We offer a 14-day money-back guarantee if you're not satisfied with the results.</p>
+            </div>
           </div>
         </div>
       </div>
