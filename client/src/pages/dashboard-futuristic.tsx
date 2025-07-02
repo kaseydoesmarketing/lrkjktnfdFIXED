@@ -149,7 +149,8 @@ export default function DashboardFuturistic() {
         }
         
         // Check if user is admin (case-insensitive)
-        const isAdminUser = user.email?.toLowerCase() === 'kaseydoesmarketing@gmail.com';
+        const adminEmails = ['kaseydoesmarketing@gmail.com', 'liftedkulture-6202@pages.plusgoogle.com'];
+        const isAdminUser = adminEmails.includes(user.email?.toLowerCase() || '');
         setIsAdmin(isAdminUser);
         
         setAuthState({

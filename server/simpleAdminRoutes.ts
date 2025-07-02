@@ -6,6 +6,7 @@ function isAdmin(userEmail: string): boolean {
   const adminEmails = [
     'KaseyDoesMarketing@gmail.com',
     'kaseydoesmarketing@gmail.com', // Add lowercase version
+    'liftedkulture-6202@pages.plusgoogle.com', // Current user
     'admin@titletesterpro.com'
   ];
   return adminEmails.includes(userEmail);
