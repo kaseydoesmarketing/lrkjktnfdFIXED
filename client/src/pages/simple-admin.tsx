@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, TestTube, Activity, AlertTriangle, Eye, Download, Settings, Ban, CheckCircle, Mail, Calendar, Play, Pause, Square, Clock, TrendingUp, Video } from 'lucide-react';
+import { Shield, Users, TestTube, Activity, AlertTriangle, Eye, Download, Settings, Ban, CheckCircle, Mail, Calendar, Play, Pause, Square, Clock, TrendingUp, Video, Crown, Zap, Star } from 'lucide-react';
 
 // UserManagement Component
 function UserManagement() {
@@ -87,6 +87,35 @@ function UserManagement() {
     }
   };
 
+  const grantUserAccess = async (userId: string, tier: string, userEmail: string) => {
+    if (!confirm(`Grant ${tier.toUpperCase()} access to ${userEmail}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch(`/api/admin/users/${userId}/grant-access`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tier })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`${tier.charAt(0).toUpperCase() + tier.slice(1)} access granted successfully`);
+        fetchUsers(); // Refresh the users list
+      } else {
+        alert(`Failed to grant ${tier} access`);
+      }
+    } catch (error) {
+      console.error(`Error granting ${tier} access:`, error);
+      alert(`Error granting ${tier} access`);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading users...</div>;
   }
@@ -128,38 +157,52 @@ function UserManagement() {
               </div>
             </div>
             
-            {user.subscriptionStatus === 'active' ? (
-              <Button
-                onClick={() => cancelUserAccess(user.id, user.email)}
-                variant="destructive"
-                size="sm"
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Ban className="w-4 h-4 mr-1" />
-                Cancel Access
-              </Button>
-            ) : (
-              <div className="space-x-2">
+            <div className="flex flex-col space-y-2">
+              {user.subscriptionStatus === 'active' ? (
                 <Button
-                  onClick={() => restoreUserAccess(user.id, user.email, 'pro')}
-                  variant="outline"
+                  onClick={() => cancelUserAccess(user.id, user.email)}
+                  variant="destructive"
                   size="sm"
-                  className="text-green-600 border-green-300 hover:bg-green-50"
+                  className="bg-red-600 hover:bg-red-700"
                 >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Restore Pro
+                  <Ban className="w-4 h-4 mr-1" />
+                  Cancel Access
                 </Button>
-                <Button
-                  onClick={() => restoreUserAccess(user.id, user.email, 'authority')}
-                  variant="outline"
-                  size="sm"
-                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Restore Authority
-                </Button>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-500 font-medium">Grant Access:</div>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      onClick={() => grantUserAccess(user.id, 'pro', user.email)}
+                      variant="outline"
+                      size="sm"
+                      className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-2 py-1"
+                    >
+                      <Shield className="w-3 h-3 mr-1" />
+                      Pro
+                    </Button>
+                    <Button
+                      onClick={() => grantUserAccess(user.id, 'authority', user.email)}
+                      variant="outline"
+                      size="sm"
+                      className="text-purple-600 border-purple-300 hover:bg-purple-50 text-xs px-2 py-1"
+                    >
+                      <Crown className="w-3 h-3 mr-1" />
+                      Authority
+                    </Button>
+                    <Button
+                      onClick={() => grantUserAccess(user.id, 'lifetime', user.email)}
+                      variant="outline"
+                      size="sm"
+                      className="text-yellow-600 border-yellow-300 hover:bg-yellow-50 text-xs px-2 py-1"
+                    >
+                      <Star className="w-3 h-3 mr-1" />
+                      Lifetime
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ))}
