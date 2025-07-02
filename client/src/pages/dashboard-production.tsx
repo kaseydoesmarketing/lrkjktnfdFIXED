@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { queryClient } from '@/lib/queryClient';
@@ -391,6 +393,14 @@ const ActiveTestCard = ({ test, onTestAction }: { test: Test; onTestAction: (id:
 
 export default function DashboardProduction() {
   const [showCreateTest, setShowCreateTest] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [testConfig, setTestConfig] = useState({
+    rotationIntervalMinutes: 60,
+    winnerMetric: 'ctr',
+    startDate: new Date().toISOString().slice(0, 16),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
+  });
+  const [titleInputs, setTitleInputs] = useState(['', '', '', '', '']);
   const { toast } = useToast();
 
   // Real-time data fetching
@@ -411,6 +421,12 @@ export default function DashboardProduction() {
     enabled: !!user,
     retry: false,
     refetchInterval: 30 * 1000,
+  });
+
+  const { data: videos = [], isLoading: videosLoading } = useQuery<Video[]>({
+    queryKey: ['/api/videos/recent'],
+    enabled: !!user && showCreateTest,
+    retry: false,
   });
 
   // Test management mutations
@@ -450,6 +466,37 @@ export default function DashboardProduction() {
     }
   });
 
+  const createTest = useMutation({
+    mutationFn: async (testData: any) => {
+      const response = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testData),
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create test');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setShowCreateTest(false);
+      setSelectedVideo(null);
+      setTitleInputs(['', '', '', '', '']);
+      toast({ title: 'Test created successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Failed to create test', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    }
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch('/api/auth/logout', {
@@ -469,6 +516,31 @@ export default function DashboardProduction() {
 
   const handleTestAction = (testId: string, action: string) => {
     testActionMutation.mutate({ testId, action });
+  };
+
+  const handleCreateTest = async () => {
+    if (!selectedVideo) {
+      toast({ title: 'Please select a video', variant: 'destructive' });
+      return;
+    }
+
+    const validTitles = titleInputs.filter(title => title.trim().length > 0);
+    if (validTitles.length < 2) {
+      toast({ title: 'Please enter at least 2 title variants', variant: 'destructive' });
+      return;
+    }
+
+    const testData = {
+      videoId: selectedVideo.id,
+      videoTitle: selectedVideo.title,
+      titles: validTitles,
+      rotationIntervalMinutes: testConfig.rotationIntervalMinutes,
+      winnerMetric: testConfig.winnerMetric,
+      startDate: new Date(testConfig.startDate).toISOString(),
+      endDate: new Date(testConfig.endDate).toISOString()
+    };
+
+    createTest.mutate(testData);
   };
 
   // Filter tests
@@ -640,25 +712,175 @@ export default function DashboardProduction() {
         </div>
       </div>
 
-      {/* Create Test Modal - Simplified for now */}
+      {/* Create Test Modal */}
       <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
-              <TestTube className="w-5 h-5 text-blue-600" />
-              <span>Create New A/B Test</span>
-            </DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2 border-gray-200 shadow-2xl">
+          <DialogHeader className="bg-white border-b border-gray-100 pb-4">
+            <DialogTitle className="text-xl font-bold text-gray-900">Create New A/B Test</DialogTitle>
+            <p className="text-gray-600">Select a video and configure your title testing parameters</p>
           </DialogHeader>
+          
+          <div className="space-y-6 bg-white p-6">
+            {/* Video Selection */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <label className="text-sm font-medium text-gray-900 mb-3 block">Select Video</label>
+              {videosLoading ? (
+                <div className="flex items-center justify-center p-12 border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-gray-700 font-medium">Loading your YouTube videos...</p>
+                  </div>
+                </div>
+              ) : videos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-white">
+                  {videos.map((video) => (
+                    <div
+                      key={video.id}
+                      onClick={() => setSelectedVideo(video)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        selectedVideo?.id === video.id
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="flex space-x-3">
+                        <img
+                          src={video.thumbnailUrl}
+                          alt={video.title}
+                          className="w-20 h-12 object-cover rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">{video.title}</h4>
+                          <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500">
+                            <span>{formatNumber(video.viewCount)} views</span>
+                            <span>•</span>
+                            <span>{video.duration}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                  <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium mb-2">No videos found</p>
+                  <p className="text-sm text-gray-500">Make sure your channel has recent videos</p>
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-6 py-4">
-            <div className="text-center py-8">
-              <TestTube className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Test creation form coming soon</p>
+            {/* Title Variants */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <label className="text-sm font-medium text-gray-900 mb-3 block">Title Variants (2-5 titles)</label>
+              <div className="space-y-3">
+                {titleInputs.map((title, index) => (
+                  <div key={index} className="relative">
+                    <Input
+                      placeholder={`Title variant ${index + 1}${index < 2 ? ' (required)' : ' (optional)'}`}
+                      value={title}
+                      onChange={(e) => {
+                        const newTitles = [...titleInputs];
+                        newTitles[index] = e.target.value;
+                        setTitleInputs(newTitles);
+                      }}
+                      className={`bg-white border-gray-300 text-gray-900 placeholder-gray-500 ${
+                        index < 2 && !title.trim() ? 'border-red-300' : ''
+                      }`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Test Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="text-sm font-medium text-gray-900 mb-2 block">Rotation Interval</label>
+                <Select
+                  value={testConfig.rotationIntervalMinutes.toString()}
+                  onValueChange={(value) => setTestConfig(prev => ({ ...prev, rotationIntervalMinutes: parseInt(value) }))}
+                >
+                  <SelectTrigger className="bg-white border-gray-300 text-gray-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300 shadow-lg">
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
+                    <SelectItem value="240">4 hours</SelectItem>
+                    <SelectItem value="480">8 hours</SelectItem>
+                    <SelectItem value="720">12 hours</SelectItem>
+                    <SelectItem value="1440">24 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="text-sm font-medium text-gray-900 mb-2 block">Winner Determination</label>
+                <Select
+                  value={testConfig.winnerMetric}
+                  onValueChange={(value) => setTestConfig(prev => ({ ...prev, winnerMetric: value }))}
+                >
+                  <SelectTrigger className="bg-white border-gray-300 text-gray-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300 shadow-lg">
+                    <SelectItem value="ctr">Highest CTR</SelectItem>
+                    <SelectItem value="views">Highest Views</SelectItem>
+                    <SelectItem value="combined">Combined Metrics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Test Duration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="text-sm font-medium text-gray-900 mb-2 block">Start Date & Time</label>
+                <Input
+                  type="datetime-local"
+                  value={testConfig.startDate}
+                  onChange={(e) => setTestConfig(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="bg-white border-gray-300 text-gray-900"
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <label className="text-sm font-medium text-gray-900 mb-2 block">End Date & Time</label>
+                <Input
+                  type="datetime-local"
+                  value={testConfig.endDate}
+                  onChange={(e) => setTestConfig(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="bg-white border-gray-300 text-gray-900"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
               <Button
+                variant="outline"
                 onClick={() => setShowCreateTest(false)}
-                className="mt-4"
+                className="text-gray-700 border-gray-300 hover:bg-gray-50"
               >
-                Close
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateTest}
+                disabled={!selectedVideo || titleInputs.filter(t => t.trim()).length < 2 || createTest.isPending}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                {createTest.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <TestTube className="w-4 h-4 mr-2" />
+                    Create Test
+                  </>
+                )}
               </Button>
             </div>
           </div>
