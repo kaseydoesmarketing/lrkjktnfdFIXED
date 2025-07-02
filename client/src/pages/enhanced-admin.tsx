@@ -245,6 +245,8 @@ function EnhancedUserManagement() {
 function EnhancedTestManagement() {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fullReport, setFullReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     fetchTests();
@@ -261,6 +263,24 @@ function EnhancedTestManagement() {
       console.error('Error fetching tests:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewFullReport = async (testId: string) => {
+    try {
+      const response = await fetch(`/api/admin/tests/${testId}/full-report`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const reportData = await response.json();
+        setFullReport(reportData);
+        setShowReportModal(true);
+      } else {
+        console.error('Failed to fetch full report');
+      }
+    } catch (error) {
+      console.error('Error fetching full report:', error);
     }
   };
 
@@ -282,31 +302,44 @@ function EnhancedTestManagement() {
                 Created: {new Date(test.createdAt).toLocaleDateString()}
               </p>
               <div className="mt-2">
-                <p className="text-sm font-medium">Real Momentum Report Data:</p>
-                <div className="grid grid-cols-3 gap-4 mt-2">
+                <p className="text-sm font-medium">Live Test KPIs:</p>
+                <div className="grid grid-cols-4 gap-3 mt-2">
                   <div className="bg-blue-50 rounded p-2 text-center">
                     <div className="text-lg font-bold text-blue-600">
-                      {test.analytics ? `${(test.analytics.averageCtr * 100).toFixed(1)}%` : 'N/A'}
+                      {test.analytics ? `${(test.analytics.averageCtr * 100).toFixed(1)}%` : '0.0%'}
                     </div>
                     <div className="text-xs text-gray-600">CTR</div>
                   </div>
                   <div className="bg-green-50 rounded p-2 text-center">
                     <div className="text-lg font-bold text-green-600">
-                      {test.analytics ? `${Math.round(test.analytics.averageViewDuration)}s` : 'N/A'}
-                    </div>
-                    <div className="text-xs text-gray-600">AVD</div>
-                  </div>
-                  <div className="bg-purple-50 rounded p-2 text-center">
-                    <div className="text-lg font-bold text-purple-600">
-                      {test.analytics ? test.analytics.totalViews.toLocaleString() : 'N/A'}
+                      {test.analytics ? test.analytics.totalViews.toLocaleString() : '0'}
                     </div>
                     <div className="text-xs text-gray-600">Views</div>
                   </div>
+                  <div className="bg-purple-50 rounded p-2 text-center">
+                    <div className="text-lg font-bold text-purple-600">
+                      {test.analytics ? test.analytics.totalImpressions.toLocaleString() : '0'}
+                    </div>
+                    <div className="text-xs text-gray-600">Impressions</div>
+                  </div>
+                  <div className="bg-orange-50 rounded p-2 text-center">
+                    <div className="text-lg font-bold text-orange-600">
+                      {test.analytics ? `${Math.round(test.analytics.averageViewDuration)}s` : '0s'}
+                    </div>
+                    <div className="text-xs text-gray-600">AVD</div>
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Data Points: {test.analytics?.dataPointsCollected || 0} • Rotations: {test.analytics?.rotationsCount || 0}
                 </div>
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleViewFullReport(test.id)}
+              >
                 View Full Report
               </Button>
             </div>

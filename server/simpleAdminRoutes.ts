@@ -110,7 +110,7 @@ export function registerSimpleAdminRoutes(app: Express) {
     }
   });
 
-  // Get all tests
+  // Get all tests with real analytics
   app.get('/api/admin/tests', requireAdmin, async (req: Request, res: Response) => {
     try {
       const allTests = await storage.getAllTests();
@@ -120,15 +120,46 @@ export function registerSimpleAdminRoutes(app: Express) {
           const user = await storage.getUser(test.userId);
           const titles = await storage.getTitlesByTestId(test.id);
           
+          // Calculate real KPI metrics from analytics data
+          let totalViews = 0;
+          let totalImpressions = 0;
+          let totalWatchTime = 0;
+          let dataPoints = 0;
+          
+          // Get analytics for all titles in this test
+          for (const title of titles) {
+            const titleAnalytics = await storage.getAnalyticsPollsByTitleId(title.id);
+            titleAnalytics.forEach((data: any) => {
+              if (data.views && data.impressions && data.averageViewDuration) {
+                totalViews += data.views;
+                totalImpressions += data.impressions;
+                totalWatchTime += data.averageViewDuration * data.views; // Convert back to total watch time
+                dataPoints++;
+              }
+            });
+          }
+          
+          const averageCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
+          const averageViewDuration = totalViews > 0 ? totalWatchTime / totalViews : 0;
+          
           return {
             id: test.id,
             userId: test.userId,
             userEmail: user?.email || 'Unknown',
             videoTitle: test.videoTitle || 'Unknown Video',
+            videoId: test.videoId,
             status: test.status,
             titlesCount: titles.length,
             rotationIntervalMinutes: test.rotationIntervalMinutes,
             createdAt: test.createdAt.toISOString(),
+            analytics: {
+              totalViews,
+              totalImpressions,
+              averageCtr: averageCtr / 100, // Convert back to decimal
+              averageViewDuration,
+              rotationsCount: dataPoints,
+              dataPointsCollected: dataPoints
+            },
             flagged: false,
             suspiciousActivity: []
           };
@@ -139,6 +170,92 @@ export function registerSimpleAdminRoutes(app: Express) {
     } catch (error) {
       console.error('Error getting tests:', error);
       res.status(500).json({ error: 'Failed to get tests' });
+    }
+  });
+
+  // Get full analytics report for specific test
+  app.get('/api/admin/tests/:testId/full-report', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      
+      const test = await storage.getTest(testId);
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+      
+      const user = await storage.getUser(test.userId);
+      const titles = await storage.getTitlesByTestId(testId);
+      
+      // Calculate performance by title using correct analytics polling
+      const titlePerformance = await Promise.all(
+        titles.map(async (title) => {
+          const titleAnalytics = await storage.getAnalyticsPollsByTitleId(title.id);
+          
+          let totalViews = 0;
+          let totalImpressions = 0;
+          let totalWatchTime = 0;
+          
+          titleAnalytics.forEach((poll) => {
+            totalViews += poll.views || 0;
+            totalImpressions += poll.impressions || 0;
+            totalWatchTime += (poll.averageViewDuration || 0) * (poll.views || 0);
+          });
+          
+          const ctr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
+          const avgViewDuration = totalViews > 0 ? totalWatchTime / totalViews : 0;
+          
+          return {
+            titleId: title.id,
+            titleText: title.text, // Correct field name
+            order: title.order,
+            totalViews,
+            totalImpressions,
+            ctr,
+            avgViewDuration,
+            rotationsActive: titleAnalytics.length
+          };
+        })
+      );
+      
+      // Overall test metrics
+      const totalViews = titlePerformance.reduce((sum, t) => sum + t.totalViews, 0);
+      const totalImpressions = titlePerformance.reduce((sum, t) => sum + t.totalImpressions, 0);
+      const overallCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
+      
+      // Determine winning title
+      const winningTitle = titlePerformance.length > 0 ? 
+        titlePerformance.reduce((best, current) => 
+          current.ctr > best.ctr ? current : best, titlePerformance[0]
+        ) : null;
+      
+      const fullReport = {
+        testInfo: {
+          id: test.id,
+          videoTitle: test.videoTitle,
+          videoId: test.videoId, // Correct field name
+          status: test.status,
+          createdAt: test.createdAt.toISOString(),
+          rotationInterval: test.rotationIntervalMinutes,
+          user: {
+            email: user?.email,
+            name: user?.name
+          }
+        },
+        overallMetrics: {
+          totalViews,
+          totalImpressions,
+          overallCtr,
+          totalRotations: titlePerformance.reduce((sum, t) => sum + t.rotationsActive, 0),
+          testDuration: test.createdAt ? Math.floor((Date.now() - test.createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 0
+        },
+        titlePerformance,
+        winningTitle
+      };
+      
+      res.json(fullReport);
+    } catch (error) {
+      console.error('Error generating full report:', error);
+      res.status(500).json({ error: 'Failed to generate full report' });
     }
   });
 
