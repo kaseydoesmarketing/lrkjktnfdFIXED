@@ -99,6 +99,12 @@ interface Momentum {
   weeklyProgress: number;
 }
 
+// Safe number formatting utility
+const safeToFixed = (value: any, decimals: number = 1): string => {
+  const num = Number(value);
+  return isNaN(num) ? "0" : num.toFixed(decimals);
+};
+
 export default function DashboardImproved() {
   const [showCreateTest, setShowCreateTest] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -368,7 +374,7 @@ export default function DashboardImproved() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Avg CTR</p>
-              <p className="text-2xl font-bold text-gray-900">{((stats?.avgCtr ?? 0) || 0).toFixed(1)}%</p>
+              <p className="text-2xl font-bold text-gray-900">{safeToFixed(stats?.avgCtr)}%</p>
             </div>
           </div>
 
@@ -379,7 +385,7 @@ export default function DashboardImproved() {
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div className="text-orange-600 text-sm font-medium">
-                {momentum.currentStreak > 0 ? '+' : ''}{momentum.weeklyProgress.toFixed(0)}%
+                {momentum.currentStreak > 0 ? '+' : ''}{safeToFixed(momentum.weeklyProgress, 0)}%
               </div>
             </div>
             <div>
@@ -488,7 +494,7 @@ export default function DashboardImproved() {
                           {test.analytics && (
                             <div className="flex items-center space-x-4 mt-2 text-sm">
                               <span className="text-green-600 font-medium">
-                                {test.analytics.averageCtr.toFixed(1)}% CTR
+                                {safeToFixed(test.analytics.averageCtr)}% CTR
                               </span>
                               <span className="text-blue-600 font-medium">
                                 {formatNumber(test.analytics.totalViews)} views
@@ -540,12 +546,12 @@ export default function DashboardImproved() {
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-sm font-medium text-gray-600">Avg Improvement</span>
-                    <span className="font-bold text-green-600">+{momentum.avgImprovementRate.toFixed(1)}%</span>
+                    <span className="font-bold text-green-600">+{safeToFixed(momentum.avgImprovementRate)}%</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-sm font-medium text-gray-600">Weekly Progress</span>
-                    <span className="font-bold text-blue-600">{momentum.weeklyProgress.toFixed(0)}%</span>
+                    <span className="font-bold text-blue-600">{safeToFixed(momentum.weeklyProgress, 0)}%</span>
                   </div>
                 </div>
 
@@ -553,7 +559,7 @@ export default function DashboardImproved() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-600">This Week</span>
-                    <span className="text-sm text-gray-500">{Math.min(momentum.weeklyProgress, 100).toFixed(0)}%</span>
+                    <span className="text-sm text-gray-500">{safeToFixed(Math.min(momentum.weeklyProgress, 100), 0)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
