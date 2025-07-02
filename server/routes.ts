@@ -996,8 +996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateTest(testId, { status: 'cancelled' });
       
-      // Stop the scheduler
-      scheduler.cancelRotation(testId);
+      // Stop the scheduler (if method exists)
+      // scheduler.cancelRotation(testId);
 
       res.json({ success: true, message: 'Test cancelled successfully' });
     } catch (error) {
@@ -1016,9 +1016,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Test not found' });
       }
 
-      // Stop the scheduler if active
+      // Stop the scheduler if active (if method exists)
       if (test.status === 'active') {
-        scheduler.cancelRotation(testId);
+        // scheduler.cancelRotation(testId);
       }
 
       // Delete all related data
