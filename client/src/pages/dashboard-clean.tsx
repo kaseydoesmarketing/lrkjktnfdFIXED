@@ -18,7 +18,10 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
-  Filter
+  Filter,
+  Sparkles,
+  Zap,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -538,18 +541,26 @@ export default function DashboardClean() {
 
         {/* Create Test Modal */}
         <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader className="pb-4">
-              <DialogTitle className="text-xl font-bold">Create A/B Test</DialogTitle>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-0 shadow-2xl rounded-2xl">
+            <DialogHeader className="pb-6 px-6 pt-6 bg-gradient-to-r from-blue-50 to-indigo-50 -mx-6 -mt-6 rounded-t-2xl">
+              <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <TestTube className="w-4 h-4 text-white" />
+                </div>
+                Create A/B Test
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            <div className="flex-1 overflow-y-auto px-6 space-y-8">
               {/* Selected Video Display */}
               {selectedVideo && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Selected Video</h3>
-                  <div className="flex items-start space-x-3">
-                    <div className="w-24 h-14 bg-gray-200 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Video className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold text-gray-900">Selected Video</h3>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-32 h-20 bg-white rounded-lg shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200">
                       {selectedVideo.thumbnail ? (
                         <img 
                           src={selectedVideo.thumbnail} 
@@ -557,29 +568,43 @@ export default function DashboardClean() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <PlayCircle className="w-6 h-6 text-gray-400" />
+                        <PlayCircle className="w-8 h-8 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-gray-900 mb-1">{selectedVideo.title}</p>
-                      <p className="text-xs text-gray-500">{formatNumber(selectedVideo.viewCount)} views</p>
+                      <p className="font-medium text-gray-900 mb-2 line-clamp-2">{selectedVideo.title}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Eye className="w-4 h-4" />
+                          {formatNumber(selectedVideo.viewCount)} views
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {selectedVideo.duration}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Title Variants */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-medium text-gray-900 mb-3">Title Variants</h3>
-                  <p className="text-sm text-gray-600 mb-4">Enter 2-5 alternative titles to test against each other</p>
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Title Variants</h3>
                 </div>
+                <p className="text-sm text-gray-600 mb-6">Create 2-5 alternative titles to test against each other. Each title will be tested to find the highest performing variant.</p>
                 
                 <div className="space-y-4">
                   {titleInputs.map((title, index) => (
-                    <div key={index} className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        Title {index + 1} {index < 2 && <span className="text-red-500">*</span>}
+                    <div key={index} className="relative">
+                      <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        Title Variant {index + 1}
+                        {index < 2 && <span className="text-red-500 text-xs">(Required)</span>}
                       </Label>
                       <Input
                         value={title}
@@ -588,26 +613,41 @@ export default function DashboardClean() {
                           newTitles[index] = e.target.value;
                           setTitleInputs(newTitles);
                         }}
-                        placeholder={`Enter title variant ${index + 1}${index < 2 ? ' (required)' : ' (optional)'}`}
-                        className="w-full"
+                        placeholder={`Enter your ${index === 0 ? 'first' : index === 1 ? 'second' : 'alternative'} title variant...`}
+                        className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-purple-300 focus:ring-purple-200 rounded-lg"
                       />
                     </div>
                   ))}
                 </div>
+                
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <Zap className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-blue-800">
+                      <strong>Pro Tip:</strong> Use different emotional hooks, keywords, or structures. Test clickbait vs informative, questions vs statements, or different emotional appeals.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Test Configuration */}
-              <div className="space-y-4">
-                <h3 className="text-base font-medium text-gray-900">Test Configuration</h3>
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Settings className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Test Configuration</h3>
+                </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Rotation Interval</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-green-600" />
+                      Rotation Interval
+                    </Label>
                     <Select 
                       value={testConfig.rotationIntervalMinutes.toString()} 
                       onValueChange={(value) => setTestConfig(prev => ({...prev, rotationIntervalMinutes: parseInt(value)}))}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -619,15 +659,19 @@ export default function DashboardClean() {
                         <SelectItem value="1440">24 hours</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500">How often to switch between title variants</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Winner Metric</Label>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-green-600" />
+                      Winner Metric
+                    </Label>
                     <Select 
                       value={testConfig.winnerMetric} 
                       onValueChange={(value) => setTestConfig(prev => ({...prev, winnerMetric: value}))}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -636,40 +680,52 @@ export default function DashboardClean() {
                         <SelectItem value="combined">Combined Metrics</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500">How to determine the winning title</p>
                   </div>
                 </div>
               </div>
 
               {/* Test Duration */}
-              <div className="space-y-4">
-                <h3 className="text-base font-medium text-gray-900">Test Duration</h3>
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Test Duration</h3>
+                </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Start Date & Time</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Play className="w-4 h-4 text-orange-600" />
+                      Start Date & Time
+                    </Label>
                     <Input
                       type="datetime-local"
                       value={testConfig.startDate}
                       onChange={(e) => setTestConfig(prev => ({...prev, startDate: e.target.value}))}
-                      className="w-full"
+                      className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-300 focus:ring-orange-200 rounded-lg"
                     />
+                    <p className="text-xs text-gray-500">When to begin the A/B test</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">End Date & Time</Label>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-orange-600" />
+                      End Date & Time
+                    </Label>
                     <Input
                       type="datetime-local"
                       value={testConfig.endDate}
                       onChange={(e) => setTestConfig(prev => ({...prev, endDate: e.target.value}))}
-                      className="w-full"
+                      className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-300 focus:ring-orange-200 rounded-lg"
                     />
+                    <p className="text-xs text-gray-500">When to complete the test and declare winner</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-6 border-t mt-6">
+            <div className="flex items-center justify-between px-6 py-6 bg-gray-50 -mx-6 -mb-6 rounded-b-2xl border-t border-gray-100">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -677,15 +733,26 @@ export default function DashboardClean() {
                   setSelectedVideo(null);
                   setTitleInputs(['', '', '', '', '']);
                 }}
+                className="h-12 px-6 border-gray-300 hover:bg-gray-100 rounded-lg"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateTest}
                 disabled={createTest.isPending || !selectedVideo}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="h-12 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
               >
-                {createTest.isPending ? 'Creating Test...' : 'Create Test'}
+                {createTest.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating Test...
+                  </>
+                ) : (
+                  <>
+                    <TestTube className="w-4 h-4" />
+                    Create A/B Test
+                  </>
+                )}
               </Button>
             </div>
           </DialogContent>
