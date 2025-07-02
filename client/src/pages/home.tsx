@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { Play, Check, Star, TrendingUp, Zap, Bot, Users, BarChart3, Target, Clock, Award, ChevronRight, ArrowRight } from 'lucide-react';
+import { Play, Check, Star, TrendingUp, Zap, Bot, Users, BarChart3, Target, Clock, Award, ChevronRight, ArrowRight, Monitor, Bell } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -135,6 +135,80 @@ export default function Home() {
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-20 animate-pulse"></div>
               <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full opacity-20 animate-pulse delay-1000"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile-First Creator Features - 76% of YouTube is Mobile */}
+      <section className="py-16 bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Built for Mobile-First Creators
+            </h2>
+            <p className="text-xl text-gray-600 mb-2">
+              Since 76% of YouTube consumption happens on mobile, we optimized every feature for creators on-the-go
+            </p>
+            <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
+              <Monitor className="w-4 h-4" />
+              <span>Mobile-Optimized Dashboard</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Thumb-Friendly Interface */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-4">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Thumb-Friendly Interface</h3>
+              <p className="text-gray-600 text-sm">Create and monitor tests with ease using 44px+ touch targets optimized for mobile creators</p>
+            </div>
+
+            {/* Mobile Preview */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
+                <Monitor className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Real-Time Mobile Preview</h3>
+              <p className="text-gray-600 text-sm">See exactly how your titles appear on different mobile devices before publishing</p>
+            </div>
+
+            {/* Push Notifications */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Smart Notifications</h3>
+              <p className="text-gray-600 text-sm">Get notified instantly when tests complete and winning titles are ready to implement</p>
+            </div>
+
+            {/* Simplified Creation */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">60-Second Setup</h3>
+              <p className="text-gray-600 text-sm">Simplified test creation designed for busy creators who need results fast</p>
+            </div>
+          </div>
+
+          {/* Mobile Stats */}
+          <div className="mt-12 bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">76%</div>
+                <div className="text-gray-600">YouTube consumption on mobile</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-green-600 mb-2">52%</div>
+                <div className="text-gray-600">Better CTR with mobile-optimized titles</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">3x</div>
+                <div className="text-gray-600">Faster test creation on mobile</div>
+              </div>
             </div>
           </div>
         </div>
