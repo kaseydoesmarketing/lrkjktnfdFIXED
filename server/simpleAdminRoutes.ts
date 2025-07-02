@@ -127,6 +127,80 @@ export function registerSimpleAdminRoutes(app: Express) {
     }
   });
 
+  // Upgrade user subscription
+  app.post('/api/admin/users/:userId/upgrade', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { tier } = req.body;
+      const adminUser = (req as any).user;
+      
+      if (!['pro', 'authority', 'lifetime'].includes(tier)) {
+        return res.status(400).json({ error: 'Invalid tier specified' });
+      }
+      
+      // Update user's subscription
+      await storage.updateUserSubscription(userId, 'active', tier);
+      
+      // Get updated user data
+      const user = await storage.getUser(userId);
+      console.log(`Admin action: upgrade user ${userId} to ${tier} by ${adminUser.email}`);
+      
+      return res.json({ 
+        success: true, 
+        userId,
+        tier,
+        message: `User upgraded to ${tier.toUpperCase()} successfully`,
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionTier: user.subscriptionTier
+        } : null
+      });
+    } catch (error) {
+      console.error('Error upgrading user:', error);
+      res.status(500).json({ error: 'Failed to upgrade user' });
+    }
+  });
+
+  // Downgrade user subscription
+  app.post('/api/admin/users/:userId/downgrade', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { tier } = req.body;
+      const adminUser = (req as any).user;
+      
+      if (!['pro', 'cancelled'].includes(tier)) {
+        return res.status(400).json({ error: 'Invalid downgrade tier specified' });
+      }
+      
+      // Update user's subscription
+      await storage.updateUserSubscription(userId, tier === 'cancelled' ? 'cancelled' : 'active', tier === 'cancelled' ? '' : tier);
+      
+      // Get updated user data
+      const user = await storage.getUser(userId);
+      console.log(`Admin action: downgrade user ${userId} to ${tier} by ${adminUser.email}`);
+      
+      return res.json({ 
+        success: true, 
+        userId,
+        tier,
+        message: `User ${tier === 'cancelled' ? 'access cancelled' : `downgraded to ${tier.toUpperCase()}`} successfully`,
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionTier: user.subscriptionTier
+        } : null
+      });
+    } catch (error) {
+      console.error('Error downgrading user:', error);
+      res.status(500).json({ error: 'Failed to downgrade user' });
+    }
+  });
+
   // Moderate user
   app.post('/api/admin/users/:userId/:action', requireAdmin, async (req: Request, res: Response) => {
     try {

@@ -106,9 +106,38 @@ function EnhancedUserManagement() {
       if (response.ok) {
         alert(`User upgraded to ${tier.toUpperCase()} successfully`);
         fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(`Error upgrading user: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       alert('Error upgrading user');
+    }
+  };
+
+  const downgradeUser = async (userId: string, tier: string, userEmail: string) => {
+    if (!confirm(`Downgrade ${userEmail} to ${tier.toUpperCase()}?`)) return;
+
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch(`/api/admin/users/${userId}/downgrade`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tier })
+      });
+      
+      if (response.ok) {
+        alert(`User ${tier === 'cancelled' ? 'access cancelled' : `downgraded to ${tier.toUpperCase()}`} successfully`);
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(`Error downgrading user: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      alert('Error downgrading user');
     }
   };
 
@@ -159,35 +188,53 @@ function EnhancedUserManagement() {
                 Joined: {new Date(user.createdAt).toLocaleDateString()}
               </p>
             </div>
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => upgradeUser(user.id, 'pro', user.email)}
-              >
-                Grant Pro
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => upgradeUser(user.id, 'authority', user.email)}
-              >
-                Grant Authority
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => upgradeUser(user.id, 'lifetime', user.email)}
-              >
-                Grant Lifetime
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => cancelAccess(user.id, user.email)}
-              >
-                Cancel Access
-              </Button>
+            <div className="flex flex-wrap gap-2">
+              {/* Upgrade Actions */}
+              <div className="flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-green-50 hover:bg-green-100 text-green-700"
+                  onClick={() => upgradeUser(user.id, 'pro', user.email)}
+                >
+                  ↗ Pro
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                  onClick={() => upgradeUser(user.id, 'authority', user.email)}
+                >
+                  ↗ Authority
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-purple-50 hover:bg-purple-100 text-purple-700"
+                  onClick={() => upgradeUser(user.id, 'lifetime', user.email)}
+                >
+                  ↗ Lifetime
+                </Button>
+              </div>
+              
+              {/* Downgrade Actions */}
+              <div className="flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+                  onClick={() => downgradeUser(user.id, 'pro', user.email)}
+                >
+                  ↘ Pro
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => downgradeUser(user.id, 'cancelled', user.email)}
+                >
+                  ✕ Cancel
+                </Button>
+              </div>
             </div>
           </div>
         </div>
