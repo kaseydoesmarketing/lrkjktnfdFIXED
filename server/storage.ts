@@ -73,6 +73,10 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = crypto.randomUUID();
     const [user] = await db
@@ -132,6 +136,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(accounts.id, accountId))
       .returning();
     return account;
+  }
+
+  async updateUserTokens(userId: string, tokens: {
+    oauthToken: string;
+    refreshToken: string;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        oauthToken: tokens.oauthToken,
+        refreshToken: tokens.refreshToken
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 
   // Sessions

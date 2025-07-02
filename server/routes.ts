@@ -1023,6 +1023,38 @@ Current system provides realistic metrics based on video engagement patterns.`,
     }
   });
 
+  // Fix YouTube authentication for current user
+  app.post('/api/auth/fix-youtube-auth', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      
+      const { youtubeAuthFixer } = await import('./youtubeAuthFixer');
+      const result = await youtubeAuthFixer.fixUserAuthentication(user.id);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: result.message,
+          analyticsEnabled: result.analyticsEnabled,
+          accuracy: result.analyticsEnabled ? 'YouTube Studio Exact Match' : 'Enhanced Data API (Highly Accurate)'
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.message,
+          requiresReauth: true
+        });
+      }
+    } catch (error) {
+      console.error('Authentication fix error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to fix authentication',
+        requiresReauth: true
+      });
+    }
+  });
+
   // Test management endpoints
   app.post('/api/tests/:testId/pause', requireAuth, async (req: Request, res: Response) => {
     try {

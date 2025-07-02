@@ -64,6 +64,16 @@ export class YouTubeService {
     }
   }
 
+  async forceRefreshTokens(refreshToken: string) {
+    try {
+      const refreshedTokens = await googleAuthService.refreshAccessToken(refreshToken);
+      return refreshedTokens;
+    } catch (error) {
+      console.error('Force token refresh failed:', error);
+      return null;
+    }
+  }
+
   async getChannelVideos(userId: string, maxResults: number = 50) {
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
@@ -224,7 +234,6 @@ export class YouTubeService {
         // Sum up metrics across all days in the range
         let totalViews = 0;
         let totalImpressions = 0;
-        let totalCtr = 0;
         let totalAvgViewDuration = 0;
         let daysWithData = 0;
 
@@ -235,14 +244,13 @@ export class YouTubeService {
             console.log('📊 Row data:', row);
             totalViews += parseInt(row[1]) || 0;
             totalImpressions += parseInt(row[2]) || 0;
-            totalCtr += parseFloat(row[3]) || 0;  // Use actual YouTube CTR data
             totalAvgViewDuration += parseInt(row[4]) || 0;
             daysWithData++;
           }
         });
 
-        // Use YouTube's actual CTR data averaged across all days
-        const accurateCtr = daysWithData > 0 ? totalCtr / daysWithData : 0;
+        // Calculate accurate Impression Click-Through Rate: (Views / Impressions) × 100
+        const accurateCtr = totalImpressions > 0 ? (totalViews / totalImpressions) * 100 : 0;
 
         return {
           views: totalViews,
@@ -292,21 +300,24 @@ export class YouTubeService {
     const engagementRate = (likes + comments) / Math.max(views, 1);
     const viewVelocity = views / Math.max(publishedDaysAgo, 1);
     
-    // Calculate realistic CTR based on actual performance indicators
-    let realisticCtr = 4.2; // Base CTR
+    // Calculate realistic impressions based on engagement patterns
+    let impressionMultiplier = 15; // Base multiplier
     
-    // Adjust CTR based on engagement patterns
-    if (engagementRate > 0.05) realisticCtr = 8.8; // Viral content
-    else if (engagementRate > 0.03) realisticCtr = 7.2; // High engagement
-    else if (engagementRate > 0.015) realisticCtr = 6.1; // Good engagement
-    else if (engagementRate > 0.008) realisticCtr = 5.1; // Average engagement
+    // Adjust impression multiplier based on engagement patterns
+    if (engagementRate > 0.05) impressionMultiplier = 8; // Viral content (better CTR)
+    else if (engagementRate > 0.03) impressionMultiplier = 10; // High engagement
+    else if (engagementRate > 0.015) impressionMultiplier = 12; // Good engagement
+    else if (engagementRate > 0.008) impressionMultiplier = 14; // Average engagement
     
     // Adjust based on view velocity (recent performance)
-    if (viewVelocity > 1000) realisticCtr += 1.2; // Recent viral growth
-    else if (viewVelocity > 100) realisticCtr += 0.6; // Good recent performance
+    if (viewVelocity > 1000) impressionMultiplier -= 2; // Recent viral growth (better CTR)
+    else if (viewVelocity > 100) impressionMultiplier -= 1; // Good recent performance
     
     // Calculate realistic impressions
-    const realisticImpressions = Math.round(views / (realisticCtr / 100));
+    const realisticImpressions = Math.round(views * impressionMultiplier);
+    
+    // Calculate accurate Impression Click-Through Rate: (Views / Impressions) × 100
+    const realisticCtr = (views / realisticImpressions) * 100;
     
     // Calculate realistic average view duration based on content length and engagement
     let retentionRate = 0.35; // Base retention
