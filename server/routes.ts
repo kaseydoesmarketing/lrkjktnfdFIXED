@@ -689,23 +689,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Fetch videos using automatic token refresh system
-      const videos = await youtubeService.getChannelVideos(user.id, 50);
-      
-      res.json(videos);
+      try {
+        // Fetch videos using automatic token refresh system
+        const videos = await youtubeService.getChannelVideos(user.id, 50);
+        res.json(videos);
+      } catch (apiError: any) {
+        console.log('YouTube API failed, checking for token refresh issues...');
+        
+        // If token refresh fails completely, offer re-authentication
+        if (apiError.message?.includes('invalid_grant') || apiError.message?.includes('Authentication failed')) {
+          return res.status(401).json({ 
+            error: 'YouTube authorization expired',
+            message: 'Your YouTube access has expired. Please sign in again to reconnect your account.',
+            reauth_required: true,
+            reauth_url: '/api/auth/google'
+          });
+        }
+        
+        // For other API errors, provide specific feedback
+        if (apiError.message?.includes('quotaExceeded')) {
+          return res.status(429).json({ 
+            error: 'YouTube API quota exceeded', 
+            message: 'Please try again later or contact support if this persists.' 
+          });
+        }
+        
+        throw apiError; // Re-throw to main catch block
+      }
     } catch (error) {
       console.error('Error fetching recent videos:', error);
-      
-      // If YouTube API fails, provide helpful error message
-      if ((error as any).message?.includes('quotaExceeded')) {
-        return res.status(429).json({ error: 'YouTube API quota exceeded. Please try again later.' });
-      }
-      
-      if ((error as any).message?.includes('invalid_credentials') || (error as any).message?.includes('invalid_grant')) {
-        return res.status(401).json({ error: 'YouTube authorization expired. Please reconnect your account.' });
-      }
-      
-      res.status(500).json({ error: 'Failed to fetch videos from YouTube. Please try again.' });
+      res.status(500).json({ 
+        error: 'Failed to fetch videos from YouTube', 
+        message: 'Please try again or contact support if this continues.' 
+      });
     }
   });
 
