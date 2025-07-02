@@ -2,7 +2,170 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, TestTube, Activity, AlertTriangle, Eye, Download, Settings } from 'lucide-react';
+import { Shield, Users, TestTube, Activity, AlertTriangle, Eye, Download, Settings, Ban, CheckCircle, Mail, Calendar } from 'lucide-react';
+
+// UserManagement Component
+function UserManagement() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const userData = await response.json();
+      setUsers(userData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelUserAccess = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to cancel access for ${userEmail}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch(`/api/admin/users/${userId}/cancel-access`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Access cancelled successfully for ${userEmail}`);
+        fetchUsers(); // Refresh the users list
+      } else {
+        alert('Failed to cancel user access');
+      }
+    } catch (error) {
+      console.error('Error cancelling user access:', error);
+      alert('Error cancelling user access');
+    }
+  };
+
+  const restoreUserAccess = async (userId: string, userEmail: string, tier = 'pro') => {
+    if (!confirm(`Are you sure you want to restore ${tier} access for ${userEmail}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch(`/api/admin/users/${userId}/restore-access`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tier })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Access restored successfully for ${userEmail}`);
+        fetchUsers(); // Refresh the users list
+      } else {
+        alert('Failed to restore user access');
+      }
+    } catch (error) {
+      console.error('Error restoring user access:', error);
+      alert('Error restoring user access');
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading users...</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {users.map((user: any) => (
+        <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Mail className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">{user.name || 'Unknown'}</p>
+              <p className="text-sm text-gray-600">{user.email}</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge 
+                  variant={user.subscriptionStatus === 'active' ? 'default' : 'secondary'}
+                  className={user.subscriptionStatus === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                >
+                  {user.subscriptionStatus || 'none'}
+                </Badge>
+                {user.subscriptionTier && (
+                  <Badge variant="outline" className="text-purple-700 border-purple-300">
+                    {user.subscriptionTier}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <div className="text-right text-sm text-gray-500 mr-4">
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                {new Date(user.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            
+            {user.subscriptionStatus === 'active' ? (
+              <Button
+                onClick={() => cancelUserAccess(user.id, user.email)}
+                variant="destructive"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Ban className="w-4 h-4 mr-1" />
+                Cancel Access
+              </Button>
+            ) : (
+              <div className="space-x-2">
+                <Button
+                  onClick={() => restoreUserAccess(user.id, user.email, 'pro')}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-300 hover:bg-green-50"
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Restore Pro
+                </Button>
+                <Button
+                  onClick={() => restoreUserAccess(user.id, user.email, 'authority')}
+                  variant="outline"
+                  size="sm"
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Restore Authority
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function SimpleAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
