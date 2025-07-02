@@ -1,0 +1,90 @@
+Test doesn't start after selecting video and entering details
+Create test button above videos is completely non-functional
+Dashboard experiencing multiple errors during test creation process
+
+YOUR TASK:
+Debug and fix these specific functionality issues. No new features - just make the existing dashboard work properly.
+SYSTEMATIC DEBUG APPROACH:
+Step 1: Console Error Analysis
+
+Open browser console and document ALL JavaScript errors
+Check for failed API calls, authentication issues, form validation errors
+Screenshot all error messages
+
+Step 2: Test Creation Flow Debug
+javascript// Check this complete flow:
+// 1. Video selection → 2. Form completion → 3. Test creation → 4. Test start
+
+// Debug points to check:
+console.log('Video selected:', selectedVideo);
+console.log('Form data:', formData);  
+console.log('API call made:', apiResponse);
+console.log('Test created:', testResult);
+Step 3: Create Test Button Fix
+
+Verify event handler is attached: onClick={handleCreateTest}
+Check if button is disabled due to form validation
+Ensure API endpoint is correct and accessible
+Fix any async/await issues preventing execution
+
+Step 4: Form Validation Debug
+javascript// Add logging to see where validation fails:
+const validateForm = () => {
+  console.log('Validating form...');
+  console.log('Selected video:', selectedVideo);
+  console.log('Title variants:', titleVariants);
+  
+  // Return detailed validation results
+  const validation = {
+    hasVideo: !!selectedVideo,
+    hasTitles: titleVariants && titleVariants.length >= 2,
+    titlesNotEmpty: titleVariants?.every(title => title.trim())
+  };
+  
+  console.log('Validation results:', validation);
+  return validation;
+};
+Step 5: API Call Fixes
+javascript// Fix authentication and API calls:
+const createTest = async () => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('No auth token');
+    
+    const response = await fetch('/api/tests/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(testData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('Test created successfully:', result);
+    
+  } catch (error) {
+    console.error('Test creation failed:', error);
+    // Show error to user
+  }
+};
+SPECIFIC FIXES NEEDED:
+
+Make video selection work: Ensure clicking a video properly sets the selected state
+Fix form submission: Ensure all form data is collected and validated before API call
+Fix create test button: Attach proper event handler and ensure it triggers test creation
+Add error display: Show users what went wrong when tests fail to start
+Fix authentication: Ensure API calls have proper auth headers
+
+SUCCESS CRITERIA:
+✅ Click video → video gets selected
+✅ Fill in test details → form validation passes
+✅ Click create test → test actually starts
+✅ No more JavaScript errors in console
+✅ Clear error messages when something fails
+NO EXTRA FEATURES - JUST FIX THE BROKEN FUNCTIONALITY
+Focus only on making the existing test creation process work reliably. Debug systematically, fix the root causes, and ensure the dashboard functions as intended.

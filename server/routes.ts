@@ -11,7 +11,9 @@ import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
 import { z } from "zod";
 
 // Input validation schemas
-const createTestValidation = insertTestSchema.extend({
+const createTestValidation = z.object({
+  videoId: z.string().min(1),
+  videoTitle: z.string().min(1).optional(),
   titles: z.array(z.string().min(1).max(200)).min(2).max(5),
   rotationIntervalMinutes: z.number().min(60).max(10080), // 1 hour to 1 week
   winnerMetric: z.enum(['ctr', 'views', 'combined']),
@@ -414,16 +416,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tests', requireAuth, async (req: Request, res: Response) => {
     try {
+      console.log('=== SERVER: Received test creation request ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      console.log('User ID:', req.user?.id);
+      
       // Validate input with comprehensive schema
       const validationResult = createTestValidation.safeParse(req.body);
       
       if (!validationResult.success) {
+        console.error('Validation failed:', validationResult.error.errors);
         return res.status(400).json({ 
           error: 'Validation failed',
           details: validationResult.error.errors,
+          receivedData: req.body,
           timestamp: new Date().toISOString()
         });
       }
+      
+      console.log('Validation successful, proceeding with test creation');
 
       const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric, startDate, endDate } = validationResult.data;
 

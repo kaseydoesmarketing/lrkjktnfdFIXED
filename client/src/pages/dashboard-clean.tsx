@@ -241,9 +241,15 @@ export default function DashboardClean() {
       titles: validTitles,
       rotationIntervalMinutes: testConfig.rotationIntervalMinutes,
       winnerMetric: testConfig.winnerMetric,
-      startDate: testConfig.startDate,
-      endDate: testConfig.endDate
+      startDate: new Date(testConfig.startDate).toISOString(),
+      endDate: new Date(testConfig.endDate).toISOString()
     };
+
+    console.log('=== TEST CREATION DEBUG ===');
+    console.log('Selected video:', selectedVideo);
+    console.log('Valid titles:', validTitles);
+    console.log('Test config:', testConfig);
+    console.log('Final test data:', testData);
 
     createTest.mutate(testData);
   };
