@@ -8,18 +8,13 @@ export class GoogleAuthService {
     // Determine the correct redirect URI based on the environment
     const replotDomain = process.env.REPLIT_DOMAINS?.split(',')[0];
     
-    // Check if we're running on the production domain
-    const isProductionDomain = process.env.NODE_ENV === 'production' || 
-                              (replotDomain && !replotDomain.includes('replit'));
-    
-    // Use explicit redirect URI based on environment
+    // Force production redirect URI for titletesterpro.com
     let redirectUri;
     if (process.env.OAUTH_REDIRECT_URI) {
       redirectUri = process.env.OAUTH_REDIRECT_URI;
-    } else if (isProductionDomain || !replotDomain) {
-      redirectUri = 'https://titletesterpro.com/api/auth/callback/google';
     } else {
-      redirectUri = `https://${replotDomain}/api/auth/callback/google`;
+      // Always use production domain for consistency
+      redirectUri = 'https://titletesterpro.com/api/auth/callback/google';
     }
       
     console.log('OAuth redirect URI:', redirectUri);

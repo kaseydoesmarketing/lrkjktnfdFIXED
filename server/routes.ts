@@ -223,9 +223,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth routes
   app.get('/api/auth/google', async (req: Request, res: Response) => {
     try {
+      // Always ensure OAuth works for production
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        console.log('OAuth credentials missing - falling back to demo mode');
-        return res.redirect('/login?demo=true&error=oauth_config');
+        console.error('CRITICAL: Missing OAuth credentials for production');
+        return res.status(500).json({ 
+          error: 'OAuth not configured', 
+          message: 'Contact administrator - missing Google OAuth credentials' 
+        });
       }
       
       console.log('Starting OAuth flow with client ID ending in:', process.env.GOOGLE_CLIENT_ID?.slice(-10));

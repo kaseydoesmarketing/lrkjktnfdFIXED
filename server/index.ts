@@ -15,11 +15,15 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS configuration
+// CORS configuration - always allow titletesterpro.com
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://titletesterpro.com', /\.replit\.app$/] 
-    : true,
+  origin: [
+    'https://titletesterpro.com',
+    'http://localhost:3000',
+    'http://localhost:5000',
+    /\.replit\.app$/,
+    /\.replit\.dev$/
+  ],
   credentials: true,
 }));
 
