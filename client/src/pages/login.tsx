@@ -148,11 +148,7 @@ export default function Login() {
               
 
             </div>
-            <div className="mt-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
-              <p className="text-sm text-green-300">
-                <strong>Production Ready:</strong> Connect with your YouTube account to start optimizing your video titles with real data-driven A/B testing.
-              </p>
-            </div>
+
             
             <div className="mt-6 pt-4 border-t border-gray-700">
               <p className="text-xs text-gray-400 text-center">
