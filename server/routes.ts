@@ -878,8 +878,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let stripeCustomerId = user.stripeCustomerId;
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create({
-          email: user.email,
-          name: user.name,
+          email: user.email ?? `user-${user.id}@titletesterpro.com`,
+          name: user.name ?? 'TitleTesterPro User',
         });
         stripeCustomerId = customer.id;
         await storage.updateUser(user.id, { stripeCustomerId });

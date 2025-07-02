@@ -99,7 +99,7 @@ export class YouTubeService {
 
       do {
         // Get videos from uploads playlist with pagination
-        const playlistResponse = await youtube.playlistItems.list({
+        const playlistResponse: any = await youtube.playlistItems.list({
           part: ['snippet'],
           playlistId: uploadsPlaylistId,
           maxResults: pageSize,
