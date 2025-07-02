@@ -8,6 +8,29 @@ import { youtubeService } from "./youtubeService";
 import { registerAdminRoutes } from "./adminRoutes";
 import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
 import { z } from "zod";
+
+// Input validation schemas
+const createTestValidation = insertTestSchema.extend({
+  titles: z.array(z.string().min(1).max(200)).min(2).max(5),
+  rotationIntervalMinutes: z.number().min(60).max(10080), // 1 hour to 1 week
+  winnerMetric: z.enum(['ctr', 'views', 'combined']),
+  startDate: z.string().refine(date => !isNaN(Date.parse(date)), {
+    message: "Invalid start date format"
+  }),
+  endDate: z.string().refine(date => !isNaN(Date.parse(date)), {
+    message: "Invalid end date format"
+  })
+});
+
+const updateTestStatusValidation = z.object({
+  status: z.enum(['active', 'paused', 'cancelled', 'completed'])
+});
+
+const generateTitlesValidation = z.object({
+  topic: z.string().min(5).max(500),
+  framework: z.string().optional()
+});
+
 import Stripe from "stripe";
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -552,21 +575,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats
-  app.get('/api/dashboard/stats', async (req: Request, res: Response) => {
+  // Authentication endpoints
+  app.get('/api/auth/me', requireAuth, async (req: Request, res: Response) => {
+    res.json(req.user);
+  });
+
+  app.post('/api/auth/logout', async (req: Request, res: Response) => {
     try {
-      const sessionToken = req.headers.authorization?.replace('Bearer ', '') || req.cookies?.['session-token'];
+      const sessionToken = req.cookies['session-token'];
       
-      if (!sessionToken) {
-        return res.status(401).json({ error: 'No session token' });
+      if (sessionToken) {
+        // Delete session from database
+        await storage.deleteSession(sessionToken);
       }
       
-      const session = await storage.getSession(sessionToken);
-      if (!session || session.expires <= new Date()) {
-        return res.status(401).json({ error: 'Invalid or expired session' });
-      }
+      // Clear the secure cookie
+      res.clearCookie('session-token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
       
-      const tests = await storage.getTestsByUserId(session.userId);
+      res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Logout failed' });
+    }
+  });
+
+  // Dashboard stats with proper authentication
+  app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const tests = await storage.getTestsByUserId(req.user!.id);
       
       const activeTests = tests.filter(t => t.status === 'active').length;
       const completedTests = tests.filter(t => t.status === 'completed').length;

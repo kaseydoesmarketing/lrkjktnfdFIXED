@@ -271,12 +271,11 @@ export default function DashboardFuturistic() {
 
     setIsGeneratingTitles(true);
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch('/api/generate-titles', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           topic: videoTopic,
@@ -307,12 +306,11 @@ export default function DashboardFuturistic() {
 
     setIsCreatingTest(true);
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch('/api/tests', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           videoId: selectedVideo.id,
@@ -375,12 +373,11 @@ export default function DashboardFuturistic() {
 
   const updateTestStatus = async (testId: string, status: string) => {
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/tests/${testId}/status`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status })
       });
