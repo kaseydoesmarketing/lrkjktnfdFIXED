@@ -133,8 +133,52 @@ export function registerSimpleAdminRoutes(app: Express) {
       const { userId, action } = req.params;
       const adminUser = (req as any).user;
       
-      console.log(`Admin action: ${action} user ${userId} by ${adminUser.email}`);
+      if (action === 'cancel-access') {
+        // Cancel user's subscription and access
+        await storage.updateUserSubscription(userId, 'cancelled', '');
+        
+        // Get updated user data
+        const user = await storage.getUser(userId);
+        console.log(`Admin cancelled access for user ${userId} (${user?.email}) by ${adminUser.email}`);
+        
+        return res.json({ 
+          success: true, 
+          action, 
+          userId,
+          message: 'User access cancelled successfully',
+          user: user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionTier: user.subscriptionTier
+          } : null
+        });
+      } else if (action === 'restore-access') {
+        // Restore user's subscription and access
+        const { tier = 'pro' } = req.body;
+        await storage.updateUserSubscription(userId, 'active', tier);
+        
+        // Get updated user data
+        const user = await storage.getUser(userId);
+        console.log(`Admin restored access for user ${userId} (${user?.email}) to ${tier} tier by ${adminUser.email}`);
+        
+        return res.json({ 
+          success: true, 
+          action, 
+          userId,
+          message: 'User access restored successfully',
+          user: user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            subscriptionStatus: user.subscriptionStatus,
+            subscriptionTier: user.subscriptionTier
+          } : null
+        });
+      }
       
+      console.log(`Admin action: ${action} user ${userId} by ${adminUser.email}`);
       res.json({ success: true, action, userId });
     } catch (error) {
       console.error('Error moderating user:', error);
