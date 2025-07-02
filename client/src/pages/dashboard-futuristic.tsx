@@ -324,34 +324,7 @@ export default function DashboardFuturistic() {
     }
   };
 
-  // Claude-powered AI title generation
-  const generateAITitles = async () => {
-    if (!videoTopic.trim() || refreshCount >= 5) return;
 
-    setIsGeneratingTitles(true);
-    try {
-      const response = await fetch('/api/generate-titles', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ videoTopic: videoTopic.trim() })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTitleSuggestions(data.titles || []);
-        setRefreshCount(prev => prev + 1);
-      } else {
-        console.error('Failed to generate titles');
-      }
-    } catch (error) {
-      console.error('Error generating titles:', error);
-    } finally {
-      setIsGeneratingTitles(false);
-    }
-  };
 
   const updateTestStatus = async (testId: string, status: string) => {
     try {
@@ -1445,24 +1418,16 @@ export default function DashboardFuturistic() {
         )}
       </main>
 
-      {/* Create Test Modal */}
+      {/* Integrated Create Test Modal with Claude AI */}
       {showCreateTest && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold">Create New A/B Test</h3>
-                  <p className="text-blue-100 mt-1">Optimize your titles with AI-powered testing</p>
-                </div>
-                <button
-                  onClick={() => setShowCreateTest(false)}
-                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+        <IntegratedCreateTestModal
+          onClose={() => setShowCreateTest(false)}
+          onTestCreated={(test) => {
+            setTests(prev => [...prev, test]);
+            setShowCreateTest(false);
+          }}
+        />
+      )}
 
             <div className="p-6 overflow-y-auto">
               {/* Video Selection */}
