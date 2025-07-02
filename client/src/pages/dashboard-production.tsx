@@ -592,6 +592,11 @@ export default function DashboardProduction() {
                   </span>
                 </div>
                 <span className="text-sm text-gray-700 hidden sm:block">{user?.name}</span>
+                {user?.email === 'kaseydoesmarketing@gmail.com' && (
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold border border-yellow-300 shadow-lg animate-pulse">
+                    ✨ Founder
+                  </Badge>
+                )}
                 {user?.subscriptionTier === 'authority' && (
                   <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                     Authority
