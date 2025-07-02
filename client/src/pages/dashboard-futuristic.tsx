@@ -94,6 +94,8 @@ export default function DashboardFuturistic() {
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [previewTitle, setPreviewTitle] = useState('');
 
   // Authenticate user
   useEffect(() => {
@@ -507,7 +509,27 @@ export default function DashboardFuturistic() {
               </div>
             </div>
 
-            {/* Navigation Tabs */}
+            {/* Mobile Navigation - Thumb-friendly */}
+            <nav className="flex md:hidden items-center space-x-1">
+              {[
+                { id: 'dashboard', icon: BarChart3 },
+                { id: 'analytics', icon: TrendingUp }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`p-3 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                    activeTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5" />
+                </button>
+              ))}
+            </nav>
+
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1 bg-gray-50 rounded-xl p-1">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -593,8 +615,8 @@ export default function DashboardFuturistic() {
         {/* Tab Content */}
         {activeTab === 'dashboard' && (
           <>
-            {/* Futuristic Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Mobile-First Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
               {[
             {
               title: 'Active Tests',
@@ -635,32 +657,36 @@ export default function DashboardFuturistic() {
           ].map((stat, index) => (
             <div
               key={stat.title}
-              className={`relative bg-gradient-to-br ${stat.bgColor} rounded-2xl p-6 border border-white shadow-sm hover:shadow-md transition-all duration-300 group`}
+              className={`relative bg-gradient-to-br ${stat.bgColor} rounded-2xl p-4 sm:p-6 border border-white shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer active:scale-95 min-h-[120px] sm:min-h-[140px]`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+              {/* Mobile-optimized layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mb-2 sm:mb-0`}>
+                  <stat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div className="flex items-center space-x-1 text-green-600 text-sm font-medium">
-                  <ArrowUpRight className="w-4 h-4" />
+                <div className="flex items-center space-x-1 text-green-600 text-xs sm:text-sm font-medium">
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{stat.trend}</span>
                 </div>
               </div>
               
               <div className="space-y-1">
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-700">{stat.title}</p>
-                <p className="text-xs text-gray-500">{stat.description}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-700 leading-tight">{stat.title}</p>
+                <p className="text-xs text-gray-500 hidden sm:block">{stat.description}</p>
               </div>
 
               {/* Subtle animation overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 opacity-0 group-hover:opacity-100 group-hover:animate-shimmer transition-opacity duration-700"></div>
+              
+              {/* Mobile touch feedback */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-active:opacity-10 bg-black transition-opacity duration-150 sm:hidden"></div>
             </div>
           ))}
         </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Mobile-First Action Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8">
           {/* Create New Test Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
@@ -1465,6 +1491,74 @@ export default function DashboardFuturistic() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile-First Floating Action Button */}
+      <div className="fixed bottom-6 right-6 z-40 lg:hidden">
+        <button
+          onClick={() => setShowCreateTest(true)}
+          className="w-14 h-14 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 active:scale-95"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
+      {/* Mobile Preview Modal - Shows how titles appear on mobile devices */}
+      {showMobilePreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl">
+            <div className="bg-gradient-to-r from-red-600 to-pink-600 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold">Mobile Preview</h3>
+                <button
+                  onClick={() => setShowMobilePreview(false)}
+                  className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              {/* Mobile YouTube Interface Preview */}
+              <div className="bg-black rounded-lg overflow-hidden">
+                <div className="aspect-video bg-gray-800 flex items-center justify-center">
+                  <span className="text-white text-xs">Video Thumbnail</span>
+                </div>
+                <div className="p-3 bg-white">
+                  <h4 className="font-semibold text-sm leading-tight mb-1">
+                    {previewTitle || 'Your title will appear here...'}
+                  </h4>
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
+                    <span>Channel Name</span>
+                    <span>•</span>
+                    <span>123K views</span>
+                    <span>•</span>
+                    <span>2 hours ago</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600 mb-2">
+                  Title length: {(previewTitle || '').length}/100 characters
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      (previewTitle || '').length > 60 ? 'bg-red-500' : 
+                      (previewTitle || '').length > 40 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(((previewTitle || '').length / 60) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Optimal length: 40-60 characters for mobile
+                </p>
               </div>
             </div>
           </div>
