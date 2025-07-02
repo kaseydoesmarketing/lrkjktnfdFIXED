@@ -24,6 +24,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import FuturisticVideoSelector from '@/components/FuturisticVideoSelector';
@@ -179,8 +181,54 @@ export default function DashboardClean() {
     }
   });
 
+  const createTest = useMutation({
+    mutationFn: async (testData: any) => {
+      const response = await fetch('/api/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(testData)
+      });
+      if (!response.ok) throw new Error('Failed to create test');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setShowCreateTest(false);
+      setSelectedVideo(null);
+      setTitleInputs(['', '', '', '', '']);
+      toast({ title: 'Test created successfully' });
+    }
+  });
+
   const handleLogout = () => {
     window.location.href = '/api/auth/logout';
+  };
+
+  const handleCreateTest = async () => {
+    if (!selectedVideo) {
+      toast({ title: 'Please select a video', variant: 'destructive' });
+      return;
+    }
+
+    const validTitles = titleInputs.filter(title => title.trim().length > 0);
+    if (validTitles.length < 2) {
+      toast({ title: 'Please enter at least 2 title variants', variant: 'destructive' });
+      return;
+    }
+
+    const testData = {
+      videoId: selectedVideo.id,
+      videoTitle: selectedVideo.title,
+      titles: validTitles,
+      rotationIntervalMinutes: testConfig.rotationIntervalMinutes,
+      winnerMetric: testConfig.winnerMetric,
+      startDate: testConfig.startDate,
+      endDate: testConfig.endDate
+    };
+
+    createTest.mutate(testData);
   };
 
   const formatNumber = (num: number) => {
