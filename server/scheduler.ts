@@ -10,6 +10,14 @@ interface ScheduledJob {
 
 class Scheduler {
   private jobs: Map<string, NodeJS.Timeout> = new Map();
+  private cleanupInterval: NodeJS.Timeout;
+  
+  constructor() {
+    // Clean up orphaned jobs every hour to prevent memory leaks
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupOrphanedJobs();
+    }, 60 * 60 * 1000); // 1 hour
+  }
 
   scheduleRotation(testId: string, titleOrder: number, delayMinutes: number) {
     const jobId = `rotate-${testId}-${titleOrder}`;
@@ -48,6 +56,38 @@ class Scheduler {
       clearTimeout(timeout);
       this.jobs.delete(jobId);
     }
+  }
+
+  private async cleanupOrphanedJobs() {
+    console.log(`🧹 [SCHEDULER CLEANUP] Starting job cleanup, current jobs: ${this.jobs.size}`);
+    
+    const jobsToCleanup: string[] = [];
+    
+    const jobKeys = Array.from(this.jobs.keys());
+    for (const jobId of jobKeys) {
+      if (jobId.startsWith('rotate-')) {
+        const testId = jobId.split('-')[1];
+        const test = await storage.getTest(testId);
+        
+        // Remove jobs for completed, cancelled, or non-existent tests
+        if (!test || ['completed', 'cancelled'].includes(test.status)) {
+          jobsToCleanup.push(jobId);
+        }
+      }
+    }
+    
+    // Clean up identified orphaned jobs
+    jobsToCleanup.forEach(jobId => this.cancelJob(jobId));
+    
+    console.log(`🧹 [SCHEDULER CLEANUP] Cleaned up ${jobsToCleanup.length} orphaned jobs`);
+  }
+
+  shutdown() {
+    clearInterval(this.cleanupInterval);
+    this.jobs.forEach((timeout, jobId) => {
+      clearTimeout(timeout);
+    });
+    this.jobs.clear();
   }
 
   private async executeRotation(testId: string, titleOrder: number) {
