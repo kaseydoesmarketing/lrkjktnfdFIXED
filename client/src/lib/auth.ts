@@ -67,49 +67,47 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User | null> {
-    // Check both cookie and localStorage for session token
-    const cookieToken = this.getSessionTokenFromCookie();
-    const localStorageToken = localStorage.getItem('sessionToken');
-    
-    // Use localStorage token if available, fallback to cookie
-    this.sessionToken = localStorageToken || cookieToken;
-    
-    if (!this.sessionToken) {
-      // For production debugging - don't log tokens in production
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('No session token found in localStorage or cookies');
-    }
-    return null;
-    }
-
     try {
+      // Always use credentials: 'include' to send cookies
+      // Try cookie-based authentication first (production OAuth)
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${this.sessionToken}`,
-        },
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.log('Authentication failed, clearing tokens');
-          this.logout();
-          return null;
+      if (response.ok) {
+        const data = await response.json();
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('User authenticated via cookie:', data.email);
         }
-        throw new Error(`Failed to get user: ${response.status}`);
+        return data;
+      }
+      
+      // If cookie auth fails, try localStorage token (demo mode)
+      const localStorageToken = localStorage.getItem('sessionToken');
+      if (localStorageToken) {
+        const tokenResponse = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${localStorageToken}`,
+          },
+          credentials: 'include',
+        });
+
+        if (tokenResponse.ok) {
+          const data = await tokenResponse.json();
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('User authenticated via localStorage token:', data.email);
+          }
+          return data;
+        }
       }
 
-      const data = await response.json();
+      // No valid authentication found
       if (process.env.NODE_ENV !== 'production') {
-        console.log('User authenticated successfully:', data.email);
+        console.log('No valid authentication found');
       }
-      return data;
+      return null;
     } catch (error) {
       console.error('Error getting current user:', error);
-      // Only logout on authentication errors, not network errors
-      if (error instanceof Error && error.message.includes('401')) {
-        this.logout();
-      }
       return null;
     }
   }
