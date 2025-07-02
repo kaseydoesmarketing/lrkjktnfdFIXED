@@ -990,19 +990,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Test not found' });
       }
 
-      if (test.status === 'cancelled') {
-        return res.status(400).json({ error: 'Test is already cancelled' });
-      }
-
-      await storage.updateTest(testId, { status: 'cancelled' });
+      // Delete the test completely instead of just cancelling it
+      await storage.deleteTest(testId);
       
       // Stop the scheduler (if method exists)
       // scheduler.cancelRotation(testId);
 
-      res.json({ success: true, message: 'Test cancelled successfully' });
+      res.json({ success: true, message: 'Test deleted successfully' });
     } catch (error) {
-      console.error('Error cancelling test:', error);
-      res.status(500).json({ error: 'Failed to cancel test' });
+      console.error('Error deleting test:', error);
+      res.status(500).json({ error: 'Failed to delete test' });
     }
   });
 
