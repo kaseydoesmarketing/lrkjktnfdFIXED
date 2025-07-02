@@ -97,37 +97,21 @@ export default function DashboardFuturistic() {
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [previewTitle, setPreviewTitle] = useState('');
 
-  // Authenticate user
+  // Authenticate user with secure cookies
   useEffect(() => {
     const authenticateUser = async () => {
       try {
         console.log('🔍 Dashboard: Starting authentication check...');
         
-        // Check for sessionToken in URL params first (from OAuth callback)
+        // Clear URL params if present (from OAuth callback)
         const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('sessionToken');
-        
-        console.log('📍 URL sessionToken found:', !!urlToken);
-        
-        if (urlToken) {
-          console.log('💾 Storing sessionToken from URL...');
-          localStorage.setItem('sessionToken', urlToken);
+        if (urlParams.has('sessionToken')) {
           window.history.replaceState({}, '', '/dashboard');
         }
-        
-        // Get token from localStorage or URL
-        const token = urlToken || localStorage.getItem('sessionToken');
-        console.log('🔑 Final token available:', !!token);
-        
-        if (!token) {
-          console.log('❌ No token found, redirecting to login...');
-          window.location.href = '/login';
-          return;
-        }
 
-        console.log('🌐 Making authentication request...');
+        console.log('🌐 Making authentication request with secure cookies...');
         const response = await fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include' // Include httpOnly cookies
         });
 
         console.log('📡 Auth response status:', response.status);
@@ -145,7 +129,7 @@ export default function DashboardFuturistic() {
         // Check subscription status
         console.log('🔍 Checking subscription status...');
         const subscriptionResponse = await fetch('/api/subscription/status', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include'
         });
         
         if (subscriptionResponse.ok) {
@@ -183,7 +167,8 @@ export default function DashboardFuturistic() {
           user: null,
           error: error instanceof Error ? error.message : 'Authentication failed'
         });
-        localStorage.removeItem('sessionToken');
+        // Clear any client-side state
+        console.log('🔄 Redirecting to login...');
         
         // Add delay to prevent redirect loops
         setTimeout(() => {
@@ -203,13 +188,10 @@ export default function DashboardFuturistic() {
   }, [authState.authenticated]);
 
   const loadDashboardData = async () => {
-    const token = localStorage.getItem('sessionToken');
-    if (!token) return;
-
     try {
       // Load stats
       const statsResponse = await fetch('/api/dashboard/stats', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
@@ -222,7 +204,7 @@ export default function DashboardFuturistic() {
       // Load tests
       setIsLoadingTests(true);
       const testsResponse = await fetch('/api/tests', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (testsResponse.ok) {
         const testsData = await testsResponse.json();
@@ -240,13 +222,10 @@ export default function DashboardFuturistic() {
   };
 
   const loadVideos = async () => {
-    const token = localStorage.getItem('sessionToken');
-    if (!token) return;
-
     setIsLoadingVideos(true);
     try {
       const response = await fetch('/api/videos/recent', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -267,17 +246,13 @@ export default function DashboardFuturistic() {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('sessionToken');
-      if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-      }
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('sessionToken');
       window.location.href = '/login';
     }
   };
