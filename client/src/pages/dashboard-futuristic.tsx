@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers } from 'lucide-react';
+import { Play, TestTube, TrendingUp, Target, Bell, LogOut, Video, Clock, Eye, Plus, X, Calendar, Settings, Zap, BarChart3, BarChart, Users, ArrowUpRight, ChevronRight, Activity, Sparkles, Bot, Shield, Gauge, Layers, Crown } from 'lucide-react';
 
 interface User {
   id: string;
   email: string;
   name: string;
   image?: string;
+  subscriptionTier?: string;
+  subscriptionStatus?: string;
 }
 
 interface Video {
@@ -87,6 +89,11 @@ export default function DashboardFuturistic() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedTestForInsights, setSelectedTestForInsights] = useState<Test | null>(null);
   const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
+  const [videoTopic, setVideoTopic] = useState('');
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // Authenticate user
   useEffect(() => {
@@ -414,6 +421,48 @@ export default function DashboardFuturistic() {
     } finally {
       localStorage.removeItem('sessionToken');
       window.location.href = '/login';
+    }
+  };
+
+  // AI Title Generation using YouTube Title Mastery Framework
+  const generateAITitles = async () => {
+    if (!videoTopic.trim()) {
+      alert('Please enter a video topic first');
+      return;
+    }
+
+    if (refreshCount >= 5) {
+      alert('Maximum of 5 title refreshes reached');
+      return;
+    }
+
+    setIsGeneratingTitles(true);
+    try {
+      const token = localStorage.getItem('sessionToken');
+      const response = await fetch('/api/generate-titles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          topic: videoTopic,
+          framework: 'youtube-title-mastery-2024-2025'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTitleSuggestions(data.titles || []);
+        setRefreshCount(prev => prev + 1);
+      } else {
+        alert('Failed to generate titles. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error generating titles:', error);
+      alert('Error generating titles. Please check your connection.');
+    } finally {
+      setIsGeneratingTitles(false);
     }
   };
 
@@ -884,6 +933,102 @@ export default function DashboardFuturistic() {
             </div>
           </div>
         </div>
+
+        {/* Authority Plan Bonus: AI-Powered Title Suggestions */}
+        {authState.user?.subscriptionTier === 'authority' && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
+            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2 flex items-center space-x-2">
+                    <Crown className="w-6 h-6" />
+                    <span>AI-Powered Title Suggestions</span>
+                  </h3>
+                  <p className="text-yellow-100">Authority Plan Exclusive - Powered by YouTube Title Mastery Framework</p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <Zap className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Video Topic or Description
+                  </label>
+                  <input
+                    type="text"
+                    value={videoTopic}
+                    onChange={(e) => setVideoTopic(e.target.value)}
+                    placeholder="e.g., JavaScript tutorial for beginners, React hooks explained..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {refreshCount}/5 title refreshes used
+                  </div>
+                  <button
+                    onClick={generateAITitles}
+                    disabled={isGeneratingTitles || refreshCount >= 5 || !videoTopic.trim()}
+                    className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingTitles ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Generate Titles</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {titleSuggestions.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-medium text-gray-900 mb-3">AI-Generated Title Suggestions:</h4>
+                    <div className="space-y-2">
+                      {titleSuggestions.map((title, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                          <span className="text-gray-900 flex-1">{title}</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(title);
+                              alert('Title copied to clipboard!');
+                            }}
+                            className="text-orange-600 hover:text-orange-700 px-2 py-1 text-sm"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        <strong>💡 Pro Tip:</strong> These titles use the 2024-2025 YouTube Algorithm optimization framework, 
+                        incorporating psychological triggers, mobile-first character limits, and semantic consistency for maximum CTR.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {refreshCount >= 5 && (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800">
+                      You've reached the maximum of 5 title refreshes. This helps ensure quality and prevents overuse.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tests Overview */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">

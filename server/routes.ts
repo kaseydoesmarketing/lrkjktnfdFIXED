@@ -9,6 +9,7 @@ import { registerAdminRoutes } from "./adminRoutes";
 import { insertTestSchema, insertTitleSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import Anthropic from '@anthropic-ai/sdk';
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
