@@ -16,21 +16,36 @@ export function registerSimpleAdminRoutes(app: Express) {
   // Admin authentication middleware
   async function requireAdmin(req: Request, res: Response, next: Function) {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Authentication required' });
+      // Debug: Log all cookies
+      console.log('All cookies:', req.cookies);
+      
+      // Get session token from secure httpOnly cookie
+      const sessionToken = req.cookies['session-token'];
+      
+      console.log('Session token from cookies:', sessionToken ? 'Found' : 'Not found');
+      
+      if (!sessionToken) {
+        return res.status(401).json({ error: 'Authentication required - no session token in cookies' });
       }
 
-      const sessionToken = authHeader.substring(7);
       const session = await storage.getSession(sessionToken);
+      console.log('Session lookup result:', session ? 'Found' : 'Not found');
       
       if (!session || session.expires < new Date()) {
         return res.status(401).json({ error: 'Invalid or expired session' });
       }
 
       const user = await storage.getUser(session.userId);
-      if (!user || !isAdmin(user.email)) {
-        return res.status(403).json({ error: 'Admin access required' });
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      console.log('Admin check - User email:', user.email);
+      console.log('Admin check - Is founder:', user.email === 'kaseydoesmarketing@gmail.com');
+      
+      // Check if user is the founder (kaseydoesmarketing@gmail.com)
+      if (user.email !== 'kaseydoesmarketing@gmail.com') {
+        return res.status(403).json({ error: 'Admin access denied - founder only' });
       }
 
       (req as any).user = user;

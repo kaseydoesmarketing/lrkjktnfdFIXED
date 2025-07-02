@@ -76,11 +76,8 @@ function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch('/api/admin/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include'
       });
       const userData = await response.json();
       setUsers(userData);
@@ -97,11 +94,10 @@ function UserManagement() {
     }
 
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/admin/users/${userId}/cancel-access`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -458,26 +454,23 @@ export default function SimpleAdmin() {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        const token = localStorage.getItem('sessionToken');
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
+        // Use cookie-based authentication instead of localStorage token
         const response = await fetch('/api/admin/check', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include' // This ensures cookies are sent
         });
 
         if (response.ok) {
           setIsAdmin(true);
           // Load basic stats
           const statsResponse = await fetch('/api/admin/metrics', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            credentials: 'include'
           });
           if (statsResponse.ok) {
             const data = await statsResponse.json();
             setStats(data);
           }
+        } else {
+          console.log('Admin access denied:', await response.text());
         }
       } catch (error) {
         console.error('Error checking admin access:', error);
@@ -491,9 +484,8 @@ export default function SimpleAdmin() {
 
   const exportData = async (type: 'users' | 'tests') => {
     try {
-      const token = localStorage.getItem('sessionToken');
       const response = await fetch(`/api/admin/export/${type}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       
       if (response.ok) {
