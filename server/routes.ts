@@ -386,14 +386,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/me', requireAuth, async (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user!;
     res.json(user);
   });
 
   // Test routes
   app.get('/api/tests', requireAuth, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const user = req.user!;
       const tests = await storage.getTestsByUserId(user.id);
       
       // Get titles for each test
@@ -413,20 +413,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tests', requireAuth, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric, startDate, endDate } = req.body;
-
-      if (!videoId || !titleTexts || titleTexts.length < 2) {
-        return res.status(400).json({ error: 'Video ID and at least 2 titles are required' });
+      // Validate input with comprehensive schema
+      const validationResult = createTestValidation.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+          timestamp: new Date().toISOString()
+        });
       }
 
-      if (!startDate || !endDate) {
-        return res.status(400).json({ error: 'Start date and end date are required' });
-      }
+      const { videoId, videoTitle, titles: titleTexts, rotationIntervalMinutes, winnerMetric, startDate, endDate } = validationResult.data;
 
       // Create test
       const test = await storage.createTest({
-        userId: user.id,
+        userId: req.user!.id,
         videoId,
         videoTitle,
         rotationIntervalMinutes: rotationIntervalMinutes || 30,
@@ -462,11 +464,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/tests/:testId/status', requireAuth, async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;
-      const { status } = req.body;
       
-      if (!['active', 'paused', 'cancelled', 'completed'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid status' });
+      // Validate status input
+      const validationResult = updateTestStatusValidation.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid status value',
+          details: validationResult.error.errors,
+          timestamp: new Date().toISOString()
+        });
       }
+      
+      const { status } = validationResult.data;
 
       const test = await storage.updateTestStatus(testId, status);
       
@@ -485,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/tests/:testId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;
-      const user = (req as any).user;
+      const user = req.user!;
       
       // Verify the test belongs to the user
       const test = await storage.getTest(testId);
@@ -545,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get recent videos from user's channel
   app.get('/api/videos/recent', requireAuth, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const user = req.user!;
       
       // No demo data in dashboard - all users see only authentic data
       
@@ -643,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/tests/:testId/collect-analytics', requireAuth, async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;
-      const user = (req as any).user;
+      const user = req.user!;
       
       const test = await storage.getTest(testId);
       if (!test || test.userId !== user.id) {
@@ -749,7 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Title Generation Endpoint (Authority Plan Exclusive)
   app.post('/api/generate-titles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const user = req.user!;
       const { topic, framework } = req.body;
 
       // Check if user has Authority subscription
@@ -815,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/create-subscription', requireAuth, async (req: Request, res: Response) => {
     try {
       const { plan } = req.body;
-      const user = (req as any).user;
+      const user = req.user!;
       
       if (!['pro', 'authority'].includes(plan)) {
         return res.status(400).json({ error: 'Invalid plan selected' });
@@ -882,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check subscription status
   app.get('/api/subscription/status', requireAuth, async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      const user = req.user!;
       
       // Check if user has an active subscription
       // For demo purposes, we'll check localStorage or default to none
@@ -904,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/subscription/update', requireAuth, async (req: Request, res: Response) => {
     try {
       const { status, tier } = req.body;
-      const user = (req as any).user;
+      const user = req.user!;
       
       // Update user subscription status in database
       await storage.updateUserSubscription(user.id, status, tier);
@@ -924,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to check subscription access for protected routes
   async function requireSubscription(req: Request, res: Response, next: Function) {
     try {
-      const user = (req as any).user;
+      const user = req.user!;
       
       if (!user) {
         return res.status(401).json({ error: 'Authentication required' });
