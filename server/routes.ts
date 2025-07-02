@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createSession({
         sessionToken,
         userId: user.id,
-        expiresAt,
+        expires: expiresAt,
       });
 
       // Set secure session cookie

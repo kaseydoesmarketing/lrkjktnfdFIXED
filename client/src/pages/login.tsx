@@ -1,21 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle, Key } from 'lucide-react';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFounderLogin, setShowFounderLogin] = useState(false);
+  const [founderEmail, setFounderEmail] = useState('');
+  const [founderPassword, setFounderPassword] = useState('');
 
   useEffect(() => {
     // Check for error parameters in URL
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
     const descriptionParam = urlParams.get('description');
+    const founderParam = urlParams.get('founder');
     
     if (errorParam) {
       console.log('Login error detected:', errorParam, descriptionParam);
       setError(descriptionParam || `Authentication error: ${errorParam}`);
+    }
+    
+    // Show founder login if ?founder=true in URL or if user clicks specific sequence
+    if (founderParam === 'true') {
+      setShowFounderLogin(true);
     }
   }, []);
 
@@ -26,19 +36,19 @@ export default function Login() {
     window.location.href = '/api/auth/google';
   };
 
-  const handleDemoLogin = async () => {
+  const handleFounderLogin = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/demo-login', {
+      const response = await fetch('/api/auth/founder-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: 'demo@titletesterpro.com',
-          name: 'Demo User',
+          email: founderEmail,
+          password: founderPassword,
         }),
       });
 
@@ -47,11 +57,11 @@ export default function Login() {
         localStorage.setItem('sessionToken', data.sessionToken);
         window.location.href = '/dashboard';
       } else {
-        setError('Demo login failed. Please try again.');
+        setError('Invalid founder credentials. Please try again.');
       }
     } catch (error) {
-      console.error('Demo login error:', error);
-      setError('Demo login failed. Please try again.');
+      console.error('Founder login error:', error);
+      setError('Founder login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -144,8 +154,55 @@ export default function Login() {
                 {isLoading ? 'Connecting...' : 'Connect with Google'}
               </Button>
 
+              {showFounderLogin && (
+                <div className="space-y-3 border-t border-gray-700 pt-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Key className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm font-medium text-yellow-400">Founder Access</span>
+                  </div>
+                  
+                  <Input
+                    type="email"
+                    placeholder="Founder email"
+                    value={founderEmail}
+                    onChange={(e) => setFounderEmail(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  />
+                  
+                  <Input
+                    type="password"
+                    placeholder="Founder password"
+                    value={founderPassword}
+                    onChange={(e) => setFounderPassword(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleFounderLogin();
+                      }
+                    }}
+                  />
+                  
+                  <Button
+                    onClick={handleFounderLogin}
+                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                    disabled={isLoading || !founderEmail || !founderPassword}
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    {isLoading ? 'Logging in...' : 'Founder Login'}
+                  </Button>
+                </div>
+              )}
 
-              
+              {!showFounderLogin && (
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowFounderLogin(true)}
+                    className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                  >
+                    Founder Access
+                  </button>
+                </div>
+              )}
 
             </div>
 
