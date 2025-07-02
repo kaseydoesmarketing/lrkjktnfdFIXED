@@ -566,8 +566,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }
 
-      // Fetch videos using automatic token refresh system
-      const videos = await youtubeService.getChannelVideos(user.id, 10);
+      // Fetch videos using automatic token refresh system (get more videos for better selection)
+      const videos = await youtubeService.getChannelVideos(user.id, 50);
       
       res.json(videos);
     } catch (error) {

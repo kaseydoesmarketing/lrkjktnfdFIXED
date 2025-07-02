@@ -71,8 +71,8 @@ export class YouTubeService {
     }
   }
 
-  async getChannelVideos(userId: string, maxResults: number = 10) {
-    console.log(`📺 [YOUTUBE API] Getting channel videos for user ${userId}`);
+  async getChannelVideos(userId: string, maxResults: number = 50) {
+    console.log(`📺 [YOUTUBE API] Getting channel videos for user ${userId} (limit: ${maxResults})`);
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
@@ -93,28 +93,56 @@ export class YouTubeService {
         throw new Error('No uploads playlist found');
       }
 
-      // Get videos from uploads playlist
-      const playlistResponse = await youtube.playlistItems.list({
-        part: ['snippet'],
-        playlistId: uploadsPlaylistId,
-        maxResults
-      });
+      let allVideos: any[] = [];
+      let nextPageToken: string | undefined = undefined;
+      const pageSize = Math.min(maxResults, 50); // YouTube API max is 50 per request
 
-      if (!playlistResponse.data.items?.length) {
+      do {
+        // Get videos from uploads playlist with pagination
+        const playlistResponse = await youtube.playlistItems.list({
+          part: ['snippet'],
+          playlistId: uploadsPlaylistId,
+          maxResults: pageSize,
+          pageToken: nextPageToken
+        });
+
+        if (playlistResponse.data.items?.length) {
+          allVideos.push(...playlistResponse.data.items);
+        }
+
+        nextPageToken = playlistResponse.data.nextPageToken;
+        
+        // Continue until we have enough videos or no more pages
+      } while (nextPageToken && allVideos.length < maxResults);
+
+      if (!allVideos.length) {
         return [];
       }
 
-      // Get detailed video information
-      const videoIds = playlistResponse.data.items
+      // Get detailed video information for all videos (in batches if needed)
+      const videoIds = allVideos
         .map(item => item.snippet?.resourceId?.videoId)
-        .filter((id): id is string => Boolean(id));
+        .filter((id): id is string => Boolean(id))
+        .slice(0, maxResults); // Trim to requested limit
       
-      const videosResponse = await youtube.videos.list({
-        part: ['snippet', 'statistics', 'contentDetails'],
-        id: videoIds
-      });
+      // YouTube API allows up to 50 video IDs per request
+      const videoDetails: any[] = [];
+      for (let i = 0; i < videoIds.length; i += 50) {
+        const batchIds = videoIds.slice(i, i + 50);
+        
+        const videosResponse = await youtube.videos.list({
+          part: ['snippet', 'statistics', 'contentDetails'],
+          id: batchIds
+        });
 
-      return videosResponse.data.items?.map((video: any) => ({
+        if (videosResponse.data.items?.length) {
+          videoDetails.push(...videosResponse.data.items);
+        }
+      }
+
+      console.log(`📺 [YOUTUBE API] Successfully fetched ${videoDetails.length} videos for user ${userId}`);
+
+      return videoDetails.map((video: any) => ({
         id: video.id!,
         title: video.snippet?.title,
         description: video.snippet?.description,
@@ -125,7 +153,7 @@ export class YouTubeService {
         commentCount: parseInt(video.statistics?.commentCount || '0'),
         duration: video.contentDetails?.duration,
         status: video.snippet?.liveBroadcastContent === 'none' ? 'published' : video.snippet?.liveBroadcastContent
-      })) || [];
+      }));
     });
   }
 

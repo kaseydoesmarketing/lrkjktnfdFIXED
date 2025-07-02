@@ -491,7 +491,19 @@ export default function DashboardClean() {
                     <Video className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Your Video Library</h2>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-xl font-bold text-gray-900">Your Video Library</h2>
+                      {videos && videos.length > 0 && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-medium">
+                          {videos.length} videos loaded
+                        </Badge>
+                      )}
+                      {isLoadingVideos && (
+                        <Badge variant="outline" className="border-gray-300 text-gray-600">
+                          Loading...
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">Select a video to create a new A/B test</p>
                   </div>
                 </div>
