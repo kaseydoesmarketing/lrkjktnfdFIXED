@@ -538,18 +538,18 @@ export default function DashboardClean() {
 
         {/* Create Test Modal */}
         <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader className="pb-4">
               <DialogTitle className="text-xl font-bold">Create A/B Test</DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-6">
               {/* Selected Video Display */}
               {selectedVideo && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 mb-2">Selected Video</h3>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+                  <h3 className="font-medium text-gray-900 mb-3">Selected Video</h3>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-24 h-14 bg-gray-200 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                       {selectedVideo.thumbnail ? (
                         <img 
                           src={selectedVideo.thumbnail} 
@@ -560,8 +560,8 @@ export default function DashboardClean() {
                         <PlayCircle className="w-6 h-6 text-gray-400" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm text-gray-900 line-clamp-2">{selectedVideo.title}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-gray-900 mb-1">{selectedVideo.title}</p>
                       <p className="text-xs text-gray-500">{formatNumber(selectedVideo.viewCount)} views</p>
                     </div>
                   </div>
@@ -569,12 +569,18 @@ export default function DashboardClean() {
               )}
 
               {/* Title Variants */}
-              <div>
-                <Label className="text-base font-medium mb-3 block">Title Variants (Enter 2-5 alternatives)</Label>
-                <div className="space-y-3">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-base font-medium text-gray-900 mb-3">Title Variants</h3>
+                  <p className="text-sm text-gray-600 mb-4">Enter 2-5 alternative titles to test against each other</p>
+                </div>
+                
+                <div className="space-y-4">
                   {titleInputs.map((title, index) => (
-                    <div key={index}>
-                      <Label className="text-sm text-gray-600 mb-1 block">Title {index + 1}</Label>
+                    <div key={index} className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Title {index + 1} {index < 2 && <span className="text-red-500">*</span>}
+                      </Label>
                       <Input
                         value={title}
                         onChange={(e) => {
@@ -591,69 +597,79 @@ export default function DashboardClean() {
               </div>
 
               {/* Test Configuration */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
-                  <Select 
-                    value={testConfig.rotationIntervalMinutes.toString()} 
-                    onValueChange={(value) => setTestConfig(prev => ({...prev, rotationIntervalMinutes: parseInt(value)}))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="180">3 hours</SelectItem>
-                      <SelectItem value="360">6 hours</SelectItem>
-                      <SelectItem value="720">12 hours</SelectItem>
-                      <SelectItem value="1440">24 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-4">
+                <h3 className="text-base font-medium text-gray-900">Test Configuration</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Rotation Interval</Label>
+                    <Select 
+                      value={testConfig.rotationIntervalMinutes.toString()} 
+                      onValueChange={(value) => setTestConfig(prev => ({...prev, rotationIntervalMinutes: parseInt(value)}))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="60">1 hour</SelectItem>
+                        <SelectItem value="120">2 hours</SelectItem>
+                        <SelectItem value="180">3 hours</SelectItem>
+                        <SelectItem value="360">6 hours</SelectItem>
+                        <SelectItem value="720">12 hours</SelectItem>
+                        <SelectItem value="1440">24 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Winner Metric</Label>
-                  <Select 
-                    value={testConfig.winnerMetric} 
-                    onValueChange={(value) => setTestConfig(prev => ({...prev, winnerMetric: value}))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ctr">Click-Through Rate (CTR)</SelectItem>
-                      <SelectItem value="views">Total Views</SelectItem>
-                      <SelectItem value="combined">Combined Metrics</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Winner Metric</Label>
+                    <Select 
+                      value={testConfig.winnerMetric} 
+                      onValueChange={(value) => setTestConfig(prev => ({...prev, winnerMetric: value}))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ctr">Click-Through Rate (CTR)</SelectItem>
+                        <SelectItem value="views">Total Views</SelectItem>
+                        <SelectItem value="combined">Combined Metrics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
               {/* Test Duration */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Start Date</Label>
-                  <Input
-                    type="datetime-local"
-                    value={testConfig.startDate}
-                    onChange={(e) => setTestConfig(prev => ({...prev, startDate: e.target.value}))}
-                  />
-                </div>
+              <div className="space-y-4">
+                <h3 className="text-base font-medium text-gray-900">Test Duration</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Start Date & Time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={testConfig.startDate}
+                      onChange={(e) => setTestConfig(prev => ({...prev, startDate: e.target.value}))}
+                      className="w-full"
+                    />
+                  </div>
 
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">End Date</Label>
-                  <Input
-                    type="datetime-local"
-                    value={testConfig.endDate}
-                    onChange={(e) => setTestConfig(prev => ({...prev, endDate: e.target.value}))}
-                  />
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">End Date & Time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={testConfig.endDate}
+                      onChange={(e) => setTestConfig(prev => ({...prev, endDate: e.target.value}))}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-6 border-t">
+            <div className="flex items-center justify-between pt-6 border-t mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
