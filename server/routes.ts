@@ -493,6 +493,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Authority feature: Live title swapping
+  app.post('/api/tests/:testId/swap-title', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      
+      // Authority account check
+      if (user.subscriptionTier !== 'authority') {
+        return res.status(403).json({ error: "Authority account required for live title swapping" });
+      }
+
+      const { testId } = req.params;
+      const { newTitle } = req.body;
+
+      if (!newTitle || typeof newTitle !== 'string') {
+        return res.status(400).json({ error: "Valid title text required" });
+      }
+
+      // Get test and verify ownership
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+
+      if (test.status !== 'active') {
+        return res.status(400).json({ error: "Can only swap titles on active campaigns" });
+      }
+
+      // Update YouTube video title immediately
+      try {
+        await youtubeService.updateVideoTitle(test.videoId, newTitle, user.id);
+        
+        // Update test current title in database
+        await storage.updateTestCurrentTitle(testId, newTitle);
+        
+        res.json({ 
+          success: true, 
+          message: "Title swapped successfully",
+          currentTitle: newTitle 
+        });
+      } catch (youtubeError) {
+        console.error("YouTube API error during title swap:", youtubeError);
+        res.status(500).json({ error: "Failed to update YouTube title" });
+      }
+    } catch (error) {
+      console.error("Error swapping title:", error);
+      res.status(500).json({ error: "Failed to swap title" });
+    }
+  });
+
+  // Claude-powered campaign momentum analysis
+  app.post('/api/analyze-campaign-momentum', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { campaignId } = req.body;
+      const user = req.user!;
+
+      if (!campaignId) {
+        return res.status(400).json({ error: "Campaign ID required" });
+      }
+
+      // Get campaign data with analytics
+      const campaign = await storage.getTest(campaignId);
+      if (!campaign || campaign.userId !== user.id) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      // Get titles and analytics data
+      const titles = await storage.getTitlesByTestId(campaignId);
+      const summaries = await storage.getTitleSummariesByTestId(campaignId);
+      
+      // Prepare data for Claude analysis
+      const analysisPrompt = `Analyze this YouTube title testing campaign momentum:
+
+Campaign: ${campaign.videoTitle}
+Status: ${campaign.status}
+Total Titles: ${titles?.length || 0}
+Rotation Interval: ${campaign.rotationIntervalMinutes} minutes
+
+Title Variants:
+${titles?.map((title, i) => `${i + 1}. ${title.text}`).join('\n') || 'No titles available'}
+
+Performance Summary:
+${summaries?.map((summary, i) => `
+Title ${i + 1}: 
+- Total Views: ${summary.totalViews}
+- CTR: ${(summary.averageCtr * 100).toFixed(2)}%
+- Avg View Duration: ${summary.averageViewDuration}s
+`).join('\n') || 'No performance data yet'}
+
+Provide insights on:
+1. Current performance momentum and trends
+2. Which titles show the most promise based on data
+3. Strategic optimization recommendations
+4. Next steps for maximizing this campaign's success
+
+Keep analysis concise, actionable, and creator-focused.`;
+
+      // Get Claude analysis
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: analysisPrompt
+        }]
+      });
+
+      const analysis = response.content[0]?.text || 'Analysis complete';
+
+      res.json({
+        success: true,
+        insights: analysis,
+        campaignId: campaignId,
+        analyzedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error analyzing campaign momentum:", error);
+      res.status(500).json({ error: "Failed to analyze campaign momentum" });
+    }
+  });
+
   app.delete('/api/tests/:testId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { testId } = req.params;
