@@ -186,13 +186,19 @@ export default function DashboardClean() {
 
   const createTest = useMutation({
     mutationFn: async (testData: any) => {
+      console.log('Creating test with data:', testData);
       const response = await fetch('/api/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(testData)
       });
-      if (!response.ok) throw new Error('Failed to create test');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Test creation failed:', errorData);
+        throw new Error(errorData.error || 'Failed to create test');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -202,6 +208,14 @@ export default function DashboardClean() {
       setSelectedVideo(null);
       setTitleInputs(['', '', '', '', '']);
       toast({ title: 'Test created successfully' });
+    },
+    onError: (error: any) => {
+      console.error('Create test error:', error);
+      toast({ 
+        title: 'Failed to create test', 
+        description: error.message,
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -553,7 +567,7 @@ export default function DashboardClean() {
 
         {/* Create Test Modal */}
         <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-0 shadow-2xl rounded-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-0 shadow-2xl rounded-2xl z-50">
             <DialogHeader className="pb-6 px-6 pt-6 bg-gradient-to-r from-blue-50 to-indigo-50 -mx-6 -mt-6 rounded-t-2xl">
               <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -662,7 +676,7 @@ export default function DashboardClean() {
                       <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
                         <SelectItem value="60">1 hour</SelectItem>
                         <SelectItem value="120">2 hours</SelectItem>
                         <SelectItem value="180">3 hours</SelectItem>
@@ -686,7 +700,7 @@ export default function DashboardClean() {
                       <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
                         <SelectItem value="ctr">Click-Through Rate (CTR)</SelectItem>
                         <SelectItem value="views">Total Views</SelectItem>
                         <SelectItem value="combined">Combined Metrics</SelectItem>
