@@ -382,14 +382,10 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                           borderRadius: '8px',
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                         }}
-                        formatter={(value, name) => [
+                        formatter={(value: any, name: any) => [
                           name === 'views' ? formatNumber(Number(value)) : `${Number(value).toFixed(2)}%`,
                           name === 'views' ? 'Views' : 'CTR'
                         ]}
-                        labelFormatter={(label, payload) => {
-                          const data = payload?.[0]?.payload;
-                          return data?.fullName || label;
-                        }}
                       />
                       <Bar 
                         dataKey="views" 
@@ -852,57 +848,69 @@ export default function DashboardFixed() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Real Stats Overview */}
+        {/* Real Stats Overview with Animated Transitions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm card-hover">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-green-300 group animate-fade-in">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <TestTube className="w-5 h-5 text-white" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-green-600" />
+              <ArrowUpRight className="w-4 h-4 text-green-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Active Tests</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.activeTests || 0}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-green-700">Active Tests</p>
+              <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-green-600">{stats?.activeTests || 0}</p>
+              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm card-hover">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-blue-300 group animate-fade-in animation-delay-100">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <Eye className="w-5 h-5 text-white" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-blue-600" />
+              <ArrowUpRight className="w-4 h-4 text-blue-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Real Total Views</p>
-              <p className="text-2xl font-bold text-gray-900">{formatNumber(stats?.totalViews || 0)}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-blue-700">Real Total Views</p>
+              <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-blue-600">{formatNumber(stats?.totalViews || 0)}</p>
+              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm card-hover">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-purple-300 group animate-fade-in animation-delay-200">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <Target className="w-5 h-5 text-white" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-purple-600" />
+              <ArrowUpRight className="w-4 h-4 text-purple-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Real Avg CTR</p>
-              <p className="text-2xl font-bold text-gray-900">{safeToFixed(stats?.avgCtr || 0, 1)}%</p>
+              <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-purple-700">Real Avg CTR</p>
+              <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-purple-600">{safeToFixed(stats?.avgCtr || 0, 1)}%</p>
+              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm card-hover">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 group animate-fade-in animation-delay-300">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-orange-600" />
+              <ArrowUpRight className="w-4 h-4 text-orange-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Completed Tests</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.completedTests || 0}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-orange-700">Completed Tests</p>
+              <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-orange-600">{stats?.completedTests || 0}</p>
+              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+              </div>
             </div>
           </div>
         </div>

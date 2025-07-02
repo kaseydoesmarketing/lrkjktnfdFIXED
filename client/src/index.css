@@ -38,6 +38,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes countUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes chartSlideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 /* Glass morphism effect */
 .glass {
   background: rgba(255, 255, 255, 0.95);
@@ -89,6 +99,37 @@
 /* Count up animation */
 .count-up {
   animation: slideInUp 0.8s ease-out forwards;
+}
+
+/* Animated fade-in with staggered delays */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+/* Chart container animations */
+.chart-container {
+  animation: chartSlideIn 0.8s ease-out forwards;
+}
+
+/* Interactive stat card enhancements */
+.stat-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px) scale(1.02);
 }
 
 /* Custom scrollbar for webkit browsers */
