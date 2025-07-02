@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/lib/auth";
-import Dashboard from "@/pages/dashboard-fixed";
+import Dashboard from "@/pages/dashboard-production";
 import EnhancedAdmin from "@/pages/enhanced-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -23,7 +23,7 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     retry: false,
   });
 
-  console.log('AuthWrapper - user:', user, 'isLoading:', isLoading, 'error:', error);
+  // Authentication check
 
   if (isLoading) {
     return (
@@ -34,16 +34,16 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
   }
 
   if (error) {
-    console.log('AuthWrapper error, redirecting to login:', error);
+    // Authentication error
     return <Login />;
   }
 
   if (!user) {
-    console.log('No user found, showing login');
+    // No authenticated user
     return <Login />;
   }
 
-  console.log('User authenticated, showing dashboard');
+  // User authenticated, rendering dashboard
   return <>{children}</>;
 }
 

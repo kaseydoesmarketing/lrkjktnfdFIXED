@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Play, 
@@ -21,7 +21,20 @@ import {
   Filter,
   Sparkles,
   Zap,
-  Settings
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  BarChart3,
+  MousePointer,
+  PlaySquare,
+  Timer,
+  History,
+  Activity,
+  Trash2,
+  RotateCcw,
+  StopCircle,
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,26 +42,26 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import FuturisticVideoSelector from '@/components/FuturisticVideoSelector';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ErrorBoundary, ChartErrorBoundary } from '@/components/ErrorBoundary';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  image?: string;
   subscriptionTier?: string;
   subscriptionStatus?: string;
 }
 
-interface Video {
-  id: string;
-  title: string;
-  thumbnail: string;
-  duration: string;
-  publishedAt: string;
-  viewCount: number;
+interface Stats {
+  activeTests: number;
+  totalViews: number;
+  avgCtr: number;
+  completedTests: number;
 }
 
 interface Test {
@@ -58,29 +71,367 @@ interface Test {
   videoTitle: string;
   status: 'active' | 'paused' | 'completed' | 'cancelled';
   rotationIntervalMinutes: number;
-  winnerMetric: 'ctr' | 'views' | 'combined';
+  winnerMetric: string;
   startDate: string;
-  endDate?: string;
+  endDate: string;
   createdAt: string;
-  analytics?: {
-    averageCtr: number;
-    totalViews: number;
-  };
+  titles: Title[];
 }
 
-interface Stats {
-  activeTests: number;
-  totalViews: number;
-  avgCtr: number;
-  avgViewDuration: number;
-  totalTitlesTested: number;
-  completedTests: number;
+interface Title {
+  id: string;
+  testId: string;
+  text: string;
+  order: number;
+  activatedAt?: string;
 }
 
-// Safe number formatting utility
-const safeToFixed = (value: any, decimals: number = 1): string => {
-  const num = Number(value);
-  return isNaN(num) ? "0" : num.toFixed(decimals);
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  publishedAt: string;
+  viewCount: number;
+  duration: string;
+}
+
+// Safe number formatting functions
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+};
+
+const safeToFixed = (num: number | undefined, decimals: number): string => {
+  return (num || 0).toFixed(decimals);
+};
+
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+  return `${Math.floor(diffInMinutes / 1440)}d ago`;
+};
+
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m`;
+};
+
+const ActiveTestCard = ({ test, onTestAction }: { test: Test; onTestAction: (id: string, action: string) => void }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const { data: analytics } = useQuery({
+    queryKey: [`/api/tests/${test.id}/analytics`],
+    refetchInterval: 30 * 1000, // Refresh every 30 seconds
+  });
+
+  if (!analytics) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+        <CollapsibleTrigger className="w-full p-6 text-left">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <Badge 
+                  className={`${
+                    test.status === 'active' ? 'bg-green-100 text-green-800' :
+                    test.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
+                </Badge>
+                <span className="text-xs text-gray-500">
+                  {test.titles.length} variants • {test.rotationIntervalMinutes}min intervals
+                </span>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1 truncate">{test.videoTitle}</h3>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <div className="flex items-center space-x-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm text-gray-500">
+                    {analytics.rotationsCount} rotations
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    Next: {analytics.nextRotationIn > 0 ? `${analytics.nextRotationIn}m` : 'Calculating...'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-gray-900">
+                  {safeToFixed(analytics.averageCtr, 1)}%
+                </div>
+                <div className="text-sm text-gray-500">Avg CTR</div>
+              </div>
+              {isExpanded ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
+          </div>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="border-t border-gray-100 p-6 bg-gray-50">
+            {/* Real-time metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Eye className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-600">Total Views</span>
+                </div>
+                <div className="text-xl font-bold text-gray-900">
+                  {formatNumber(analytics.totalViews)}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <MousePointer className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-gray-600">Avg CTR</span>
+                </div>
+                <div className="text-xl font-bold text-gray-900">
+                  {safeToFixed(analytics.averageCtr, 1)}%
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-gray-600">Avg Duration</span>
+                </div>
+                <div className="text-xl font-bold text-gray-900">
+                  {Math.floor(analytics.averageViewDuration / 60)}:{String(Math.floor(analytics.averageViewDuration % 60)).padStart(2, '0')}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center space-x-2 mb-2">
+                  <PlaySquare className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-medium text-gray-600">Current Title</span>
+                </div>
+                <div className="text-sm font-medium text-gray-900 truncate">
+                  {analytics.currentTitle}
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Performance Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              
+              {/* CTR Trend Chart */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-gray-900">CTR Performance Trend</h4>
+                </div>
+                <div className="h-64">
+                  <ChartErrorBoundary>
+                    {analytics.rotationLogs && analytics.rotationLogs.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={analytics.rotationLogs.map((log: any, index: number) => ({
+                            name: `Title ${index + 1}`,
+                            ctr: log.ctrAtRotation || 0,
+                            views: log.viewsAtRotation || 0,
+                            duration: log.durationMinutes || 0
+                          }))}
+                        >
+                          <defs>
+                            <linearGradient id="ctrGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            stroke="#6B7280"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            stroke="#6B7280"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(value) => `${value}%`}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                            formatter={(value: any) => [`${Number(value).toFixed(2)}%`, 'CTR']}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="ctr"
+                            stroke="#3B82F6"
+                            strokeWidth={3}
+                            fill="url(#ctrGradient)"
+                            animationBegin={0}
+                            animationDuration={1500}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="text-center">
+                          <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>No data available</p>
+                          <p className="text-sm">Start a test to see CTR trends</p>
+                        </div>
+                      </div>
+                    )}
+                  </ChartErrorBoundary>
+                </div>
+              </div>
+
+              {/* Title Performance Comparison */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <BarChart3 className="w-5 h-5 text-green-600" />
+                  <h4 className="font-semibold text-gray-900">Title Performance Comparison</h4>
+                </div>
+                <div className="h-64">
+                  <ChartErrorBoundary>
+                    {analytics.rotationLogs && analytics.rotationLogs.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={analytics.rotationLogs.map((log: any, index: number) => ({
+                            name: `T${index + 1}`,
+                            fullName: log.titleText?.length > 30 ? log.titleText.substring(0, 30) + '...' : log.titleText,
+                            views: log.viewsAtRotation || 0,
+                            ctr: log.ctrAtRotation || 0
+                          }))}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            stroke="#6B7280"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            stroke="#6B7280"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(value) => formatNumber(value)}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="views" 
+                            fill="#10B981" 
+                            radius={[4, 4, 0, 0]}
+                            animationBegin={300}
+                            animationDuration={1200}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="text-center">
+                          <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>No comparison data</p>
+                          <p className="text-sm">Run tests to compare performance</p>
+                        </div>
+                      </div>
+                    )}
+                  </ChartErrorBoundary>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Test Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex space-x-2">
+                {test.status === 'active' && (
+                  <Button
+                    onClick={() => onTestAction(test.id, 'pause')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-1"
+                  >
+                    <Pause className="w-4 h-4" />
+                    <span>Pause</span>
+                  </Button>
+                )}
+                
+                {test.status === 'paused' && (
+                  <Button
+                    onClick={() => onTestAction(test.id, 'resume')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-1"
+                  >
+                    <Play className="w-4 h-4" />
+                    <span>Resume</span>
+                  </Button>
+                )}
+                
+                {(test.status === 'active' || test.status === 'paused') && (
+                  <Button
+                    onClick={() => onTestAction(test.id, 'complete')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Complete</span>
+                  </Button>
+                )}
+              </div>
+
+              <Button
+                onClick={() => onTestAction(test.id, 'cancel')}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-1 text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Cancel Test</span>
+              </Button>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
 };
 
 export default function DashboardClean() {
@@ -93,113 +444,78 @@ export default function DashboardClean() {
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
   });
   const [titleInputs, setTitleInputs] = useState(['', '', '', '', '']);
-  const [isCreatingTest, setIsCreatingTest] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const { toast } = useToast();
 
-  // Get user from the existing auth system
-  const { data: user } = useQuery({
+  // Real-time data fetching
+  const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ['/api/auth/me'],
-    queryFn: () => fetch('/api/auth/me', { credentials: 'include' }).then(res => res.json()),
+    retry: false,
   });
 
-  // Data queries
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ['/api/dashboard/stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/dashboard/stats', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      return response.json();
-    },
-    enabled: !!user
+    enabled: !!user,
+    retry: false,
+    refetchInterval: 30 * 1000,
   });
 
-  const { data: tests = [] } = useQuery({
+  const { data: tests = [], isLoading: testsLoading } = useQuery<Test[]>({
     queryKey: ['/api/tests'],
-    queryFn: async () => {
-      const response = await fetch('/api/tests', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch tests');
-      return response.json();
-    },
-    enabled: !!user
+    enabled: !!user,
+    retry: false,
+    refetchInterval: 30 * 1000,
   });
 
-  const { data: videos = [], isLoading: isLoadingVideos } = useQuery({
+  const { data: videos = [], isLoading: videosLoading } = useQuery<Video[]>({
     queryKey: ['/api/videos/recent'],
-    queryFn: async () => {
-      const response = await fetch('/api/videos/recent', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch videos');
-      return response.json();
-    },
-    enabled: !!user
+    enabled: !!user && showCreateTest,
+    retry: false,
   });
 
   // Test management mutations
-  const pauseTest = useMutation({
-    mutationFn: async (testId: string) => {
-      const response = await fetch(`/api/tests/${testId}/pause`, {
+  const testActionMutation = useMutation({
+    mutationFn: async ({ testId, action }: { testId: string; action: string }) => {
+      const response = await fetch(`/api/tests/${testId}/${action}`, {
         method: 'POST',
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to pause test');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to perform action');
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      toast({ title: 'Test paused successfully' });
-    }
-  });
-
-  const resumeTest = useMutation({
-    mutationFn: async (testId: string) => {
-      const response = await fetch(`/api/tests/${testId}/resume`, {
-        method: 'POST',
-        credentials: 'include'
+      
+      const actionMessages = {
+        pause: 'Test paused successfully',
+        resume: 'Test resumed successfully', 
+        complete: 'Test completed successfully',
+        cancel: 'Test cancelled successfully'
+      };
+      
+      toast({ 
+        title: actionMessages[variables.action as keyof typeof actionMessages] || 'Action completed successfully' 
       });
-      if (!response.ok) throw new Error('Failed to resume test');
-      return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      toast({ title: 'Test resumed successfully' });
-    }
-  });
-
-  const deleteTest = useMutation({
-    mutationFn: async (testId: string) => {
-      const response = await fetch(`/api/tests/${testId}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Action failed', 
+        description: error.message,
+        variant: 'destructive' 
       });
-      if (!response.ok) throw new Error('Failed to delete test');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      toast({ title: 'Test deleted successfully' });
     }
   });
 
   const createTest = useMutation({
     mutationFn: async (testData: any) => {
-      console.log('Creating test with data:', testData);
-      const response = await fetch('/api/tests', {
+      return await apiRequest('/api/tests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(testData)
+        body: JSON.stringify(testData),
+        headers: { 'Content-Type': 'application/json' }
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Test creation failed:', errorData);
-        throw new Error(errorData.error || 'Failed to create test');
-      }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
@@ -207,10 +523,9 @@ export default function DashboardClean() {
       setShowCreateTest(false);
       setSelectedVideo(null);
       setTitleInputs(['', '', '', '', '']);
-      toast({ title: 'Test created successfully' });
+      toast({ title: 'Test created successfully!' });
     },
-    onError: (error: any) => {
-      console.error('Create test error:', error);
+    onError: (error: Error) => {
       toast({ 
         title: 'Failed to create test', 
         description: error.message,
@@ -219,8 +534,25 @@ export default function DashboardClean() {
     }
   });
 
-  const handleLogout = () => {
-    window.location.href = '/api/auth/logout';
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Logout failed');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = '/';
+    }
+  });
+
+  const handleLogout = () => logoutMutation.mutate();
+
+  const handleTestAction = (testId: string, action: string) => {
+    testActionMutation.mutate({ testId, action });
   };
 
   const handleCreateTest = async () => {
@@ -245,42 +577,15 @@ export default function DashboardClean() {
       endDate: new Date(testConfig.endDate).toISOString()
     };
 
-    console.log('=== TEST CREATION DEBUG ===');
-    console.log('Selected video:', selectedVideo);
-    console.log('Valid titles:', validTitles);
-    console.log('Test config:', testConfig);
-    console.log('Final test data:', testData);
-
     createTest.mutate(testData);
   };
 
-  const formatNumber = (num: number) => {
-    const safeNum = Number(num) || 0;
-    if (safeNum >= 1000000) return `${safeToFixed(safeNum / 1000000)}M`;
-    if (safeNum >= 1000) return `${safeToFixed(safeNum / 1000, 0)}K`;
-    return safeNum.toString();
-  };
+  // Filter tests
+  const activeTests = tests.filter((test: Test) => test.status === 'active');
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'paused': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  // Filter tests based on search and status
-  const filteredTests = tests.filter((test: Test) => {
-    const matchesSearch = test.videoTitle.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || test.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  if (!user) {
+  if (userLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading TitleTesterPro</p>
@@ -289,507 +594,200 @@ export default function DashboardClean() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Please log in to access your dashboard</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">TitleTesterPro</h1>
-                <p className="text-xs text-gray-500 -mt-1">A/B Testing Dashboard</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-600">
-                    {user.name?.charAt(0) || 'U'}
-                  </span>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        {/* Fixed Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-sm text-gray-700 hidden sm:block">{user.name}</span>
-                {user.subscriptionTier === 'authority' && (
-                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                    Authority
-                  </Badge>
-                )}
-              </div>
-
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Simplified Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Active Tests */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <TestTube className="w-5 h-5 text-white" />
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Active Tests</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.activeTests || 0}</p>
-            </div>
-          </div>
-
-          {/* Total Views */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-white" />
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Views</p>
-              <p className="text-2xl font-bold text-gray-900">{formatNumber(stats?.totalViews || 0)}</p>
-            </div>
-          </div>
-
-          {/* Average CTR */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                <Target className="w-5 h-5 text-white" />
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Avg CTR</p>
-              <p className="text-2xl font-bold text-gray-900">{safeToFixed(stats?.avgCtr)}%</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Active Tests Section - Full Width */}
-        <div className="mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="border-b border-gray-100 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <Play className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Active Tests</h2>
-                    <p className="text-sm text-gray-500">Manage your running A/B tests</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Search className="w-4 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Search tests..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48"
-                    />
-                  </div>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="paused">Paused</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">TitleTesterPro</h1>
+                  <p className="text-xs text-gray-500 -mt-1">Real-time A/B Testing</p>
                 </div>
               </div>
-            </div>
 
-            <div className="divide-y divide-gray-100">
-              {filteredTests.length > 0 ? (
-                filteredTests.map((test: Test) => (
-                  <div key={test.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{test.videoTitle}</h3>
-                          <Badge className={getStatusColor(test.status)}>{test.status}</Badge>
-                        </div>
-                        <div className="flex items-center space-x-6 text-sm text-gray-600 mb-3">
-                          <span className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4" />
-                            <span>Every {test.rotationIntervalMinutes}min</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Target className="w-4 h-4" />
-                            <span>{test.winnerMetric === 'ctr' ? 'CTR' : test.winnerMetric === 'views' ? 'Views' : 'Combined'}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(test.startDate).toLocaleDateString()}</span>
-                          </span>
-                        </div>
-                        {test.analytics && (
-                          <div className="flex items-center space-x-4 mt-2 text-sm">
-                            <span className="text-green-600 font-medium">
-                              {safeToFixed(test.analytics.averageCtr)}% CTR
-                            </span>
-                            <span className="text-blue-600 font-medium">
-                              {formatNumber(test.analytics.totalViews)} views
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {test.status === 'active' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => pauseTest.mutate(test.id)}
-                            disabled={pauseTest.isPending}
-                          >
-                            <Pause className="w-4 h-4 mr-1" />
-                            Pause
-                          </Button>
-                        ) : test.status === 'paused' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => resumeTest.mutate(test.id)}
-                            disabled={resumeTest.isPending}
-                          >
-                            <Play className="w-4 h-4 mr-1" />
-                            Resume
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteTest.mutate(test.id)}
-                          disabled={deleteTest.isPending}
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-blue-600">
+                      {user?.name?.charAt(0) || 'U'}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <TestTube className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No tests found</h3>
-                  <p className="text-gray-500 mb-4">Create your first A/B test to start optimizing your titles</p>
+                  <span className="text-sm text-gray-700 hidden sm:block">{user?.name}</span>
+                  {user?.subscriptionTier === 'authority' && (
+                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                      Authority
+                    </Badge>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
 
-        {/* Video Library Section - Full Width */}
-        <div className="mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="border-b border-gray-100 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Video className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-bold text-gray-900">Your Video Library</h2>
-                      {videos && videos.length > 0 && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-medium">
-                          {videos.length} videos loaded
-                        </Badge>
-                      )}
-                      {isLoadingVideos && (
-                        <Badge variant="outline" className="border-gray-300 text-gray-600">
-                          Loading...
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">Select a video to create a new A/B test</p>
-                  </div>
-                </div>
-                <Button onClick={() => setShowCreateTest(true)} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Test
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             </div>
+          </div>
+        </header>
 
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                {videos.map((video: Video) => (
-                  <div
-                    key={video.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => {
-                      setSelectedVideo(video);
-                      setShowCreateTest(true);
-                    }}
-                  >
-                    <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      {video.thumbnail ? (
-                        <img 
-                          src={video.thumbnail} 
-                          alt={video.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <PlayCircle className="w-8 h-8 text-gray-400" />
-                      )}
-                    </div>
-                    <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2">{video.title}</h3>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{formatNumber(video.viewCount)} views</span>
-                      <span>{new Date(video.publishedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Real Stats Overview with Animated Transitions */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-green-300 group animate-fade-in">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                  <TestTube className="w-5 h-5 text-white" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-green-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-green-700">Active Tests</p>
+                <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-green-600">{stats?.activeTests || 0}</p>
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-blue-300 group animate-fade-in animation-delay-100">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                  <Eye className="w-5 h-5 text-white" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-blue-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-blue-700">Total Views</p>
+                <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-blue-600">{formatNumber(stats?.totalViews || 0)}</p>
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-purple-300 group animate-fade-in animation-delay-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-purple-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-purple-700">Avg CTR</p>
+                <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-purple-600">{safeToFixed(stats?.avgCtr || 0, 1)}%</p>
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-105 hover:border-orange-300 group animate-fade-in animation-delay-300">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                  <CheckCircle className="w-5 h-5 text-white" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-orange-600 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1 transition-colors duration-300 group-hover:text-orange-700">Completed Tests</p>
+                <p className="text-2xl font-bold text-gray-900 transition-colors duration-300 group-hover:text-orange-600">{stats?.completedTests || 0}</p>
+                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Active Tests Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Active Tests</h2>
+                <p className="text-gray-600 mt-1">Real-time A/B testing with live analytics</p>
+              </div>
+              <Button
+                onClick={() => setShowCreateTest(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Test
+              </Button>
+            </div>
+
+            {activeTests.length > 0 ? (
+              <div className="space-y-4">
+                {activeTests.map((test: Test) => (
+                  <ActiveTestCard 
+                    key={test.id} 
+                    test={test} 
+                    onTestAction={handleTestAction}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <TestTube className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Tests</h3>
+                <p className="text-gray-600 mb-4">Create your first A/B test to start optimizing your video titles</p>
+                <Button
+                  onClick={() => setShowCreateTest(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Test
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Create Test Modal */}
+        {/* Create Test Modal - Simplified for now */}
         <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-0 shadow-2xl rounded-2xl z-50">
-            <DialogHeader className="pb-6 px-6 pt-6 bg-gradient-to-r from-blue-50 to-indigo-50 -mx-6 -mt-6 rounded-t-2xl">
-              <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <TestTube className="w-4 h-4 text-white" />
-                </div>
-                Create A/B Test
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                <TestTube className="w-5 h-5 text-blue-600" />
+                <span>Create New A/B Test</span>
               </DialogTitle>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto px-6 space-y-8">
-              {/* Selected Video Display */}
-              {selectedVideo && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Video className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-semibold text-gray-900">Selected Video</h3>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                    <div className="w-32 h-20 bg-white rounded-lg shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 border border-gray-200">
-                      {selectedVideo.thumbnail ? (
-                        <img 
-                          src={selectedVideo.thumbnail} 
-                          alt={selectedVideo.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <PlayCircle className="w-8 h-8 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 mb-2 line-clamp-2">{selectedVideo.title}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {formatNumber(selectedVideo.viewCount)} views
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {selectedVideo.duration}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Title Variants */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Title Variants</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-6">Create 2-5 alternative titles to test against each other. Each title will be tested to find the highest performing variant.</p>
-                
-                <div className="space-y-4">
-                  {titleInputs.map((title, index) => (
-                    <div key={index} className="relative">
-                      <Label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        Title Variant {index + 1}
-                        {index < 2 && <span className="text-red-500 text-xs">(Required)</span>}
-                      </Label>
-                      <Input
-                        value={title}
-                        onChange={(e) => {
-                          const newTitles = [...titleInputs];
-                          newTitles[index] = e.target.value;
-                          setTitleInputs(newTitles);
-                        }}
-                        placeholder={`Enter your ${index === 0 ? 'first' : index === 1 ? 'second' : 'alternative'} title variant...`}
-                        className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-purple-300 focus:ring-purple-200 rounded-lg"
-                      />
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-start gap-2">
-                    <Zap className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-blue-800">
-                      <strong>Pro Tip:</strong> Use different emotional hooks, keywords, or structures. Test clickbait vs informative, questions vs statements, or different emotional appeals.
-                    </p>
-                  </div>
-                </div>
+            <div className="space-y-6 py-4">
+              {/* Test creation form would go here */}
+              <div className="text-center py-8">
+                <TestTube className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Test creation form coming soon</p>
+                <Button
+                  onClick={() => setShowCreateTest(false)}
+                  className="mt-4"
+                >
+                  Close
+                </Button>
               </div>
-
-              {/* Test Configuration */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Settings className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Test Configuration</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-green-600" />
-                      Rotation Interval
-                    </Label>
-                    <Select 
-                      value={testConfig.rotationIntervalMinutes.toString()} 
-                      onValueChange={(value) => setTestConfig(prev => ({...prev, rotationIntervalMinutes: parseInt(value)}))}
-                    >
-                      <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
-                        <SelectItem value="60">1 hour</SelectItem>
-                        <SelectItem value="120">2 hours</SelectItem>
-                        <SelectItem value="180">3 hours</SelectItem>
-                        <SelectItem value="360">6 hours</SelectItem>
-                        <SelectItem value="720">12 hours</SelectItem>
-                        <SelectItem value="1440">24 hours</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500">How often to switch between title variants</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Target className="w-4 h-4 text-green-600" />
-                      Winner Metric
-                    </Label>
-                    <Select 
-                      value={testConfig.winnerMetric} 
-                      onValueChange={(value) => setTestConfig(prev => ({...prev, winnerMetric: value}))}
-                    >
-                      <SelectTrigger className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-green-300 rounded-lg">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
-                        <SelectItem value="ctr">Click-Through Rate (CTR)</SelectItem>
-                        <SelectItem value="views">Total Views</SelectItem>
-                        <SelectItem value="combined">Combined Metrics</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500">How to determine the winning title</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Test Duration */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-5 h-5 text-orange-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Test Duration</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Play className="w-4 h-4 text-orange-600" />
-                      Start Date & Time
-                    </Label>
-                    <Input
-                      type="datetime-local"
-                      value={testConfig.startDate}
-                      onChange={(e) => setTestConfig(prev => ({...prev, startDate: e.target.value}))}
-                      className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-300 focus:ring-orange-200 rounded-lg"
-                    />
-                    <p className="text-xs text-gray-500">When to begin the A/B test</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-orange-600" />
-                      End Date & Time
-                    </Label>
-                    <Input
-                      type="datetime-local"
-                      value={testConfig.endDate}
-                      onChange={(e) => setTestConfig(prev => ({...prev, endDate: e.target.value}))}
-                      className="w-full h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-orange-300 focus:ring-orange-200 rounded-lg"
-                    />
-                    <p className="text-xs text-gray-500">When to complete the test and declare winner</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-between px-6 py-6 bg-gray-50 -mx-6 -mb-6 rounded-b-2xl border-t border-gray-100">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCreateTest(false);
-                  setSelectedVideo(null);
-                  setTitleInputs(['', '', '', '', '']);
-                }}
-                className="h-12 px-6 border-gray-300 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTest}
-                disabled={createTest.isPending || !selectedVideo}
-                className="h-12 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
-              >
-                {createTest.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating Test...
-                  </>
-                ) : (
-                  <>
-                    <TestTube className="w-4 h-4" />
-                    Create A/B Test
-                  </>
-                )}
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
