@@ -6,6 +6,7 @@ import { authService } from "./auth";
 import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { registerAdminRoutes } from "./adminRoutes";
+import { apiCache, youtubeCache, userCache, cacheKey, getCachedOrFetch, invalidateUserCache, invalidateTestCache } from "./cache";
 import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
 import { z } from "zod";
 

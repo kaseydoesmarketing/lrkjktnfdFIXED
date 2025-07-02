@@ -66,7 +66,7 @@ export function invalidateUserCache(userId: string): void {
   ];
   
   patterns.forEach(pattern => {
-    cache.del(pattern);
+    apiCache.del(pattern); userCache.del(pattern);
   });
 }
 
@@ -78,7 +78,7 @@ export function invalidateTestCache(testId: string, userId: string): void {
   ];
   
   patterns.forEach(pattern => {
-    cache.del(pattern);
+    apiCache.del(pattern); userCache.del(pattern);
   });
 }
 
