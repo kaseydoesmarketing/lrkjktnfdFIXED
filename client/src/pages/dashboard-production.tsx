@@ -373,6 +373,33 @@ const ActiveTestCard = ({ test, onTestAction }: { test: Test; onTestAction: (id:
                     <span>Complete</span>
                   </Button>
                 )}
+                
+                {/* Analytics Debugging Controls - Only for founder */}
+                {user?.email === 'kaseydoesmarketing@gmail.com' && (
+                  <>
+                    <Button
+                      onClick={() => forceAnalytics.mutate(test.id)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      disabled={forceAnalytics.isPending}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Force Analytics</span>
+                    </Button>
+                    
+                    <Button
+                      onClick={() => simulateRotation.mutate(test.id)}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+                      disabled={simulateRotation.isPending}
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>Simulate Rotation</span>
+                    </Button>
+                  </>
+                )}
               </div>
 
               <Button
@@ -510,6 +537,51 @@ export default function DashboardProduction() {
     onSuccess: () => {
       queryClient.clear();
       window.location.href = '/';
+    }
+  });
+
+  // Analytics debugging mutations
+  const forceAnalytics = useMutation({
+    mutationFn: async (testId: string) => {
+      const response = await fetch(`/api/tests/${testId}/force-analytics`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to force analytics collection');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      toast({ title: 'Analytics collection triggered successfully', variant: 'default' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Failed to trigger analytics collection', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    }
+  });
+
+  const simulateRotation = useMutation({
+    mutationFn: async (testId: string) => {
+      const response = await fetch(`/api/tests/${testId}/simulate-rotation`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to simulate rotation');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      toast({ title: 'Title rotation simulated successfully', variant: 'default' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Failed to simulate rotation', 
+        description: error.message,
+        variant: 'destructive' 
+      });
     }
   });
 

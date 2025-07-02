@@ -5,6 +5,7 @@ import { scheduler } from "./scheduler";
 import { authService } from "./auth";
 import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
+import { analyticsCollector } from "./analyticsCollector";
 import { registerAdminRoutes } from "./adminRoutes";
 import { apiCache, youtubeCache, userCache, cacheKey, getCachedOrFetch, invalidateUserCache, invalidateTestCache } from "./cache";
 import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
@@ -838,6 +839,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to collect analytics' });
+    }
+  });
+
+  // Force analytics collection for test (debugging endpoint)
+  app.post('/api/tests/:testId/force-analytics', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      await analyticsCollector.forceCollectTestAnalytics(testId);
+      
+      res.json({ 
+        success: true, 
+        message: 'Analytics collection forced successfully',
+        testId 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to force analytics collection' });
+    }
+  });
+
+  // Simulate rotation for testing
+  app.post('/api/tests/:testId/simulate-rotation', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      await analyticsCollector.simulateRotation(testId);
+      
+      res.json({ 
+        success: true, 
+        message: 'Title rotation simulated successfully',
+        testId 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to simulate rotation' });
     }
   });
 

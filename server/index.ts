@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { analyticsCollector } from "./analyticsCollector";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
@@ -139,5 +140,15 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Initialize analytics collection for all active tests
+    setTimeout(async () => {
+      try {
+        await analyticsCollector.initializeAllActiveTests();
+        log(`Analytics collector initialized for active tests`);
+      } catch (error) {
+        console.error('Failed to initialize analytics collector:', error);
+      }
+    }, 2000); // 2 second delay to ensure database is ready
   });
 })();
