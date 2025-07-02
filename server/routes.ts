@@ -840,10 +840,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let event;
 
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || '');
-    } catch (err) {
-      console.log(`Webhook signature verification failed.`, err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      if (!sig) {
+        return res.status(400).send('Missing stripe-signature header');
+      }
+      event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
+    } catch (err: any) {
+      console.log(`Webhook signature verification failed.`, err?.message || err);
+      return res.status(400).send(`Webhook Error: ${err?.message || 'Invalid signature'}`);
     }
 
     // Handle the event

@@ -48,6 +48,10 @@ export interface IStorage {
   getTitleSummaryByTitleId(titleId: string): Promise<TitleSummary | undefined>;
   getTitleSummariesByTestId(testId: string): Promise<TitleSummary[]>;
   
+  // Subscription methods
+  updateUserSubscription(userId: string, status: string, tier: string | null): Promise<User>;
+  getUserByStripeSubscriptionId(subscriptionId: string): Promise<User | undefined>;
+  
   // Admin methods
   getAllUsers(): Promise<User[]>;
   getAllTests(): Promise<Test[]>;
@@ -288,14 +292,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription management
-  async updateUserSubscription(userId: string, status: string, tier: string): Promise<void> {
-    await db
+  async updateUserSubscription(userId: string, status: string, tier: string | null): Promise<User> {
+    const [user] = await db
       .update(users)
       .set({ 
         subscriptionStatus: status,
         subscriptionTier: tier
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 
   async getUserSubscription(userId: string): Promise<{ status: string | null, tier: string | null } | null> {
@@ -311,6 +317,11 @@ export class DatabaseStorage implements IStorage {
       status: user.subscriptionStatus,
       tier: user.subscriptionTier
     } : null;
+  }
+
+  async getUserByStripeSubscriptionId(subscriptionId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeSubscriptionId, subscriptionId));
+    return user || undefined;
   }
 
   async getAllUsers(): Promise<User[]> {

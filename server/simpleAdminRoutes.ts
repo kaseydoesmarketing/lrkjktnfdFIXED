@@ -186,6 +186,41 @@ export function registerSimpleAdminRoutes(app: Express) {
     }
   });
 
+  // Grant specific access to users
+  app.post('/api/admin/users/:userId/grant-access', requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { tier } = req.body; // 'pro', 'authority', or 'lifetime'
+      const adminUser = (req as any).user;
+      
+      if (!['pro', 'authority', 'lifetime'].includes(tier)) {
+        return res.status(400).json({ error: 'Invalid tier. Must be pro, authority, or lifetime' });
+      }
+      
+      // Grant access with the specified tier
+      await storage.updateUserSubscription(userId, 'active', tier);
+      
+      // Get updated user data
+      const user = await storage.getUser(userId);
+      console.log(`Admin granted ${tier} access to user ${userId} (${user?.email}) by ${adminUser.email}`);
+      
+      res.json({ 
+        success: true,
+        message: `${tier.charAt(0).toUpperCase() + tier.slice(1)} access granted successfully`,
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionTier: user.subscriptionTier
+        } : null
+      });
+    } catch (error) {
+      console.error('Error granting access:', error);
+      res.status(500).json({ error: 'Failed to grant access' });
+    }
+  });
+
   // Moderate test
   app.post('/api/admin/tests/:testId/:action', requireAdmin, async (req: Request, res: Response) => {
     try {
