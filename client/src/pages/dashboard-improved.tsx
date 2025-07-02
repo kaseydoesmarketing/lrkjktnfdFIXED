@@ -128,7 +128,7 @@ export default function DashboardImproved() {
       if (!response.ok) throw new Error('Failed to fetch stats');
       return response.json();
     },
-    enabled: !!authState.user
+    enabled: !!user
   });
 
   const { data: tests = [] } = useQuery({
@@ -138,7 +138,7 @@ export default function DashboardImproved() {
       if (!response.ok) throw new Error('Failed to fetch tests');
       return response.json();
     },
-    enabled: !!authState.user
+    enabled: !!user
   });
 
   const { data: videos = [] } = useQuery({
@@ -148,7 +148,7 @@ export default function DashboardImproved() {
       if (!response.ok) throw new Error('Failed to fetch videos');
       return response.json();
     },
-    enabled: !!authState.user
+    enabled: !!user
   });
 
   // Calculate accurate momentum data
@@ -277,7 +277,7 @@ export default function DashboardImproved() {
     return matchesSearch && matchesStatus;
   });
 
-  if (authState.loading) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -286,10 +286,6 @@ export default function DashboardImproved() {
         </div>
       </div>
     );
-  }
-
-  if (!authState.user) {
-    return null; // Will redirect to login
   }
 
   return (
@@ -312,11 +308,11 @@ export default function DashboardImproved() {
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-blue-600">
-                    {authState.user.name?.charAt(0) || 'U'}
+                    {user.name?.charAt(0) || 'U'}
                   </span>
                 </div>
-                <span className="text-sm text-gray-700 hidden sm:block">{authState.user.name}</span>
-                {authState.user.subscriptionTier === 'authority' && (
+                <span className="text-sm text-gray-700 hidden sm:block">{user.name}</span>
+                {user.subscriptionTier === 'authority' && (
                   <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                     <Crown className="w-3 h-3 mr-1" />
                     Authority
