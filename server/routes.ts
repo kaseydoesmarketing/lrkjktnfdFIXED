@@ -192,6 +192,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OAuth diagnostic route for debugging production issues
+  app.get('/api/auth/debug', (req: Request, res: Response) => {
+    const diagnostics = {
+      environment: process.env.NODE_ENV,
+      hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+      hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+      clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 12) + '...',
+      replitDomains: process.env.REPLIT_DOMAINS,
+      oauthRedirectUri: process.env.OAUTH_REDIRECT_URI,
+      detectedDomain: req.get('host'),
+      timestamp: new Date().toISOString()
+    };
+    
+    res.json({
+      status: 'OAuth Configuration Diagnostics for titletesterpro.com',
+      ...diagnostics,
+      expectedRedirectUri: diagnostics.detectedDomain?.includes('titletesterpro.com') 
+        ? 'https://titletesterpro.com/api/auth/callback/google'
+        : `https://${diagnostics.detectedDomain}/api/auth/callback/google`,
+      troubleshooting: {
+        step1: 'Check Google Cloud Console OAuth configuration',
+        step2: 'Verify redirect URI matches exactly',
+        step3: 'Ensure OAuth consent screen is published or in testing mode',
+        step4: 'Confirm environment variables are set on production'
+      }
+    });
+  });
+
   // Google OAuth routes
   app.get('/api/auth/google', async (req: Request, res: Response) => {
     try {
