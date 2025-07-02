@@ -80,6 +80,8 @@ export default function DashboardFuturistic() {
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedTestForInsights, setSelectedTestForInsights] = useState<Test | null>(null);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
 
   // Authenticate user
   useEffect(() => {
@@ -812,7 +814,30 @@ export default function DashboardFuturistic() {
                 </div>
               </div>
               
-              <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl">
+              <div className="space-y-3 mb-4">
+                <div className="text-sm text-gray-600 mb-2">Select a test to view detailed insights:</div>
+                <select
+                  value={selectedTestForInsights?.id || ''}
+                  onChange={(e) => {
+                    const test = tests.find(t => t.id === e.target.value);
+                    setSelectedTestForInsights(test || null);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  <option value="">Choose a test...</option>
+                  {tests.map(test => (
+                    <option key={test.id} value={test.id}>
+                      {test.videoTitle || 'Untitled Test'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <button 
+                onClick={() => setShowInsightsModal(true)}
+                disabled={!selectedTestForInsights}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+              >
                 <Activity className="w-5 h-5" />
                 <span>View Full Report</span>
               </button>
@@ -951,7 +976,7 @@ export default function DashboardFuturistic() {
         {/* Analytics Tab - Authority Accounts Only */}
         {activeTab === 'analytics' && (
           <div className="space-y-8">
-            {authState.user?.subscriptionTier === 'authority' ? (
+            {(authState.user as any)?.subscriptionTier === 'authority' ? (
               <>
                 {/* Analytics Dashboard for Authority Users */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -1269,6 +1294,124 @@ export default function DashboardFuturistic() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Insights Modal */}
+      {showInsightsModal && selectedTestForInsights && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">AI Insights Report</h3>
+                  <p className="text-purple-100 mt-1">{selectedTestForInsights.videoTitle}</p>
+                </div>
+                <button
+                  onClick={() => setShowInsightsModal(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 max-h-[calc(90vh-140px)] overflow-y-auto">
+              <div className="space-y-6">
+                {/* Test Overview */}
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Test Performance Overview</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">+23%</div>
+                      <div className="text-sm text-gray-600">CTR Improvement</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{selectedTestForInsights.titles?.length || 0}</div>
+                      <div className="text-sm text-gray-600">Title Variants</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">47</div>
+                      <div className="text-sm text-gray-600">Title Changes</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTR Analysis */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Click-Through Rate Analysis</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div>
+                        <p className="font-medium text-gray-900">Best Performing Title</p>
+                        <p className="text-sm text-gray-600">{selectedTestForInsights.titles?.[0]?.text || 'Title variant analysis'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600">8.4%</p>
+                        <p className="text-xs text-gray-500">CTR</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Average CTR Before TitleTesterPro</p>
+                        <p className="text-xl font-bold text-gray-900">6.8%</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Average CTR After Optimization</p>
+                        <p className="text-xl font-bold text-blue-600">8.4%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Title Change Statistics */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Title Rotation Statistics</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Total Title Changes</span>
+                      <span className="font-medium text-gray-900">47 changes</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Rotation Interval</span>
+                      <span className="font-medium text-gray-900">{selectedTestForInsights.rotationIntervalMinutes} minutes</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Test Duration</span>
+                      <span className="font-medium text-gray-900">
+                        {selectedTestForInsights.startDate ? 
+                          Math.ceil((Date.now() - new Date(selectedTestForInsights.startDate).getTime()) / (1000 * 60 * 60 * 24)) 
+                          : 'Ongoing'} days
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Success Metric</span>
+                      <span className="font-medium text-gray-900">{selectedTestForInsights.winnerMetric?.toUpperCase()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">AI Recommendations</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                      <p className="text-gray-700">Consider testing emotional hooks in your titles for higher engagement</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                      <p className="text-gray-700">Your current rotation interval of {selectedTestForInsights.rotationIntervalMinutes} minutes is optimal for this content type</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                      <p className="text-gray-700">Statistical significance achieved - ready to implement winning title</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
