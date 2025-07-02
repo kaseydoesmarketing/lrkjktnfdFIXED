@@ -213,13 +213,8 @@ export default function DashboardFuturistic() {
         const statsData = await statsResponse.json();
         setStats(statsData);
       } else {
-        // Load realistic demo statistics for development
-        setStats({
-          activeTests: 3,
-          totalViews: 847620,
-          avgCtr: '6.2',
-          testsWon: 12
-        });
+        // No demo data - show only real statistics
+        setStats({ activeTests: 0, totalViews: 0, avgCtr: '0.0', testsWon: 0 });
       }
 
       // Load tests
@@ -261,40 +256,8 @@ export default function DashboardFuturistic() {
       }
     } catch (error) {
       console.error('Error loading videos:', error);
-      // Fallback to realistic demo videos
-      const realisticVideos: Video[] = [
-        {
-          id: 'demo-video-1',
-          title: 'Complete JavaScript Course 2024: From Zero to Expert',
-          description: 'Master JavaScript with this comprehensive course covering ES6+, DOM manipulation, async programming, and real-world projects.',
-          thumbnail: 'https://i.ytimg.com/vi/jS4aFq5-91M/maxresdefault.jpg',
-          publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          viewCount: 284750,
-          duration: '12:47:32',
-          status: 'published'
-        },
-        {
-          id: 'demo-video-2',
-          title: 'React Hooks Explained: useState, useEffect, and More',
-          description: 'Deep dive into React Hooks with practical examples. Learn useState, useEffect, useContext, and custom hooks.',
-          thumbnail: 'https://i.ytimg.com/vi/O6P86uwfdR0/maxresdefault.jpg',
-          publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          viewCount: 156230,
-          duration: '28:15',
-          status: 'published'
-        },
-        {
-          id: 'demo-video-3',
-          title: 'CSS Grid vs Flexbox: When to Use Each Layout Method',
-          description: 'Complete comparison of CSS Grid and Flexbox. Learn when to use each layout method with practical examples.',
-          thumbnail: 'https://i.ytimg.com/vi/RSIclWvNTdQ/maxresdefault.jpg',
-          publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          viewCount: 92840,
-          duration: '18:42',
-          status: 'published'
-        }
-      ];
-      setVideos(realisticVideos);
+      // No demo data - show empty state for dashboard
+      setVideos([]);
     } finally {
       setIsLoadingVideos(false);
     }

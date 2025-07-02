@@ -490,63 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = (req as any).user;
       
-      // For demo user, return sample video data to showcase functionality
-      if (user.email === 'demo@titletesterpro.com') {
-        const demoVideos = [
-          {
-            id: 'dQw4w9WgXcQ',
-            title: 'How to Create Viral YouTube Content - 5 Proven Strategies',
-            description: 'Learn the exact strategies successful YouTubers use to create viral content that gets millions of views. In this video, I share...',
-            thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
-            publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            viewCount: 125430,
-            duration: 'PT12M34S',
-            status: 'published'
-          },
-          {
-            id: 'jNQXAC9IVRw',
-            title: 'My Morning Routine for Maximum Productivity (2024)',
-            description: 'I share my complete morning routine that has helped me become more productive and focused throughout the day...',
-            thumbnail: 'https://img.youtube.com/vi/jNQXAC9IVRw/mqdefault.jpg',
-            publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            viewCount: 89210,
-            duration: 'PT8M15S',
-            status: 'published'
-          },
-          {
-            id: 'L_jWHffIx5E',
-            title: 'The Secret to Growing Your YouTube Channel Fast',
-            description: 'Most creators are making these critical mistakes that prevent their channels from growing. Here is what you need to know...',
-            thumbnail: 'https://img.youtube.com/vi/L_jWHffIx5E/mqdefault.jpg',
-            publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            viewCount: 203850,
-            duration: 'PT15M42S',
-            status: 'published'
-          },
-          {
-            id: 'kJQP7kiw5Fk',
-            title: 'Why Most YouTube Channels FAIL (And How to Fix It)',
-            description: 'If your YouTube channel is not growing, you are probably making one of these common mistakes. I will show you exactly how to fix them...',
-            thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg',
-            publishedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            viewCount: 67890,
-            duration: 'PT11M28S',
-            status: 'published'
-          },
-          {
-            id: 'fC7oUOUEEi4',
-            title: 'I Tested Every YouTube Title Strategy - Here is What Actually Works',
-            description: 'I spent 3 months testing different YouTube title strategies across 50+ videos. The results will surprise you...',
-            thumbnail: 'https://img.youtube.com/vi/fC7oUOUEEi4/mqdefault.jpg',
-            publishedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-            viewCount: 342170,
-            duration: 'PT18M56S',
-            status: 'published'
-          }
-        ];
-        
-        return res.json(demoVideos);
-      }
+      // No demo data in dashboard - all users see only authentic data
       
       // Get user's account to access YouTube tokens
       const account = await storage.getAccountByUserId(user.id, 'google');
