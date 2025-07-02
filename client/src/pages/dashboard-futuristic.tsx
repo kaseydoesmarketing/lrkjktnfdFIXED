@@ -1361,49 +1361,61 @@ export default function DashboardFuturistic() {
             
             <div className="p-6 max-h-[calc(90vh-140px)] overflow-y-auto">
               <div className="space-y-6">
-                {/* Test Overview */}
+                {/* Real Momentum Data */}
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Test Performance Overview</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Real Performance Metrics</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">+23%</div>
-                      <div className="text-sm text-gray-600">CTR Improvement</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {selectedTestForInsights.analytics ? 
+                          `${(selectedTestForInsights.analytics.averageCtr * 100).toFixed(1)}%` : 
+                          'No Data'}
+                      </div>
+                      <div className="text-sm text-gray-600">Current CTR</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{selectedTestForInsights.titles?.length || 0}</div>
-                      <div className="text-sm text-gray-600">Title Variants</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {selectedTestForInsights.analytics ? 
+                          `${Math.round(selectedTestForInsights.analytics.averageViewDuration)}s` : 
+                          'No Data'}
+                      </div>
+                      <div className="text-sm text-gray-600">Average View Duration</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">47</div>
-                      <div className="text-sm text-gray-600">Title Changes</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {selectedTestForInsights.analytics ? 
+                          selectedTestForInsights.analytics.totalViews.toLocaleString() : 
+                          'No Data'}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Views</div>
                     </div>
                   </div>
                 </div>
 
-                {/* CTR Analysis */}
+                {/* Live Charts and Breakdowns */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Click-Through Rate Analysis</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Title Performance Breakdown</h4>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                      <div>
-                        <p className="font-medium text-gray-900">Best Performing Title</p>
-                        <p className="text-sm text-gray-600">{selectedTestForInsights.titles?.[0]?.text || 'Title variant analysis'}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">8.4%</p>
-                        <p className="text-xs text-gray-500">CTR</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Average CTR Before TitleTesterPro</p>
-                        <p className="text-xl font-bold text-gray-900">6.8%</p>
-                      </div>
-                      <div className="bg-blue-50 rounded-lg p-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Average CTR After Optimization</p>
-                        <p className="text-xl font-bold text-blue-600">8.4%</p>
-                      </div>
-                    </div>
+                    {selectedTestForInsights.titles && selectedTestForInsights.titles.length > 0 ? (
+                      selectedTestForInsights.titles.map((title, index) => (
+                        <div key={title.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">Title {index + 1}</p>
+                            <p className="text-sm text-gray-600">{title.text}</p>
+                            {title.activatedAt && (
+                              <p className="text-xs text-gray-500">
+                                Last active: {new Date(title.activatedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Performance data coming soon</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No title variants available</p>
+                    )}
                   </div>
                 </div>
 
