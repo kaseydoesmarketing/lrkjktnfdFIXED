@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats with proper authentication
+  // Dashboard stats with real-time data from active tests only
   app.get('/api/dashboard/stats', requireAuth, async (req: Request, res: Response) => {
     try {
       const tests = await storage.getTestsByUserId(req.user!.id);
@@ -761,27 +761,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeTests = tests.filter(t => t.status === 'active').length;
       const completedTests = tests.filter(t => t.status === 'completed').length;
       
-      // Calculate total views and average CTR from all summaries
+      // Calculate real metrics from ACTIVE tests only
       let totalViews = 0;
       let totalImpressions = 0;
       let avgCtr = 0;
+      let avgViewDuration = 0;
+      let dataPoints = 0;
       
-      const allSummaries = await Promise.all(
-        tests.map(test => storage.getTitleSummariesByTestId(test.id))
-      );
+      // Get analytics from active tests only for real-time data
+      const activeTestsData = tests.filter(t => t.status === 'active');
       
-      const flatSummaries = allSummaries.flat();
-      if (flatSummaries.length > 0) {
-        totalViews = flatSummaries.reduce((sum, s) => sum + s.totalViews, 0);
-        totalImpressions = flatSummaries.reduce((sum, s) => sum + s.totalImpressions, 0);
-        avgCtr = flatSummaries.reduce((sum, s) => sum + s.finalCtr, 0) / flatSummaries.length;
+      for (const test of activeTestsData) {
+        const titles = await storage.getTitlesByTestId(test.id);
+        
+        for (const title of titles) {
+          const polls = await storage.getAnalyticsPollsByTitleId(title.id);
+          
+          if (polls.length > 0) {
+            // Use latest poll data for real-time metrics
+            const latestPoll = polls[polls.length - 1];
+            totalViews += latestPoll.views;
+            totalImpressions += latestPoll.impressions;
+            avgCtr += latestPoll.ctr;
+            avgViewDuration += latestPoll.averageViewDuration;
+            dataPoints++;
+          }
+        }
+      }
+      
+      // Calculate averages
+      if (dataPoints > 0) {
+        avgCtr = avgCtr / dataPoints;
+        avgViewDuration = avgViewDuration / dataPoints;
       }
 
       res.json({
         activeTests,
-        totalViews,
-        avgCtr: avgCtr.toFixed(1),
-        testsWon: completedTests,
+        totalViews, // Real total views from active tests
+        avgCtr: Number(avgCtr.toFixed(1)), // Real average CTR
+        avgViewDuration: Math.round(avgViewDuration), // Real average view duration
+        completedTests, // Only truly completed tests
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -850,6 +869,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error collecting analytics:', error);
       res.status(500).json({ error: 'Failed to collect analytics' });
+    }
+  });
+
+  // Test management endpoints
+  app.post('/api/tests/:testId/pause', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      if (test.status !== 'active') {
+        return res.status(400).json({ error: 'Test is not active' });
+      }
+
+      await storage.updateTest(testId, { status: 'paused' });
+      
+      // Stop the scheduler for this test
+      scheduler.cancelRotation(testId);
+
+      res.json({ success: true, message: 'Test paused successfully' });
+    } catch (error) {
+      console.error('Error pausing test:', error);
+      res.status(500).json({ error: 'Failed to pause test' });
+    }
+  });
+
+  app.post('/api/tests/:testId/resume', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      if (test.status !== 'paused') {
+        return res.status(400).json({ error: 'Test is not paused' });
+      }
+
+      await storage.updateTest(testId, { status: 'active' });
+      
+      // Resume the scheduler
+      const titles = await storage.getTitlesByTestId(testId);
+      const currentOrder = titles.reduce((max, title) => 
+        title.activatedAt ? Math.max(max, title.order) : max, 0
+      );
+      const nextOrder = (currentOrder + 1) % titles.length;
+      
+      scheduler.scheduleRotation(testId, nextOrder, test.rotationIntervalMinutes / 60);
+
+      res.json({ success: true, message: 'Test resumed successfully' });
+    } catch (error) {
+      console.error('Error resuming test:', error);
+      res.status(500).json({ error: 'Failed to resume test' });
+    }
+  });
+
+  app.post('/api/tests/:testId/complete', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      if (test.status === 'completed') {
+        return res.status(400).json({ error: 'Test is already completed' });
+      }
+
+      await storage.updateTest(testId, { 
+        status: 'completed',
+        endDate: new Date()
+      });
+      
+      // Stop the scheduler
+      scheduler.cancelRotation(testId);
+
+      // Generate final analytics summary
+      const titles = await storage.getTitlesByTestId(testId);
+      for (const title of titles) {
+        const polls = await storage.getAnalyticsPollsByTitleId(title.id);
+        if (polls.length > 0) {
+          const totalViews = polls.reduce((sum, p) => sum + p.views, 0);
+          const totalImpressions = polls.reduce((sum, p) => sum + p.impressions, 0);
+          const avgCtr = polls.reduce((sum, p) => sum + p.ctr, 0) / polls.length;
+          const avgAvd = polls.reduce((sum, p) => sum + p.averageViewDuration, 0) / polls.length;
+
+          await storage.createTitleSummary({
+            titleId: title.id,
+            totalViews,
+            totalImpressions, 
+            finalCtr: avgCtr,
+            finalAvd: avgAvd
+          });
+        }
+      }
+
+      res.json({ success: true, message: 'Test completed successfully' });
+    } catch (error) {
+      console.error('Error completing test:', error);
+      res.status(500).json({ error: 'Failed to complete test' });
+    }
+  });
+
+  app.post('/api/tests/:testId/cancel', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      if (test.status === 'cancelled') {
+        return res.status(400).json({ error: 'Test is already cancelled' });
+      }
+
+      await storage.updateTest(testId, { status: 'cancelled' });
+      
+      // Stop the scheduler
+      scheduler.cancelRotation(testId);
+
+      res.json({ success: true, message: 'Test cancelled successfully' });
+    } catch (error) {
+      console.error('Error cancelling test:', error);
+      res.status(500).json({ error: 'Failed to cancel test' });
+    }
+  });
+
+  app.post('/api/tests/:testId/delete', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { testId } = req.params;
+      const user = req.user!;
+
+      const test = await storage.getTest(testId);
+      if (!test || test.userId !== user.id) {
+        return res.status(404).json({ error: 'Test not found' });
+      }
+
+      // Stop the scheduler if active
+      if (test.status === 'active') {
+        scheduler.cancelRotation(testId);
+      }
+
+      // Delete all related data
+      const titles = await storage.getTitlesByTestId(testId);
+      for (const title of titles) {
+        await storage.deleteTitleSummary(title.id);
+        await storage.deleteAnalyticsPollsByTitleId(title.id);
+      }
+      await storage.deleteTitlesByTestId(testId);
+      await storage.deleteTest(testId);
+
+      res.json({ success: true, message: 'Test deleted permanently' });
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      res.status(500).json({ error: 'Failed to delete test' });
     }
   });
 

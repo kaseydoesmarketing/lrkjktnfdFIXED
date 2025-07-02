@@ -81,6 +81,18 @@ export const titleSummaries = pgTable("title_summaries", {
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 
+export const testRotationLogs = pgTable("test_rotation_logs", {
+  id: text("id").primaryKey(),
+  testId: text("test_id").notNull(),
+  titleId: text("title_id").notNull(),
+  titleText: text("title_text").notNull(),
+  rotatedAt: timestamp("rotated_at").defaultNow().notNull(),
+  rotationOrder: integer("rotation_order").notNull(),
+  durationMinutes: integer("duration_minutes"), // How long this title was active
+  viewsAtRotation: integer("views_at_rotation").default(0),
+  ctrAtRotation: real("ctr_at_rotation").default(0),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tests: many(tests),

@@ -31,6 +31,7 @@ export interface IStorage {
   getTest(id: string): Promise<Test | undefined>;
   createTest(test: InsertTest): Promise<Test>;
   updateTestStatus(id: string, status: string): Promise<Test>;
+  updateTest(id: string, updates: Partial<Test>): Promise<Test>;
   deleteTest(id: string): Promise<void>;
   
   // Titles
