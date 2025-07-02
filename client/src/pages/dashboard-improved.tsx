@@ -252,9 +252,10 @@ export default function DashboardImproved() {
   };
 
   const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
-    return num.toString();
+    const safeNum = Number(num) || 0;
+    if (safeNum >= 1000000) return `${safeToFixed(safeNum / 1000000)}M`;
+    if (safeNum >= 1000) return `${safeToFixed(safeNum / 1000, 0)}K`;
+    return safeNum.toString();
   };
 
   const getStatusColor = (status: string) => {
