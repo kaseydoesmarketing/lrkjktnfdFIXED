@@ -600,19 +600,6 @@ export default function DashboardProduction() {
                     ✨ Founder
                   </Badge>
                 )}
-                {user?.email !== 'kaseydoesmarketing@gmail.com' && (
-                  <Badge 
-                    className="bg-gradient-to-r from-red-400 to-red-600 text-white font-bold border border-red-300 shadow-lg cursor-pointer hover:from-red-500 hover:to-red-700 transition-all duration-200"
-                    onClick={() => {
-                      // Logout current user and redirect to founder login
-                      localStorage.removeItem('sessionToken');
-                      document.cookie = 'session-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                      window.location.href = '/login?founder=kasey2024';
-                    }}
-                  >
-                    🔑 Login as Founder
-                  </Badge>
-                )}
                 {user?.subscriptionTier === 'authority' && (
                   <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                     Authority
