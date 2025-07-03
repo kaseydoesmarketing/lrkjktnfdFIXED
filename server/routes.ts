@@ -133,10 +133,12 @@ async function requireAuth(req: Request, res: Response, next: NextFunction): Pro
     req.user = user;
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     res.status(500).json({ 
       error: 'Authentication error',
       code: 'AUTH_ERROR',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
@@ -893,7 +895,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user!;
       
-      if (!user.oauthToken) {
+      // Get OAuth tokens from accounts table
+      const account = await storage.getAccountByUserId(user.id, 'google');
+      
+      if (!account || !account.accessToken) {
         return res.json({
           accuracy: 'Authentication Required',
           instructions: 'Please authenticate with Google to access YouTube data.',
@@ -906,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { google } = await import('googleapis');
         const googleAuthService = await import('./googleAuth');
         
-        const authClient = googleAuthService.googleAuthService.createAuthenticatedClient(user.oauthToken);
+        const authClient = googleAuthService.googleAuthService.createAuthenticatedClient(account.accessToken);
         const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
         
         // Test if we can make a simple query

@@ -73,9 +73,7 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
-  }
+
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = crypto.randomUUID();
@@ -113,11 +111,12 @@ export class DatabaseStorage implements IStorage {
     return account || undefined;
   }
 
-  async getAccountByUserId(userId: string, provider: string): Promise<Account | undefined> {
+  async getAccountByUserId(userId: string, provider: string = 'google'): Promise<Account | undefined> {
     const [account] = await db
       .select()
       .from(accounts)
-      .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)));
+      .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)))
+      .limit(1);
     return account || undefined;
   }
 
