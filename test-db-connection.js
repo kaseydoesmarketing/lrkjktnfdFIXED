@@ -3,11 +3,7 @@ import pg from 'pg';
 // Test direct connection to Supabase
 async function testConnection() {
   const client = new pg.Client({
-    host: 'aws-0-us-east-2.pooler.supabase.com',
-    port: 5432,
-    database: 'postgres',
-    user: 'postgres.dnezcshuzdkhzrcjfwaq',
-    password: 'Princeandmarley8625#',
+    connectionString: 'postgresql://postgres:Princeandmarley8625%23@db.dnezcshuzdkhzrcjfwaq.supabase.co:5432/postgres',
     ssl: { rejectUnauthorized: false }
   });
 

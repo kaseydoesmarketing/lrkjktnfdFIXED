@@ -6,10 +6,10 @@ const { Pool } = pg;
 
 // Force override DATABASE_URL to use Supabase instead of disabled Neon database
 if (process.env.NODE_ENV === 'development' || process.env.DATABASE_URL?.includes('neondb')) {
-  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%23@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
-  process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
+  process.env.DATABASE_URL = "postgresql://postgres:Princeandmarley8625%23@db.dnezcshuzdkhzrcjfwaq.supabase.co:5432/postgres";
+  process.env.PGHOST = "db.dnezcshuzdkhzrcjfwaq.supabase.co";
   process.env.PGPORT = "5432";
-  process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
+  process.env.PGUSER = "postgres";
   process.env.PGPASSWORD = "Princeandmarley8625#";
   process.env.PGDATABASE = "postgres";
 }
@@ -25,10 +25,10 @@ console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + 
 
 // Enhanced connection pool configuration
 export const pool = new Pool({ 
-  host: 'aws-0-us-east-2.pooler.supabase.com',
+  host: 'db.dnezcshuzdkhzrcjfwaq.supabase.co',
   port: 5432,
   database: 'postgres',
-  user: 'postgres.dnezcshuzdkhzrcjfwaq',
+  user: 'postgres',
   password: 'Princeandmarley8625#',
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
