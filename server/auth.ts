@@ -7,16 +7,22 @@ export interface AuthUser {
   image?: string;
 }
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here!'; // 32 bytes
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-character-secret-key-here!';
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16;
+
+// Create a 32-byte key from the encryption key string
+function getKey(): Buffer {
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+}
 
 export function encryptToken(token: string): string {
   if (!token) return '';
   
   try {
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+    const key = getKey();
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
     let encrypted = cipher.update(token, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     return iv.toString('hex') + ':' + encrypted;
@@ -31,8 +37,12 @@ export function decryptToken(encryptedToken: string): string {
   
   try {
     const [ivHex, encryptedHex] = encryptedToken.split(':');
+    if (!ivHex || !encryptedHex) {
+      throw new Error('Invalid encrypted token format');
+    }
     const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    const key = getKey();
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;

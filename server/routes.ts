@@ -242,10 +242,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/callback/google', async (req: Request, res: Response) => {
     try {
+      console.log('🔍 OAuth Callback Debug:');
+      console.log('- Full URL:', req.url);
+      console.log('- Query params:', req.query);
       
       const { code, error, error_description } = req.query;
       const errorStr = typeof error === 'string' ? error : '';
       const errorDescStr = typeof error_description === 'string' ? error_description : '';
+      
+      console.log('- Code present:', !!code);
+      console.log('- Error:', errorStr);
+      console.log('- Error description:', errorDescStr);
       
       if (error) {
         
@@ -293,7 +300,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Exchange code for tokens
+      console.log('📝 Exchanging code for tokens...');
       const tokens = await googleAuthService.exchangeCodeForTokens(code);
+      console.log('✅ Tokens received:', { 
+        hasAccessToken: !!tokens.access_token, 
+        hasRefreshToken: !!tokens.refresh_token,
+        expiryDate: tokens.expiry_date 
+      });
       
       if (!tokens.access_token) {
         return res.status(400).json({ error: 'Failed to get access token' });

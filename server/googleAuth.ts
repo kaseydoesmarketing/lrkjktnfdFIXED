@@ -35,6 +35,11 @@ export class GoogleAuthService {
       throw new Error('Google OAuth not configured');
     }
       
+    console.log('🔧 OAuth Configuration:');
+    console.log('- Client ID:', process.env.GOOGLE_CLIENT_ID);
+    console.log('- Redirect URI:', redirectUri);
+    console.log('- Current domain:', process.env.REPLIT_DOMAINS);
+    
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
