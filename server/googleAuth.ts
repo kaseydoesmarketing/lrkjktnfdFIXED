@@ -48,23 +48,39 @@ export class GoogleAuthService {
   }
 
   getAuthUrl() {
-    // Full YouTube API scopes for production use
+    // MINIMAL SCOPES FOR TITLETESTERPRO FUNCTIONALITY
+    // Following Google's principle of least privilege
     const scopes = [
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/youtube',
-      'https://www.googleapis.com/auth/youtube.force-ssl',
-      'https://www.googleapis.com/auth/yt-analytics.readonly'
+      // USER AUTHENTICATION (Required)
+      'https://www.googleapis.com/auth/userinfo.email',      // Get user's email for account creation
+      'https://www.googleapis.com/auth/userinfo.profile',    // Get user's name and profile picture
+      
+      // YOUTUBE READ ACCESS (Feature: Video Selection)
+      'https://www.googleapis.com/auth/youtube.readonly',    // Read user's videos for test creation
+                                                             // Used by: getChannelVideos(), getVideoAnalytics()
+      
+      // YOUTUBE WRITE ACCESS (Feature: A/B Testing)
+      'https://www.googleapis.com/auth/youtube',             // Update video titles during A/B tests
+                                                             // Used by: updateVideoTitle()
+                                                             // Note: No granular scope exists for title-only updates
+      
+      // ANALYTICS ACCESS (Feature: Performance Tracking)
+      'https://www.googleapis.com/auth/yt-analytics.readonly' // Read video analytics for A/B test results
+                                                             // Used by: getVideoAnalytics() for CTR, views, etc.
     ];
+    
+    // Note: Removed youtube.force-ssl as it's redundant - all API calls use HTTPS by default
 
     const authUrl = this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
+      access_type: 'offline',          // Get refresh token for background updates
       scope: scopes.join(' '),
-      prompt: 'consent',
-      include_granted_scopes: true,
+      prompt: 'consent',               // Always show consent screen
+      include_granted_scopes: true,    // INCREMENTAL AUTHORIZATION ENABLED
       response_type: 'code'
     });
+
+    console.log('📋 OAuth URL generated with incremental authorization enabled');
+    console.log('📋 Requested scopes:', scopes);
 
     return authUrl;
   }
