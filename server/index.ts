@@ -1,15 +1,14 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// Force override DATABASE_URL with the value from .env
-if (process.env.NODE_ENV === 'development') {
-  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeton%242016@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
-  process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
-  process.env.PGPORT = "5432";
-  process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
-  process.env.PGPASSWORD = "Princeton$2016";
-  process.env.PGDATABASE = "postgres";
-}
+// Force Supabase database configuration (override Replit's system env vars)
+// Use URL-encoded password to avoid special character issues
+process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%21@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
+process.env.PGPORT = "6543";
+process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
+process.env.PGPASSWORD = "Princeandmarley8625!";
+process.env.PGDATABASE = "postgres";
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -19,6 +18,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
+import pg from "pg";
 
 const app = express();
 app.set('trust proxy', 1);

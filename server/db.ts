@@ -24,14 +24,12 @@ if (!process.env.DATABASE_URL) {
 console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
 
 // Enhanced connection pool configuration
+// Try without SSL first since Supabase pooler may handle SSL differently
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
-  ssl: {
-    rejectUnauthorized: false
-  }
 });
 
 // Monitor pool events for debugging
@@ -44,3 +42,12 @@ pool.on('connect', () => {
 });
 
 export const db = drizzle({ client: pool, schema });
+
+// Test database connection on startup
+pool.query('SELECT NOW()', (err, result) => {
+  if (err) {
+    console.error('Database connection test failed:', err.message);
+  } else {
+    console.log('Database connection test successful:', result.rows[0].now);
+  }
+});
