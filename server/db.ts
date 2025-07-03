@@ -25,11 +25,7 @@ console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + 
 
 // Enhanced connection pool configuration
 export const pool = new Pool({ 
-  host: 'db.dnezcshuzdkhzrcjfwaq.supabase.co',
-  port: 5432,
-  database: 'postgres',
-  user: 'postgres',
-  password: 'Princeandmarley8625#',
+  connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
