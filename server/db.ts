@@ -24,13 +24,8 @@ if (!process.env.DATABASE_URL) {
 console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
 
 // Enhanced connection pool configuration
-// Using individual parameters to avoid special character issues
 export const pool = new Pool({ 
-  host: process.env.PGHOST,
-  port: parseInt(process.env.PGPORT || '6543'),
-  database: process.env.PGDATABASE,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
+  connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
