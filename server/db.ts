@@ -4,15 +4,8 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-// Force override DATABASE_URL to use Supabase instead of disabled Neon database
-if (process.env.NODE_ENV === 'development' || process.env.DATABASE_URL?.includes('neondb')) {
-  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%21@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
-  process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
-  process.env.PGPORT = "6543";
-  process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
-  process.env.PGPASSWORD = "Princeandmarley8625!";
-  process.env.PGDATABASE = "postgres";
-}
+// Use the DATABASE_URL from environment variables
+// The correct Supabase URL is already in .env file
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
