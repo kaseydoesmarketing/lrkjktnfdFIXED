@@ -1,3 +1,16 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+// Force override DATABASE_URL with the value from .env
+if (process.env.NODE_ENV === 'development') {
+  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeton%242016@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+  process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
+  process.env.PGPORT = "5432";
+  process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
+  process.env.PGPASSWORD = "Princeton$2016";
+  process.env.PGDATABASE = "postgres";
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
