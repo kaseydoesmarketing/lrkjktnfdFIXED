@@ -389,6 +389,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to dashboard without token in URL for security
       res.redirect('/dashboard');
     } catch (error) {
+      console.error('❌ OAuth callback error:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       res.redirect('/login?error=oauth_failed');
     }
   });
