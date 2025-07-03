@@ -23,19 +23,24 @@ class Scheduler {
     const jobId = `rotate-${testId}-${titleOrder}`;
     const delay = delayMinutes * 60 * 1000; // Convert to milliseconds
     
+    console.log(`[SCHEDULER] Scheduling rotation for test ${testId}, title order ${titleOrder} in ${delayMinutes} minutes`);
+    
     // Cancel existing job if any
     this.cancelJob(jobId);
     
     const timeout = setTimeout(async () => {
       try {
+        console.log(`[SCHEDULER] Starting rotation for test ${testId}, title order ${titleOrder}`);
         await this.executeRotation(testId, titleOrder);
       } catch (error: any) {
+        console.error(`[SCHEDULER] Error in rotation for test ${testId}:`, error.message);
       } finally {
         this.jobs.delete(jobId);
       }
     }, delay);
     
     this.jobs.set(jobId, timeout);
+    console.log(`[SCHEDULER] Rotation job ${jobId} scheduled successfully`);
   }
 
   schedulePoll(titleId: string, delayMinutes: number = 60) { // Increased from 15 to 60 minutes for cost optimization
