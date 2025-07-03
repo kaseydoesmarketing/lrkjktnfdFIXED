@@ -6,11 +6,11 @@ const { Pool } = pg;
 
 // Force override DATABASE_URL to use Supabase instead of disabled Neon database
 if (process.env.NODE_ENV === 'development' || process.env.DATABASE_URL?.includes('neondb')) {
-  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%23@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+  process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%21@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
   process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
   process.env.PGPORT = "6543";
   process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
-  process.env.PGPASSWORD = "Princeandmarley8625#";
+  process.env.PGPASSWORD = "Princeandmarley8625!";
   process.env.PGDATABASE = "postgres";
 }
 
@@ -24,12 +24,13 @@ if (!process.env.DATABASE_URL) {
 console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
 
 // Enhanced connection pool configuration
-// Try without SSL first since Supabase pooler may handle SSL differently
+// Disable SSL for Supabase pooler connection
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
+  ssl: false // Disable SSL for Supabase pooler
 });
 
 // Monitor pool events for debugging

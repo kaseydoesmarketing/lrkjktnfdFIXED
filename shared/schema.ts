@@ -51,6 +51,7 @@ export const tests = pgTable("tests", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  currentTitleIndex: integer("current_title_index").notNull().default(0), // Current active title index
 });
 
 export const titles = pgTable("titles", {
