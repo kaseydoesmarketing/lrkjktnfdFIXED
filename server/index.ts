@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Force Supabase database configuration (override Replit's system env vars)
-// Using port 6543 for transaction pooler with URL-encoded password
-process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%21@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+// Using port 5432 for direct connection with URL-encoded password
+process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625%21@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
 process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
-process.env.PGPORT = "6543";
+process.env.PGPORT = "5432";
 process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
 process.env.PGPASSWORD = "Princeandmarley8625!";
 process.env.PGDATABASE = "postgres";
