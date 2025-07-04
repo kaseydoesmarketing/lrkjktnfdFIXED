@@ -4,23 +4,18 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-// Use the DATABASE_URL from environment variables
-// The correct Supabase URL is already in .env file
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+// Force Supabase database URL (override any system env vars)
+const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+process.env.DATABASE_URL = SUPABASE_DATABASE_URL;
 
 // Debug: Log the DATABASE_URL being used (masked for security)
-console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
+console.log('Using Supabase DATABASE_URL:', SUPABASE_DATABASE_URL.substring(0, 50) + '...');
 
-// Enhanced connection pool configuration for Neon database
+// Enhanced connection pool configuration for Supabase database
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: SUPABASE_DATABASE_URL,
   max: 20, // Increased pool size for better concurrency
-  ssl: { rejectUnauthorized: false }, // Neon requires SSL
+  ssl: { rejectUnauthorized: false }, // Supabase requires SSL
   connectionTimeoutMillis: 30000, // 30 second timeout
   idleTimeoutMillis: 30000, // 30 second idle timeout
   allowExitOnIdle: false, // Keep connections alive
