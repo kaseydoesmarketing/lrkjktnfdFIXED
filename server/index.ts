@@ -19,6 +19,8 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
 import pg from "pg";
+import session from "express-session";
+import passport from "./passportConfig";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -36,9 +38,12 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:5000',
     /\.replit\.app$/,
-    /\.replit\.dev$/
+    /\.replit\.dev$/,
+    'https://ttro3.replit.app'
   ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Rate limiting
