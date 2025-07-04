@@ -20,14 +20,10 @@ console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + 
 // Disable SSL for Supabase pooler connection
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 10, // Reduced pool size to prevent connection exhaustion
-  idleTimeoutMillis: 10000, // Close idle connections after 10 seconds
-  connectionTimeoutMillis: 30000, // Increased timeout to 30 seconds
-  query_timeout: 30000, // Query timeout
-  statement_timeout: 30000, // Statement timeout
-  ssl: false, // Disable SSL for Supabase pooler
-  keepAlive: true, // Enable TCP keepalive
-  keepAliveInitialDelayMillis: 10000 // Start keepalive after 10 seconds
+  max: 3, // Very small pool to prevent exhaustion
+  idleTimeoutMillis: 1000, // Quick cleanup
+  connectionTimeoutMillis: 5000, // Shorter timeout
+  ssl: false // Disable SSL for Supabase pooler
 });
 
 // Monitor pool events for debugging
