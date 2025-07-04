@@ -5,7 +5,8 @@ import * as schema from "@shared/schema";
 const { Pool } = pg;
 
 // Force Supabase database URL (override any system env vars)
-const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+// Using port 5432 for session pooler instead of 6543 (transaction pooler)
+const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
 process.env.DATABASE_URL = SUPABASE_DATABASE_URL;
 
 // Debug: Log the DATABASE_URL being used (masked for security)
@@ -34,7 +35,13 @@ pool.on('connect', () => {
 
 export const db = drizzle({ client: pool, schema });
 
-// Test database connection on startup
+// Test database connection on startup and set search path
+pool.query('SET search_path TO public', (err) => {
+  if (err) {
+    console.error('Failed to set search path:', err.message);
+  }
+});
+
 pool.query('SELECT NOW()', (err, result) => {
   if (err) {
     console.error('Database connection test failed:', err.message);
