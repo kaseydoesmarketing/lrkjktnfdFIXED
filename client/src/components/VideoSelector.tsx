@@ -63,7 +63,8 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
     }
   };
 
-  const videos = allVideos.length > 0 ? allVideos : [];
+  // Use allVideos if populated, otherwise use data from query
+  const videos = allVideos.length > 0 ? allVideos : (data?.videos || []);
 
   const formatViewCount = (count: number) => {
     if (count >= 1000000) {
