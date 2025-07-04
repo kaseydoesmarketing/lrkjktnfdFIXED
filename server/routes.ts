@@ -1754,6 +1754,48 @@ Current system provides realistic metrics based on video engagement patterns.`,
     res.json({ received: true });
   });
 
+  // Debug endpoints
+  app.get('/api/debug/database-status', async (req, res) => {
+    try {
+      const { pool } = await import('./db');
+      const client = await pool.connect();
+      
+      const result = await client.query('SELECT NOW()');
+      const tablesResult = await client.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        ORDER BY table_name
+      `);
+      const userCountResult = await client.query('SELECT COUNT(*) FROM users');
+      
+      client.release();
+      
+      res.json({
+        connected: true,
+        timestamp: result.rows[0].now,
+        database: 'Supabase',
+        host: 'aws-0-us-east-2.pooler.supabase.com',
+        tables: tablesResult.rows.map((r: any) => r.table_name),
+        userCount: userCountResult.rows[0].count
+      });
+    } catch (err: any) {
+      res.json({
+        connected: false,
+        error: err.message,
+        database: 'Supabase'
+      });
+    }
+  });
+  
+  app.get('/api/debug/oauth-config', (req, res) => {
+    res.json({
+      clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 30) + '...',
+      redirectUri: `https://${req.get('host')}/api/auth/callback/google`,
+      configured: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET
+    });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
