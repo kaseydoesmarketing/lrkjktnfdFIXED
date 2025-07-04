@@ -20,18 +20,23 @@ export class YouTubeService {
     operation: (accessToken: string) => Promise<T>
   ): Promise<T> {
     
-    const account = await storage.getAccountByUserId(userId, 'google');
-    if (!account) {
-      throw new Error('No Google account found for user');
+    const user = await storage.getUser(userId);
+    if (!user) {
+      throw new Error('User not found');
     }
 
-    if (!account.accessToken || !account.refreshToken) {
+    if (!user.accessToken || !user.refreshToken) {
       throw new Error('User account missing OAuth tokens - re-authentication required');
     }
 
+    // Decrypt the tokens
+    const { authService } = await import('./auth');
+    const accessToken = authService.decryptToken(user.accessToken);
+    const refreshToken = authService.decryptToken(user.refreshToken);
+
     try {
       // Try the operation with current access token
-      return await operation(account.accessToken);
+      return await operation(accessToken);
     } catch (error: any) {
       
       // Check if error is authentication-related (401 Unauthorized)
@@ -39,16 +44,15 @@ export class YouTubeService {
         
         try {
           // Refresh the access token
-          const refreshedTokens = await googleAuthService.refreshAccessToken(account.refreshToken);
+          const refreshedTokens = await googleAuthService.refreshAccessToken(refreshToken);
           
-          // Calculate new expiry time (tokens typically expire in 1 hour)
-          const expiresAt = refreshedTokens.expiry_date || (Date.now() + 3600 * 1000);
+          // Update user with new tokens
+          const encryptedAccessToken = authService.encryptToken(refreshedTokens.access_token!);
+          const encryptedRefreshToken = refreshedTokens.refresh_token ? authService.encryptToken(refreshedTokens.refresh_token) : user.refreshToken;
           
-          // Update account with new tokens
-          await storage.updateAccountTokens(account.id, {
-            accessToken: refreshedTokens.access_token!,
-            refreshToken: refreshedTokens.refresh_token || account.refreshToken,
-            expiresAt
+          await storage.updateUser(userId, {
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken
           });
           
           
@@ -70,6 +74,31 @@ export class YouTubeService {
       return refreshedTokens;
     } catch (error) {
       console.error('Force token refresh failed:', error);
+      return null;
+    }
+  }
+
+  async getChannelInfo(accessToken: string) {
+    try {
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const youtube = google.youtube({ version: 'v3', auth: authClient });
+      
+      const response = await youtube.channels.list({
+        part: ['snippet'],
+        mine: true
+      });
+      
+      if (!response.data.items?.length) {
+        return null;
+      }
+      
+      const channel = response.data.items[0];
+      return {
+        id: channel.id!,
+        title: channel.snippet?.title || 'Unknown Channel'
+      };
+    } catch (error) {
+      console.error('Failed to fetch channel info:', error);
       return null;
     }
   }

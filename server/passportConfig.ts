@@ -61,6 +61,22 @@ passport.use(new GoogleStrategy({
         const encryptedAccessToken = authService.encryptToken(accessToken);
         const encryptedRefreshToken = refreshToken ? authService.encryptToken(refreshToken) : null;
         
+        // Fetch YouTube channel info using the access token
+        let youtubeChannelId = null;
+        let youtubeChannelTitle = null;
+        
+        try {
+          const { youtubeService } = await import('./youtubeService');
+          const channelInfo = await youtubeService.getChannelInfo(accessToken);
+          if (channelInfo) {
+            youtubeChannelId = channelInfo.id;
+            youtubeChannelTitle = channelInfo.title;
+            console.log('✅ YouTube channel found:', youtubeChannelTitle);
+          }
+        } catch (error) {
+          console.error('YouTube channel fetch failed, continuing without it');
+        }
+        
         user = await storage.createUser({
           email,
           name,
@@ -68,11 +84,32 @@ passport.use(new GoogleStrategy({
           googleId,
           accessToken: encryptedAccessToken,
           refreshToken: encryptedRefreshToken,
-          youtubeChannelId: null,
-          youtubeChannelTitle: null,
+          youtubeChannelId,
+          youtubeChannelTitle,
           subscriptionTier: 'free',
           subscriptionStatus: 'inactive'
         });
+      }
+      
+      // For both new and existing users, update YouTube channel info if we have tokens
+      if (user && (user.accessToken || accessToken)) {
+        try {
+          const { youtubeService } = await import('./youtubeService');
+          const tokenToUse = accessToken || (user.accessToken ? authService.decryptToken(user.accessToken) : null);
+          
+          if (tokenToUse) {
+            const channelInfo = await youtubeService.getChannelInfo(tokenToUse);
+            if (channelInfo && (!user.youtubeChannelId || !user.youtubeChannelTitle)) {
+              await storage.updateUser(user.id, {
+                youtubeChannelId: channelInfo.id,
+                youtubeChannelTitle: channelInfo.title
+              });
+              user = await storage.getUser(user.id);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to update YouTube channel info:', error);
+        }
       }
       
       return done(null, user);

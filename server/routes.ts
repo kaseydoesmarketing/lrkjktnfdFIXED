@@ -663,9 +663,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json(demoVideos);
         }
 
-        // Get user's account to access YouTube tokens
-        const account = await storage.getAccountByUserId(user.id, "google");
-        if (!account || !account.accessToken) {
+        // Check if user has YouTube tokens
+        if (!user.accessToken) {
           return res.status(401).json({
             error: "YouTube account not connected",
             message: "Please reconnect your YouTube account via Google OAuth",
@@ -821,8 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "Test not found" });
         }
 
-        const account = await storage.getAccountByUserId(user.id, "google");
-        if (!account?.accessToken) {
+        if (!user.accessToken) {
           return res
             .status(401)
             .json({ error: "YouTube account not connected" });
@@ -944,10 +942,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const user = req.user!;
 
-        // Get OAuth tokens from accounts table
-        const account = await storage.getAccountByUserId(user.id, "google");
-
-        if (!account || !account.accessToken) {
+        // Check if user has OAuth tokens
+        if (!user.accessToken) {
           return res.json({
             accuracy: "Authentication Required",
             instructions:
