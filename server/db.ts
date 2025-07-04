@@ -5,8 +5,8 @@ import * as schema from "@shared/schema";
 const { Pool } = pg;
 
 // Force Supabase database URL (override any system env vars)
-// Using port 5432 for session pooler instead of 6543 (transaction pooler)
-const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+// Using transaction pooler port 6543
+const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true";
 process.env.DATABASE_URL = SUPABASE_DATABASE_URL;
 
 // Debug: Log the DATABASE_URL being used (masked for security)
