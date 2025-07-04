@@ -13,6 +13,7 @@ import Home from "@/pages/home";
 import Paywall from "@/pages/paywall";
 
 import AuthCallback from "@/pages/auth-callback";
+import OAuthTest from "@/pages/OAuthTest";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 
@@ -63,6 +64,7 @@ function Router() {
       <Route path="/paywall" component={Paywall} />
       <Route path="/login" component={Login} />
       <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/oauth-test" component={OAuthTest} />
       <Route path="/privacy" component={() => <Privacy />} />
       <Route path="/terms" component={() => <Terms />} />
       <Route path="/" component={Home} />
