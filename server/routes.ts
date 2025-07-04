@@ -662,7 +662,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
           ];
 
-          return res.json(demoVideos);
+          return res.json({
+            videos: demoVideos,
+            nextPageToken: undefined
+          });
         }
 
         // Check if user has YouTube tokens

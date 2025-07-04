@@ -31,7 +31,7 @@ function DashboardContent() {
     retry: false,
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{activeTests: number, totalViews: number, avgCtr: number, completedTests: number}>({
     queryKey: ['/api/dashboard/stats'],
     enabled: !!user,
     retry: false,
@@ -43,11 +43,19 @@ function DashboardContent() {
     retry: false,
   });
 
-  const { data: recentVideos = [] } = useQuery({
+  const { data: videosData, isLoading: videosLoading, error: videosError } = useQuery<{videos: any[], nextPageToken?: string}>({
     queryKey: ['/api/videos/recent'],
     enabled: !!user,
     retry: false,
   });
+  
+  // Log to understand what's happening
+  console.log('Videos Data:', videosData);
+  console.log('Videos Loading:', videosLoading);
+  console.log('Videos Error:', videosError);
+  
+  // Handle both array response and paginated response
+  const recentVideos = videosData?.videos || [];
 
   // Safe data processing with error handling
   const activeTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'active') : [];

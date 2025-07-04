@@ -22,6 +22,11 @@ interface VideoSelectorProps {
   selectedVideoId?: string;
 }
 
+interface VideosResponse {
+  videos: Video[];
+  nextPageToken?: string;
+}
+
 export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoSelectorProps) {
   const [allVideos, setAllVideos] = useState<Video[]>([]);
   const [nextPageToken, setNextPageToken] = useState<string | undefined>();
@@ -48,13 +53,12 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
     
     setIsLoadingMore(true);
     try {
-      const response = await apiRequest(`/api/videos/recent?pageToken=${nextPageToken}`, {
-        method: 'GET'
-      });
+      const response = await apiRequest('GET', `/api/videos/recent?pageToken=${nextPageToken}`);
+      const data = await response.json();
       
-      if (response?.videos) {
-        setAllVideos(prev => [...prev, ...response.videos]);
-        setNextPageToken(response.nextPageToken);
+      if (data?.videos) {
+        setAllVideos(prev => [...prev, ...data.videos]);
+        setNextPageToken(data.nextPageToken);
       }
     } catch (error) {
       console.error('Failed to load more videos:', error);
