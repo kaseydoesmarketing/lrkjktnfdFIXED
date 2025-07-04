@@ -622,6 +622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const user = req.user!;
+        const pageToken = req.query.pageToken as string | undefined;
+        const maxResults = parseInt(req.query.maxResults as string) || 50;
 
         // No demo data in dashboard - all users see only authentic data
 
@@ -672,8 +674,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Fetch videos using automatic token refresh system
-          const videos = await youtubeService.getChannelVideos(user.id, 50);
+          // Fetch videos using automatic token refresh system with pagination
+          const result = await youtubeService.getChannelVideos(user.id, maxResults, pageToken);
+
+          // Check if result is array (backward compatibility) or pagination object
+          const isArray = Array.isArray(result);
+          const videos = isArray ? result : result.videos;
+          const nextPageToken = isArray ? undefined : result.nextPageToken;
 
           // Map thumbnail field to thumbnailUrl for frontend consistency
           const videosWithThumbnailUrl = videos.map((video) => ({
@@ -683,7 +690,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`,
           }));
 
-          res.json(videosWithThumbnailUrl);
+          if (pageToken || nextPageToken) {
+            res.json({
+              videos: videosWithThumbnailUrl,
+              nextPageToken: nextPageToken
+            });
+          } else {
+            // Backward compatibility: return array for non-paginated requests
+            res.json(videosWithThumbnailUrl);
+          }
         } catch (apiError: any) {
           // If token refresh fails completely, offer re-authentication
           if (

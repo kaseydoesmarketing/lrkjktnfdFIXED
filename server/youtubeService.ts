@@ -103,7 +103,7 @@ export class YouTubeService {
     }
   }
 
-  async getChannelVideos(userId: string, maxResults: number = 50) {
+  async getChannelVideos(userId: string, maxResults: number = 50, pageToken?: string) {
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
@@ -134,7 +134,7 @@ export class YouTubeService {
           part: ['snippet'],
           playlistId: uploadsPlaylistId,
           maxResults: pageSize,
-          pageToken: nextPageToken
+          pageToken: nextPageToken || pageToken
         });
 
         if (playlistResponse.data.items?.length) {
@@ -172,7 +172,7 @@ export class YouTubeService {
       }
 
 
-      return videoDetails.map((video: any) => ({
+      const videos = videoDetails.map((video: any) => ({
         id: video.id!,
         title: video.snippet?.title,
         description: video.snippet?.description,
@@ -184,6 +184,16 @@ export class YouTubeService {
         duration: video.contentDetails?.duration,
         status: video.snippet?.liveBroadcastContent === 'none' ? 'published' : video.snippet?.liveBroadcastContent
       }));
+
+      // Return just videos if no pagination requested, otherwise return object with pagination
+      if (!pageToken && allVideos.length <= maxResults) {
+        return videos;
+      }
+
+      return {
+        videos,
+        nextPageToken: nextPageToken
+      };
     });
   }
 
