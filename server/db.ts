@@ -18,13 +18,14 @@ console.log('Using DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + 
 
 // Enhanced connection pool configuration
 // Disable SSL for Supabase pooler connection
-// Neon database configuration
+// Neon database configuration with aggressive timeout handling
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 5, // Reasonable pool size
+  max: 1, // Single connection to prevent pool exhaustion
   ssl: { rejectUnauthorized: false }, // Neon requires SSL
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000
+  connectionTimeoutMillis: 5000, // 5 second timeout
+  idleTimeoutMillis: 1000, // 1 second idle timeout
+  allowExitOnIdle: true // Allow process to exit if idle
 });
 
 // Monitor pool events for debugging
