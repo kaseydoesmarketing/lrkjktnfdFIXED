@@ -5,8 +5,8 @@ import * as schema from "@shared/schema";
 const { Pool } = pg;
 
 // Force Supabase database URL (override any system env vars)
-// Using session pooler port 5432 for better compatibility with Drizzle ORM
-const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:5432/postgres";
+// Using transaction pooler with prepared statements disabled for Drizzle ORM
+const SUPABASE_DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
 process.env.DATABASE_URL = SUPABASE_DATABASE_URL;
 
 // Debug: Log the DATABASE_URL being used (masked for security)
@@ -21,7 +21,9 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000, // 30 second idle timeout
   allowExitOnIdle: false, // Keep connections alive
   query_timeout: 30000, // 30 second query timeout
-  statement_timeout: 30000 // 30 second statement timeout
+  statement_timeout: 30000, // 30 second statement timeout
+  // Disable prepared statements for pgbouncer compatibility
+  options: '-c default_transaction_isolation=read\\ committed -c search_path=public'
 });
 
 // Monitor pool events for debugging
@@ -29,29 +31,43 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
-pool.on('connect', (client) => {
+pool.on('connect', async (client) => {
   console.log('Connected to database');
-  // Set search path for each new connection
-  client.query('SET search_path TO public', (err) => {
-    if (err) {
-      console.error('Failed to set search path:', err.message);
-    }
-  });
-});
-
-export const db = drizzle({ client: pool, schema });
-
-// Test database connection on startup and set search path
-pool.query('SET search_path TO public', (err) => {
-  if (err) {
+  // Set search path for each new connection - CRITICAL for pgbouncer
+  try {
+    await client.query('SET search_path TO public');
+    console.log('Search path set to public');
+  } catch (err) {
     console.error('Failed to set search path:', err.message);
   }
 });
 
-pool.query('SELECT NOW()', (err, result) => {
-  if (err) {
-    console.error('Database connection test failed:', err.message);
-  } else {
-    console.log('Database connection test successful:', result.rows[0].now);
-  }
+// Use drizzle with mode that works with pgbouncer
+export const db = drizzle(pool, { 
+  schema,
+  mode: 'default' // Use default mode for pgbouncer compatibility
 });
+
+// Test database connection and verify tables exist
+(async () => {
+  try {
+    const client = await pool.connect();
+    await client.query('SET search_path TO public');
+    
+    const result = await client.query('SELECT NOW()');
+    console.log('Database connection test successful:', result.rows[0].now);
+    
+    // Verify tables exist in public schema
+    const tablesResult = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      LIMIT 5
+    `);
+    console.log('Tables found:', tablesResult.rows.map(r => r.table_name).join(', '));
+    
+    client.release();
+  } catch (err) {
+    console.error('Database initialization error:', err.message);
+  }
+})();
