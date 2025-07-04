@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Clock, Play, Loader2 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { Eye, Clock, Play } from 'lucide-react';
 
 interface Video {
   id: string;
@@ -22,53 +20,10 @@ interface VideoSelectorProps {
   selectedVideoId?: string;
 }
 
-interface VideosResponse {
-  videos: Video[];
-  nextPageToken?: string;
-}
-
 export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoSelectorProps) {
-  const [allVideos, setAllVideos] = useState<Video[]>([]);
-  const [nextPageToken, setNextPageToken] = useState<string | undefined>();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const { data, isLoading } = useQuery({
+  const { data: videos, isLoading } = useQuery({
     queryKey: ['/api/videos/recent'],
   });
-
-  useEffect(() => {
-    if (data) {
-      // Handle both array response (backward compatibility) and paginated response
-      if (Array.isArray(data)) {
-        setAllVideos(data);
-      } else if (data?.videos) {
-        setAllVideos(data.videos);
-        setNextPageToken(data.nextPageToken);
-      }
-    }
-  }, [data]);
-
-  const loadMoreVideos = async () => {
-    if (!nextPageToken || isLoadingMore) return;
-    
-    setIsLoadingMore(true);
-    try {
-      const response = await apiRequest('GET', `/api/videos/recent?pageToken=${nextPageToken}`);
-      const data = await response.json();
-      
-      if (data?.videos) {
-        setAllVideos(prev => [...prev, ...data.videos]);
-        setNextPageToken(data.nextPageToken);
-      }
-    } catch (error) {
-      console.error('Failed to load more videos:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
-  // Use allVideos if populated, otherwise use data from query
-  const videos = allVideos.length > 0 ? allVideos : (Array.isArray(data) ? data : (data?.videos || []));
 
   const formatViewCount = (count: number) => {
     if (count >= 1000000) {
@@ -124,25 +79,6 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
               </div>
             ))}
           </div>
-          {nextPageToken && (
-            <div className="mt-4 text-center">
-              <Button
-                onClick={loadMoreVideos}
-                disabled={isLoadingMore}
-                variant="outline"
-                className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-              >
-                {isLoadingMore ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading more videos...
-                  </>
-                ) : (
-                  'Load More Videos'
-                )}
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     );
@@ -226,25 +162,6 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
             </div>
           ))}
         </div>
-        {nextPageToken && (
-          <div className="mt-4 text-center">
-            <Button
-              onClick={loadMoreVideos}
-              disabled={isLoadingMore}
-              variant="outline"
-              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-            >
-              {isLoadingMore ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading more videos...
-                </>
-              ) : (
-                'Load More Videos'
-              )}
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
