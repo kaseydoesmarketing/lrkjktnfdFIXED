@@ -25,12 +25,26 @@ export async function createOAuthTables() {
       );
     `);
     console.log('✅ Users table created/verified');
+    
+    // Add OAuth columns if they don't exist
+    try {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS access_token TEXT;`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT;`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS youtube_channel_id VARCHAR(255);`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS youtube_channel_title VARCHAR(255);`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP;`);
+      await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();`);
+      console.log('✅ OAuth columns added to users table');
+    } catch (error) {
+      console.log('⚠️  Some OAuth columns might already exist');
+    }
 
     // Create ab_tests table if it doesn't exist
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS ab_tests (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
         video_id VARCHAR(255) NOT NULL,
         video_title TEXT NOT NULL,
         title_variants JSONB NOT NULL,
@@ -49,8 +63,8 @@ export async function createOAuthTables() {
     // Create test_results table if it doesn't exist
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS test_results (
-        id SERIAL PRIMARY KEY,
-        test_id INTEGER REFERENCES ab_tests(id) ON DELETE CASCADE,
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+        test_id TEXT REFERENCES ab_tests(id) ON DELETE CASCADE,
         title_variant TEXT NOT NULL,
         views INTEGER DEFAULT 0,
         impressions INTEGER DEFAULT 0,

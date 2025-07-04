@@ -46,6 +46,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Session configuration - CRITICAL FOR OAUTH
+app.use(session({
+  secret: process.env.SESSION_SECRET || '85DvMXCnQEUNuGR+rRZ6JxPebaC0deT2ftCQ09gK/f/TFQyDyCdolY9z7F46LK2zICIZW5MFrSLvUzztfDE1KA==',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

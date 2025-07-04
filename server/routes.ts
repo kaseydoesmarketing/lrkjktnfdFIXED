@@ -7,6 +7,7 @@ import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import { registerAdminRoutes } from "./adminRoutes";
+import oauthRoutes from "./oauthRoutes";
 import {
   apiCache,
   youtubeCache,
@@ -160,6 +161,9 @@ import { registerSimpleAdminRoutes } from "./simpleAdminRoutes";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes
   registerSimpleAdminRoutes(app);
+  
+  // Register OAuth routes with Passport.js
+  app.use('/api/auth', oauthRoutes);
 
   // Demo login route for immediate dashboard access
   app.post("/api/auth/demo-login", async (req: Request, res: Response) => {
@@ -231,7 +235,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Google OAuth routes
+  // OLD OAuth routes - commented out since we're using Passport.js now
+  /*
   app.get("/api/auth/google", async (req: Request, res: Response) => {
     try {
       // Always ensure OAuth works for production
@@ -426,79 +431,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect("/login?error=oauth_failed");
     }
   });
-
-  // Demo auth route (fallback)
-  app.post("/api/auth/google", async (req: Request, res: Response) => {
-    try {
-      const { email, name, image, accessToken, refreshToken } = req.body;
-
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
-
-      let user = await storage.getUserByEmail(email);
-
-      if (!user) {
-        user = await storage.createUser({ email, name, image });
-      }
-
-      // Create or update account
-      const existingAccount = await storage.getAccountByProvider(
-        "google",
-        email,
-      );
-      if (!existingAccount) {
-        await storage.createAccount({
-          userId: user.id,
-          type: "oauth",
-          provider: "google",
-          providerAccountId: email,
-          accessToken,
-          refreshToken,
-          expiresAt: null,
-          tokenType: "Bearer",
-          scope: "https://www.googleapis.com/auth/youtube.force-ssl",
-          idToken: null,
-          sessionState: null,
-        });
-      }
-
-      // Create session
-      const sessionToken = crypto.randomUUID();
-      const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-
-      await storage.createSession({
-        sessionToken,
-        userId: user.id,
-        expires,
-      });
-
-      res.json({ user, sessionToken });
-    } catch (error) {
-      res.status(500).json({ error: "Authentication failed" });
-    }
-  });
-
-  app.post(
-    "/api/auth/logout",
-    requireAuth,
-    async (req: Request, res: Response) => {
-      try {
-        const sessionToken = req.headers.authorization?.replace("Bearer ", "");
-        if (sessionToken) {
-          await storage.deleteSession(sessionToken);
-        }
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: "Logout failed" });
-      }
-    },
-  );
-
-  app.get("/api/auth/me", requireAuth, async (req: Request, res: Response) => {
-    const user = req.user!;
-    res.json(user);
-  });
+  */
+  
+  // These routes are now handled by Passport.js in oauthRoutes.ts
 
   // Test routes
   app.get("/api/tests", requireAuth, async (req: Request, res: Response) => {

@@ -8,14 +8,20 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name"),
   image: text("image"),
+  googleId: text("google_id").unique(),
   youtubeId: text("youtube_id").unique(),
-  oauthToken: text("oauth_token"), // Encrypted
+  accessToken: text("access_token"), // Encrypted
   refreshToken: text("refresh_token"), // Encrypted
+  youtubeChannelId: text("youtube_channel_id"),
+  youtubeChannelTitle: text("youtube_channel_title"),
+  oauthToken: text("oauth_token"), // Encrypted - deprecated, use accessToken
   subscriptionStatus: text("subscription_status").default("none"), // "none", "active", "cancelled"
   subscriptionTier: text("subscription_tier"), // "pro", "authority"
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const accounts = pgTable("accounts", {
