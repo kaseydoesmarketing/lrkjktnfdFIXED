@@ -343,8 +343,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continue without YouTube channel info
       }
 
-      // Create or update user
-      let user = await storage.getUserByEmail(userInfo.email);
+      // Create or update user with timeout protection
+      let user;
+      try {
+        user = await storage.getUserByEmail(userInfo.email);
+      } catch (error) {
+        console.error('Failed to get user by email:', error);
+        return res.redirect('/login?error=database_error');
+      }
 
       if (!user) {
         // Check if this is the founder account and grant authority privileges
