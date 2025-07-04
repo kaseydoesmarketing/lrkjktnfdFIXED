@@ -690,15 +690,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`,
           }));
 
-          if (pageToken || nextPageToken) {
-            res.json({
-              videos: videosWithThumbnailUrl,
-              nextPageToken: nextPageToken
-            });
-          } else {
-            // Backward compatibility: return array for non-paginated requests
-            res.json(videosWithThumbnailUrl);
-          }
+          // Always return object format for consistency
+          res.json({
+            videos: videosWithThumbnailUrl,
+            nextPageToken: nextPageToken
+          });
         } catch (apiError: any) {
           // If token refresh fails completely, offer re-authentication
           if (

@@ -63,7 +63,7 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
     }
   };
 
-  const videos = allVideos.length > 0 ? allVideos : Array.isArray(data) ? data : data?.videos || [];
+  const videos = allVideos.length > 0 ? allVideos : [];
 
   const formatViewCount = (count: number) => {
     if (count >= 1000000) {
