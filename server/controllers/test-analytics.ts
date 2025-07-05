@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { tests, titles, analyticsPolls, testRotationLogs } from '../../shared/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 
 interface RotationLog {
   id: string;
@@ -41,11 +41,13 @@ export async function getTestAnalytics(req: Request, res: Response) {
 
     // Get all analytics polls for this test
     const testTitleIds = test.titles.map(t => t.id);
-    const polls = await db
-      .select()
-      .from(analyticsPolls)
-      .where(sql`${analyticsPolls.titleId} = ANY(${testTitleIds})`)
-      .orderBy(desc(analyticsPolls.polledAt));
+    const polls = testTitleIds.length > 0 
+      ? await db
+          .select()
+          .from(analyticsPolls)
+          .where(inArray(analyticsPolls.titleId, testTitleIds))
+          .orderBy(desc(analyticsPolls.polledAt))
+      : [];
 
     // Get rotation logs
     const rotationLogs = await db

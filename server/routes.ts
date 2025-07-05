@@ -480,18 +480,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tests", requireAuth, async (req: Request, res: Response) => {
     try {
       const user = req.user!;
+      console.log('📊 [/api/tests] Fetching tests for user:', user.id, user.email);
+      
       const tests = await storage.getTestsByUserId(user.id);
-
+      console.log('✅ [/api/tests] Found tests:', tests.length);
+      
       // Get titles for each test
       const testsWithTitles = await Promise.all(
         tests.map(async (test) => {
           const titles = await storage.getTitlesByTestId(test.id);
+          console.log(`📝 [/api/tests] Test ${test.id} has ${titles.length} titles`);
           return { ...test, titles };
         }),
       );
 
+      console.log('🎯 [/api/tests] Returning tests with titles:', testsWithTitles.length);
       res.json(testsWithTitles);
     } catch (error) {
+      console.error('❌ [/api/tests] Error:', error);
       res.status(500).json({ error: "Failed to fetch tests" });
     }
   });
