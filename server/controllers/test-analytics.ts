@@ -17,11 +17,13 @@ interface RotationLog {
 export async function getTestAnalytics(req: Request, res: Response) {
   try {
     const { testId } = req.params;
-    const userId = req.session?.userId;
+    const user = req.user;
 
-    if (!userId) {
+    if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const userId = user.id;
 
     // Get test with titles
     const test = await db.query.tests.findFirst({
