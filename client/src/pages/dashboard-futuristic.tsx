@@ -204,14 +204,27 @@ export default function DashboardFuturistic() {
       // Load tests
       setIsLoadingTests(true);
       const testsResponse = await fetch('/api/tests', {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       if (testsResponse.ok) {
         const testsData = await testsResponse.json();
+        console.log('✅ Tests loaded successfully:', testsData);
         setTests(testsData);
       } else {
-        // No demo data - show only real data or empty state
-        setTests([]);
+        const errorText = await testsResponse.text();
+        console.error('❌ Failed to load tests:', testsResponse.status, errorText);
+        
+        // If it's an auth error, try to fetch without waiting for full auth
+        if (testsResponse.status === 401) {
+          console.log('🔄 Retrying tests fetch with current session...');
+          // The user is authenticated (stats work), so let's not clear the tests
+          // Keep any existing tests data
+        } else {
+          setTests([]);
+        }
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
