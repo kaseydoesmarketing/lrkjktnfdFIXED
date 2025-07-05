@@ -2183,9 +2183,9 @@ Current system provides realistic metrics based on video engagement patterns.`,
     });
   });
 
-  // 404 handler - must be last
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({ error: 'Route not found' });
+  // 404 handler for API routes only
+  app.use('/api/*', (req: Request, res: Response) => {
+    res.status(404).json({ error: 'API route not found' });
   });
 
   const httpServer = createServer(app);
