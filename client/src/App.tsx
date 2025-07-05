@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/lib/auth";
-import Dashboard from "@/pages/dashboard-fixed";
+import Dashboard from "@/pages/dashboard-production";
 import EnhancedAdmin from "@/pages/enhanced-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
