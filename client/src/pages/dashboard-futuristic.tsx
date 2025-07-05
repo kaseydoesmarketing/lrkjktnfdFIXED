@@ -203,15 +203,19 @@ export default function DashboardFuturistic() {
 
       // Load tests
       setIsLoadingTests(true);
+      console.log('🔍 Fetching tests from /api/tests...');
       const testsResponse = await fetch('/api/tests', {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         }
       });
+      console.log('📊 Tests response status:', testsResponse.status);
       if (testsResponse.ok) {
         const testsData = await testsResponse.json();
         console.log('✅ Tests loaded successfully:', testsData);
+        console.log('📋 Number of tests:', testsData.length);
+        console.log('🎯 First test (if any):', testsData[0]);
         setTests(testsData);
       } else {
         const errorText = await testsResponse.text();
@@ -930,6 +934,8 @@ export default function DashboardFuturistic() {
                 </div>
               </div>
             ) : tests.length === 0 ? (
+              // Add debugging
+              console.log('🔍 Tests array is empty:', tests),
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <TestTube className="w-8 h-8 text-gray-400" />
