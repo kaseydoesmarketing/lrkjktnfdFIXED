@@ -951,6 +951,9 @@ export default function DashboardFuturistic() {
               </div>
             ) : (
               <div className="space-y-4">
+                {console.log('🎯 Rendering tests:', tests)}
+                {console.log('📊 Tests type:', typeof tests, 'Is Array:', Array.isArray(tests))}
+                {console.log('🔍 First test:', tests[0])}
                 {tests.map((test) => (
                   <div
                     key={test.id}
