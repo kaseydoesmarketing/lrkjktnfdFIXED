@@ -90,11 +90,11 @@ async function rotateTitle(testId: string) {
     log(`Updating YouTube video ${test.videoId} to: "${nextTitle.text}"`);
     
     try {
-      await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
+      await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
         await youtubeService.updateVideoTitle(
           test.videoId,
           nextTitle.text,
-          accessToken
+          tokens.accessToken!
         );
       });
       
@@ -176,10 +176,10 @@ async function pollAnalytics(testId: string) {
 
     // Fetch YouTube analytics with token refresh
     try {
-      const analytics = await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
+      const analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
         return await youtubeService.getVideoAnalytics(
           test.videoId,
-          accessToken
+          tokens.accessToken!
         );
       });
       
@@ -367,23 +367,3 @@ export function getSchedulerStatus() {
   log('Scheduler status:', status);
   return status;
 }
-
-// Export scheduler object for backwards compatibility with routes.ts
-export const scheduler = {
-  startTest: scheduleTest,
-  scheduleTest: (testId: string, startDate: Date) => {
-    // Calculate minutes until start date
-    const now = new Date();
-    const delayMinutes = Math.max(0, Math.floor((startDate.getTime() - now.getTime()) / 60000));
-    scheduleTest(testId, delayMinutes);
-  },
-  scheduleRotation: (testId: string, delayMinutes: number, _: number) => {
-    scheduleTest(testId, delayMinutes);
-  },
-  cancelJob: (jobId: string) => {
-    const testId = jobId.replace('rotation-', '');
-    stopScheduledTest(testId);
-  },
-  rotateToNextTitle: triggerManualRotation,
-  cancelRotation: stopScheduledTest
-};

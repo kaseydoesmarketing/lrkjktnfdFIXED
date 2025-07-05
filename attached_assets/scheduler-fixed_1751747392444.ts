@@ -1,8 +1,8 @@
 import cron from 'node-cron';
 import { db } from './db';
-import { tests, titles, analyticsPolls } from '@shared/schema';
+import { tests, titles, analyticPolls } from './db/schema';
 import { eq, and, isNull, gte, lte, sql } from 'drizzle-orm';
-import { youtubeService } from './youtubeService';
+import { updateVideoTitle, getVideoAnalytics, withTokenRefresh } from './youtube';
 
 // Store active cron jobs
 const activeJobs = new Map<string, cron.ScheduledTask>();
@@ -90,11 +90,11 @@ async function rotateTitle(testId: string) {
     log(`Updating YouTube video ${test.videoId} to: "${nextTitle.text}"`);
     
     try {
-      await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
-        await youtubeService.updateVideoTitle(
+      await withTokenRefresh(test.userId, async (tokens) => {
+        await updateVideoTitle(
           test.videoId,
           nextTitle.text,
-          accessToken
+          tokens.accessToken!
         );
       });
       
@@ -176,15 +176,15 @@ async function pollAnalytics(testId: string) {
 
     // Fetch YouTube analytics with token refresh
     try {
-      const analytics = await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
-        return await youtubeService.getVideoAnalytics(
+      const analytics = await withTokenRefresh(test.userId, async (tokens) => {
+        return await getVideoAnalytics(
           test.videoId,
-          accessToken
+          tokens.accessToken!
         );
       });
       
       // Store analytics poll
-      await db.insert(analyticsPolls).values({
+      await db.insert(analyticPolls).values({
         titleId: activeTitle.id,
         views: analytics.views || 0,
         impressions: analytics.impressions || 0,
@@ -367,23 +367,3 @@ export function getSchedulerStatus() {
   log('Scheduler status:', status);
   return status;
 }
-
-// Export scheduler object for backwards compatibility with routes.ts
-export const scheduler = {
-  startTest: scheduleTest,
-  scheduleTest: (testId: string, startDate: Date) => {
-    // Calculate minutes until start date
-    const now = new Date();
-    const delayMinutes = Math.max(0, Math.floor((startDate.getTime() - now.getTime()) / 60000));
-    scheduleTest(testId, delayMinutes);
-  },
-  scheduleRotation: (testId: string, delayMinutes: number, _: number) => {
-    scheduleTest(testId, delayMinutes);
-  },
-  cancelJob: (jobId: string) => {
-    const testId = jobId.replace('rotation-', '');
-    stopScheduledTest(testId);
-  },
-  rotateToNextTitle: triggerManualRotation,
-  cancelRotation: stopScheduledTest
-};

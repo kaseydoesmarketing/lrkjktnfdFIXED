@@ -57,6 +57,7 @@ export const tests = pgTable("tests", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   currentTitleIndex: integer("current_title_index").notNull().default(0), // Current active title index
 });
 
@@ -66,6 +67,7 @@ export const titles = pgTable("titles", {
   text: text("text").notNull(),
   order: integer("order").notNull(), // Rotation order (0, 1, 2...)
   activatedAt: timestamp("activated_at"),
+  isActive: boolean("is_active").default(false),
 });
 
 export const analyticsPolls = pgTable("analytics_polls", {
@@ -74,6 +76,7 @@ export const analyticsPolls = pgTable("analytics_polls", {
   polledAt: timestamp("polled_at").defaultNow().notNull(),
   views: integer("views").notNull(),
   impressions: integer("impressions").notNull(),
+  clicks: integer("clicks").notNull().default(0),
   ctr: real("ctr").notNull(),
   averageViewDuration: integer("average_view_duration").notNull(), // Seconds
 });

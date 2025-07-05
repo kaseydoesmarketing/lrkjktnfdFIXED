@@ -18,6 +18,7 @@ import {
   invalidateTestCache,
 } from "./cache";
 import { insertTestSchema, insertTitleSchema, type User } from "@shared/schema";
+import { getTestAnalytics } from "./controllers/test-analytics";
 import { z } from "zod";
 
 // Input validation schemas
@@ -1653,92 +1654,7 @@ Current system provides realistic metrics based on video engagement patterns.`,
   app.get(
     "/api/tests/:testId/analytics",
     requireAuth,
-    async (req: Request, res: Response) => {
-      try {
-        const { testId } = req.params;
-        const user = req.user!;
-
-        const test = await storage.getTest(testId);
-        if (!test || test.userId !== user.id) {
-          return res.status(404).json({ error: "Test not found" });
-        }
-
-        const titles = await storage.getTitlesByTestId(testId);
-
-        // Calculate rotation statistics
-        let rotationsCount = 0;
-        let currentTitle = "N/A";
-        let totalViews = 0;
-        let totalImpressions = 0;
-        let totalCtr = 0;
-        let totalViewDuration = 0;
-        let dataPoints = 0;
-
-        // Find currently active title and count rotations
-        let mostRecentActivation = null;
-        for (const title of titles) {
-          if (title.activatedAt) {
-            rotationsCount++;
-            if (
-              !mostRecentActivation ||
-              title.activatedAt > mostRecentActivation
-            ) {
-              mostRecentActivation = title.activatedAt;
-              currentTitle = title.text;
-            }
-
-            // Get analytics data for this title (use most recent poll to avoid duplication)
-            const polls = await storage.getAnalyticsPollsByTitleId(title.id);
-            if (polls.length > 0) {
-              // Sort polls by polled_at descending and use the most recent one
-              const latestPoll = polls.sort(
-                (a, b) => b.polledAt.getTime() - a.polledAt.getTime(),
-              )[0];
-              totalViews += latestPoll.views;
-              totalImpressions += latestPoll.impressions;
-              totalCtr += latestPoll.ctr;
-              totalViewDuration += latestPoll.averageViewDuration;
-              dataPoints++;
-            }
-          }
-        }
-
-        // Calculate next rotation time
-        let nextRotationIn = 0;
-        if (test.status === "active" && mostRecentActivation) {
-          const timeSinceLastRotation =
-            Date.now() - mostRecentActivation.getTime();
-          const rotationIntervalMs = test.rotationIntervalMinutes * 60 * 1000;
-          const timeUntilNext = rotationIntervalMs - timeSinceLastRotation;
-          nextRotationIn = Math.max(0, Math.round(timeUntilNext / (60 * 1000))); // Convert to minutes
-        }
-
-        // Calculate averages
-        const averageCtr = dataPoints > 0 ? totalCtr / dataPoints : 0;
-        const averageViewDuration =
-          dataPoints > 0 ? totalViewDuration / dataPoints : 0;
-
-        res.json({
-          rotationsCount,
-          nextRotationIn,
-          averageCtr: Number(averageCtr.toFixed(1)),
-          totalViews,
-          averageViewDuration: Math.round(averageViewDuration),
-          currentTitle,
-          rotationLogs: titles
-            .filter((t) => t.activatedAt)
-            .sort((a, b) => b.activatedAt!.getTime() - a.activatedAt!.getTime())
-            .slice(0, 5)
-            .map((t) => ({
-              title: t.text,
-              activatedAt: t.activatedAt,
-              order: t.order,
-            })),
-        });
-      } catch (error) {
-        res.status(500).json({ error: "Failed to fetch test analytics" });
-      }
-    },
+    getTestAnalytics
   );
 
   app.post(
