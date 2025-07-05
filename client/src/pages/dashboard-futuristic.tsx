@@ -62,6 +62,8 @@ interface AuthState {
 }
 
 export default function DashboardFuturistic() {
+  console.log('🚨 Dashboard Component Loaded!');
+  
   const [authState, setAuthState] = useState<AuthState>({
     loading: true,
     authenticated: false,
@@ -182,19 +184,28 @@ export default function DashboardFuturistic() {
 
   // Load dashboard data
   useEffect(() => {
+    console.log('🚀 Dashboard Effect - Auth State:', authState);
     if (authState.authenticated) {
+      console.log('✅ User authenticated, loading dashboard data...');
       loadDashboardData();
+    } else {
+      console.log('❌ User not authenticated yet');
     }
   }, [authState.authenticated]);
 
   const loadDashboardData = async () => {
     try {
+      console.log('📍 Starting loadDashboardData...');
+      
       // Load stats
       const statsResponse = await fetch('/api/dashboard/stats', {
         credentials: 'include'
       });
+      console.log('📊 Stats response:', statsResponse.status);
+      
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
+        console.log('✅ Stats data:', statsData);
         setStats(statsData);
       } else {
         // No demo data - show only real statistics
@@ -204,31 +215,36 @@ export default function DashboardFuturistic() {
       // Load tests
       setIsLoadingTests(true);
       console.log('🔍 Fetching tests from /api/tests...');
-      const testsResponse = await fetch('/api/tests', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log('📊 Tests response status:', testsResponse.status);
-      if (testsResponse.ok) {
-        const testsData = await testsResponse.json();
-        console.log('✅ Tests loaded successfully:', testsData);
-        console.log('📋 Number of tests:', testsData.length);
-        console.log('🎯 First test (if any):', testsData[0]);
-        setTests(testsData);
-      } else {
-        const errorText = await testsResponse.text();
-        console.error('❌ Failed to load tests:', testsResponse.status, errorText);
-        
-        // If it's an auth error, try to fetch without waiting for full auth
-        if (testsResponse.status === 401) {
-          console.log('🔄 Retrying tests fetch with current session...');
-          // The user is authenticated (stats work), so let's not clear the tests
-          // Keep any existing tests data
+      try {
+        const testsResponse = await fetch('/api/tests', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('📊 Tests response status:', testsResponse.status);
+        if (testsResponse.ok) {
+          const testsData = await testsResponse.json();
+          console.log('✅ Tests loaded successfully:', testsData);
+          console.log('📋 Number of tests:', testsData.length);
+          console.log('🎯 First test (if any):', testsData[0]);
+          setTests(testsData);
         } else {
-          setTests([]);
+          const errorText = await testsResponse.text();
+          console.error('❌ Failed to load tests:', testsResponse.status, errorText);
+          
+          // If it's an auth error, try to fetch without waiting for full auth
+          if (testsResponse.status === 401) {
+            console.log('🔄 Retrying tests fetch with current session...');
+            // The user is authenticated (stats work), so let's not clear the tests
+            // Keep any existing tests data
+          } else {
+            setTests([]);
+          }
         }
+      } catch (fetchError) {
+        console.error('💥 Error fetching tests:', fetchError);
+        setTests([]);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -951,9 +967,6 @@ export default function DashboardFuturistic() {
               </div>
             ) : (
               <div className="space-y-4">
-                {console.log('🎯 Rendering tests:', tests)}
-                {console.log('📊 Tests type:', typeof tests, 'Is Array:', Array.isArray(tests))}
-                {console.log('🔍 First test:', tests[0])}
                 {tests.map((test) => (
                   <div
                     key={test.id}

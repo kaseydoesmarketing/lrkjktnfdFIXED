@@ -476,6 +476,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // These routes are now handled by Passport.js in oauthRoutes.ts
 
+  // Debug endpoint to check all tests (remove in production)
+  app.get("/api/debug/all-tests", async (req: Request, res: Response) => {
+    try {
+      const allTests = await storage.getAllTests();
+      console.log('🔍 [DEBUG] All tests in database:', allTests.length);
+      res.json({ totalTests: allTests.length, tests: allTests });
+    } catch (error) {
+      console.error('❌ [DEBUG] Error fetching all tests:', error);
+      res.status(500).json({ error: 'Failed to fetch tests' });
+    }
+  });
+
   // Test routes
   app.get("/api/tests", requireAuth, async (req: Request, res: Response) => {
     try {
