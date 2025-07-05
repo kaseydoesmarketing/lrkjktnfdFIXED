@@ -1,0 +1,68 @@
+You now have all the code, data, specs, and business logic required to fully deliver a working, production-ready dashboard & platform. This is not optional — everything must function exactly as intended before marking this as complete.
+
+🪓 Your Mission:
+✅ Fix ALL the known issues without excuses.
+✅ Connect all components end-to-end so they function properly.
+✅ Remove hacks or half-finished features.
+✅ Where something is broken or misconfigured, FIX IT.
+✅ Test EVERYTHING thoroughly — don’t assume something works just because you touched it.
+
+Specific Tasks to Complete:
+1️⃣ Resolve the issue where a new title campaign test fails to start. This is a blocker — no campaign = useless platform.
+2️⃣ Ensure the dashboard updates in real-time (or appropriately polled) with accurate:
+
+Active tests
+
+Completed tests
+
+Total views
+
+Avg CTR
+
+Current title
+Metrics must match what’s coming from the YouTube API, synchronized correctly.
+3️⃣ Verify the Stripe payment integration is fully functional and hitting the correct account and plan. Currently, it appears misdirected or broken. Fix it, test it end-to-end (including actual test payment).
+4️⃣ Make sure rotating titles happen at the interval selected, and the system records data hourly (or as designed) when a title is rotated.
+5️⃣ All forms (plans, campaigns, tests, etc.) must submit, validate, and trigger correct backend logic without throwing errors.
+6️⃣ Any intermittent bugs or crashes? Root cause them and fix, not just band-aid them.
+7️⃣ Remove unnecessary code, logs, and clutter. Leave it clean & maintainable.
+
+Deliverable:
+🚀 A fully working application where:
+
+I can create and launch a new test campaign without error.
+
+The dashboard reflects accurate, up-to-date data.
+
+Payments work properly via Stripe.
+
+Title rotations and metrics sync flawlessly with YouTube.
+
+NO broken buttons, no failing forms, no silent errors.
+
+Expectations:
+DO NOT send it back unfinished claiming “waiting for info.” You have everything you need here.
+
+DO NOT assume “good enough.” If you wouldn’t stake your name on it working, don’t ship it.
+
+DO NOT overcomplicate — fix what’s broken, wire up what’s not connected, test thoroughly, deliver cleanly.
+
+Run a full QA pass yourself. Don’t leave QA to the client.
+
+Timeline:
+⏳ This should be treated with urgency. Every hour this isn’t working costs the business. No dragging feet. Fix it completely, test it properly, deliver it ready to launch.
+
+Notes:
+If you encounter a blocker that is genuinely outside your control (e.g., YouTube API keys revoked, Stripe account issue outside of code, etc.), document it clearly and propose a solution immediately. Do not just stop.
+
+If you want, I can also draft a follow-up checklist or a QA script they can run step-by-step to confirm everything is actually working. Let me know.
+
+
+
+
+
+
+
+
+
+Ask ChatGPT
