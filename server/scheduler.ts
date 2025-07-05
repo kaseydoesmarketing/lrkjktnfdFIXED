@@ -212,6 +212,15 @@ async function pollAnalytics(testId: string) {
 export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
   log(`Scheduling test ${testId} with ${rotationIntervalMinutes} minute intervals`);
   
+  // Validate rotation interval to prevent memory issues
+  if (!rotationIntervalMinutes || rotationIntervalMinutes <= 0) {
+    error(`Invalid rotation interval: ${rotationIntervalMinutes} minutes for test ${testId}. Skipping scheduling.`);
+    return;
+  }
+  
+  // Ensure minimum interval of 1 minute to prevent excessive scheduling
+  const safeInterval = Math.max(1, rotationIntervalMinutes);
+  
   // Clear any existing job
   const existingJob = activeJobs.get(testId);
   if (existingJob) {
@@ -221,7 +230,7 @@ export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
   }
   
   // Create cron pattern (run every N minutes)
-  const cronPattern = `*/${rotationIntervalMinutes} * * * *`;
+  const cronPattern = `*/${safeInterval} * * * *`;
   
   // Schedule rotation job
   const rotationJob = cron.schedule(cronPattern, async () => {
@@ -268,36 +277,58 @@ export async function initializeScheduler() {
     
     // Schedule each active test
     for (const test of activeTests) {
-      // Check if test has titles to rotate
-      const activatedTitles = test.titles.filter(t => t.activatedAt).length;
-      const remainingTitles = test.titles.filter(t => !t.activatedAt).length;
-      
-      if (remainingTitles === 0) {
-        log(`Test ${test.id} has no remaining titles, marking as completed`);
-        await db.update(tests)
-          .set({ 
-            status: 'completed',
-            endDate: new Date()
-          })
-          .where(eq(tests.id, test.id));
-        continue;
+      try {
+        // Validate test has required fields
+        if (!test.id || !test.rotationIntervalMinutes) {
+          error(`Test ${test.id} missing required fields, skipping`);
+          continue;
+        }
+        
+        // Check if test has titles to rotate
+        const activatedTitles = test.titles.filter(t => t.activatedAt).length;
+        const remainingTitles = test.titles.filter(t => !t.activatedAt).length;
+        
+        if (remainingTitles === 0) {
+          log(`Test ${test.id} has no remaining titles, marking as completed`);
+          await db.update(tests)
+            .set({ 
+              status: 'completed',
+              endDate: new Date()
+            })
+            .where(eq(tests.id, test.id));
+          continue;
+        }
+        
+        // Ensure valid rotation interval
+        if (test.rotationIntervalMinutes <= 0) {
+          error(`Test ${test.id} has invalid rotation interval: ${test.rotationIntervalMinutes}, skipping`);
+          continue;
+        }
+        
+        scheduleTest(test.id, test.rotationIntervalMinutes);
+        
+        log(`Scheduled test ${test.id}:`, {
+          videoTitle: test.videoTitle,
+          titlesActivated: activatedTitles,
+          titlesRemaining: remainingTitles,
+          rotationInterval: test.rotationIntervalMinutes
+        });
+        
+      } catch (testErr) {
+        error(`Failed to schedule test ${test.id}`, testErr);
+        continue; // Continue with next test
       }
-      
-      scheduleTest(test.id, test.rotationIntervalMinutes);
-      
-      log(`Scheduled test ${test.id}:`, {
-        videoTitle: test.videoTitle,
-        titlesActivated: activatedTitles,
-        titlesRemaining: remainingTitles,
-        rotationInterval: test.rotationIntervalMinutes
-      });
     }
     
-    // Poll analytics immediately for all active tests
+    // Poll analytics immediately for all active tests with better error handling
     setTimeout(async () => {
       log('Running initial analytics poll for all active tests...');
       for (const test of activeTests) {
-        await pollAnalytics(test.id);
+        try {
+          await pollAnalytics(test.id);
+        } catch (pollErr) {
+          error(`Failed to poll analytics for test ${test.id}`, pollErr);
+        }
       }
     }, 5000); // Wait 5 seconds after startup
     
