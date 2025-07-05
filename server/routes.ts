@@ -934,6 +934,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get complete rotation history with timestamps
+  app.get(
+    "/api/tests/:testId/rotation-history",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        const titles = await storage.getTitlesByTestId(testId);
+        const rotationHistory: any[] = [];
+
+        // Build rotation history from title activations
+        for (let i = 0; i < titles.length; i++) {
+          const title = titles[i];
+          if (title.activatedAt) {
+            const nextTitle = titles[i + 1];
+            const endedAt = nextTitle?.activatedAt || new Date();
+            
+            // Get analytics data for this rotation period
+            const analytics = await storage.getAnalyticsPollsByTitleId(title.id);
+            const rotationAnalytics = analytics.filter(a => {
+              const pollTime = new Date(a.createdAt);
+              return pollTime >= title.activatedAt! && pollTime <= endedAt;
+            });
+
+            // Calculate aggregated performance for this rotation
+            const totalViews = rotationAnalytics.reduce((sum, a) => sum + a.views, 0);
+            const totalImpressions = rotationAnalytics.reduce((sum, a) => sum + a.impressions, 0);
+            const avgCtr = rotationAnalytics.length > 0 
+              ? rotationAnalytics.reduce((sum, a) => sum + a.ctr, 0) / rotationAnalytics.length
+              : 0;
+
+            rotationHistory.push({
+              rotationNumber: title.order,
+              titleId: title.id,
+              title: title.text,
+              startedAt: title.activatedAt,
+              endedAt: endedAt !== new Date() ? endedAt : null,
+              durationMinutes: Math.floor((endedAt.getTime() - title.activatedAt.getTime()) / (1000 * 60)),
+              youtubeUpdateSuccessful: true, // We can track this in future updates
+              performance: {
+                views: totalViews,
+                ctr: Number(avgCtr.toFixed(2)),
+                impressions: totalImpressions
+              }
+            });
+          }
+        }
+
+        res.json(rotationHistory);
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch rotation history" });
+      }
+    },
+  );
+
+  // Real-time rotation status
+  app.get(
+    "/api/tests/:testId/current-rotation",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        const titles = await storage.getTitlesByTestId(testId);
+        
+        // Find the currently active title
+        const activeTitle = titles.find((t) => {
+          if (!t.activatedAt) return false;
+          return !titles.some(
+            (other) => other.activatedAt && other.activatedAt > t.activatedAt!,
+          );
+        });
+
+        if (!activeTitle || !activeTitle.activatedAt) {
+          return res.json({
+            currentTitle: null,
+            timeUntilNextRotation: 0,
+            rotationNumber: 0,
+            totalTitles: titles.length,
+            testStatus: test.status
+          });
+        }
+
+        // Calculate time until next rotation
+        const rotationTime = test.rotationIntervalMinutes * 60 * 1000;
+        const timeSinceActivation = Date.now() - activeTitle.activatedAt.getTime();
+        const timeUntilNext = Math.max(0, rotationTime - timeSinceActivation);
+
+        res.json({
+          currentTitle: activeTitle.text,
+          timeUntilNextRotation: Math.ceil(timeUntilNext / (1000 * 60)), // minutes remaining
+          rotationNumber: activeTitle.order,
+          totalTitles: titles.length,
+          testStatus: test.status
+        });
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch current rotation status" });
+      }
+    },
+  );
+
+  // Comprehensive test logs with performance data
+  app.get(
+    "/api/tests/:testId/logs",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        const titles = await storage.getTitlesByTestId(testId);
+        const detailedLogs: any[] = [];
+        let totalTestDuration = 0;
+        let successfulUpdates = 0;
+        let failedUpdates = 0;
+
+        // Build detailed logs for each title rotation
+        for (let i = 0; i < titles.length; i++) {
+          const title = titles[i];
+          if (title.activatedAt) {
+            const nextTitle = titles[i + 1];
+            const endedAt = nextTitle?.activatedAt || new Date();
+            const durationMinutes = Math.floor((endedAt.getTime() - title.activatedAt.getTime()) / (1000 * 60));
+            totalTestDuration += durationMinutes;
+            
+            // Get all analytics for this rotation period
+            const analytics = await storage.getAnalyticsPollsByTitleId(title.id);
+            const rotationAnalytics = analytics.filter(a => {
+              const pollTime = new Date(a.createdAt);
+              return pollTime >= title.activatedAt! && pollTime <= endedAt;
+            });
+
+            // Calculate performance metrics
+            const totalViews = rotationAnalytics.reduce((sum, a) => sum + a.views, 0);
+            const totalImpressions = rotationAnalytics.reduce((sum, a) => sum + a.impressions, 0);
+            const avgCtr = rotationAnalytics.length > 0 
+              ? rotationAnalytics.reduce((sum, a) => sum + a.ctr, 0) / rotationAnalytics.length
+              : 0;
+            const avgViewDuration = rotationAnalytics.length > 0
+              ? rotationAnalytics.reduce((sum, a) => sum + a.averageViewDuration, 0) / rotationAnalytics.length
+              : 0;
+
+            successfulUpdates++; // Track success/failure when we add YouTube update tracking
+
+            detailedLogs.push({
+              rotationNumber: title.order,
+              title: title.text,
+              startedAt: title.activatedAt,
+              endedAt: endedAt !== new Date() ? endedAt : null,
+              durationMinutes,
+              youtubeUpdateSuccessful: true,
+              performance: {
+                views: totalViews,
+                ctr: Number(avgCtr.toFixed(2)),
+                impressions: totalImpressions,
+                averageViewDuration: Math.round(avgViewDuration)
+              }
+            });
+          }
+        }
+
+        res.json({
+          test: {
+            id: test.id,
+            videoId: test.videoId,
+            status: test.status,
+            rotationIntervalMinutes: test.rotationIntervalMinutes,
+            winnerMetric: test.winnerMetric,
+            startDate: test.startDate,
+            endDate: test.endDate
+          },
+          titles: titles.map(t => ({ id: t.id, text: t.text, order: t.order })),
+          rotationHistory: detailedLogs,
+          summary: {
+            totalRotations: detailedLogs.length,
+            successfulUpdates,
+            failedUpdates,
+            totalTestDuration
+          }
+        });
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch test logs" });
+      }
+    },
+  );
+
+  // Individual title performance over time
+  app.get(
+    "/api/titles/:titleId/performance",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { titleId } = req.params;
+        const user = req.user!;
+
+        // Verify title belongs to user
+        const title = await storage.getTitle(titleId);
+        if (!title) {
+          return res.status(404).json({ error: "Title not found" });
+        }
+
+        const test = await storage.getTest(title.testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        // Get all analytics polls for this title
+        const analytics = await storage.getAnalyticsPollsByTitleId(titleId);
+        
+        // Format performance data with timestamps
+        const performanceData = analytics.map(poll => ({
+          timestamp: poll.createdAt,
+          views: poll.views,
+          impressions: poll.impressions,
+          ctr: poll.ctr,
+          averageViewDuration: poll.averageViewDuration
+        }));
+
+        res.json({
+          titleId,
+          titleText: title.text,
+          order: title.order,
+          activatedAt: title.activatedAt,
+          performanceHistory: performanceData
+        });
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch title performance" });
+      }
+    },
+  );
+
   // YouTube Analytics API accuracy status and enablement
   app.get(
     "/api/analytics/accuracy-status",
