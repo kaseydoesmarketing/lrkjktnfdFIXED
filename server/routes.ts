@@ -165,6 +165,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register OAuth routes with Passport.js
   app.use('/api/auth', oauthRoutes);
 
+  // Health check endpoint
+  app.get("/api/health", (req: Request, res: Response) => {
+    res.json({ 
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+
+  // Start or schedule a test
+  app.post(
+    "/api/tests/:testId/start",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const { startNow = false } = req.body;
+        const user = req.user!;
+        
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+        
+        if (startNow) {
+          // Start immediately
+          await scheduler.startTest(testId);
+        } else {
+          // Schedule for later
+          await scheduler.scheduleTest(testId, new Date(test.startDate));
+        }
+        
+        await storage.updateTestStatus(testId, "active");
+        res.json({ success: true, message: "Test started successfully" });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    },
+  );
+
   // Demo login route for immediate dashboard access
   app.post("/api/auth/demo-login", async (req: Request, res: Response) => {
     try {
@@ -1183,6 +1223,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // All titles for a test with performance data
+  app.get(
+    "/api/tests/:testId/titles",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        const titles = await storage.getTitlesByTestId(testId);
+        
+        // Get performance data for each title
+        const titlesWithPerformance = await Promise.all(
+          titles.map(async (title) => {
+            const analytics = await storage.getAnalyticsPollsByTitleId(title.id);
+            const totalViews = analytics.reduce((sum, a) => sum + a.views, 0);
+            const avgCtr = analytics.length > 0 
+              ? analytics.reduce((sum, a) => sum + a.ctr, 0) / analytics.length 
+              : 0;
+            
+            return {
+              ...title,
+              performanceHistory: analytics,
+              totalViews,
+              avgCtr: Number(avgCtr.toFixed(2))
+            };
+          })
+        );
+        
+        res.json(titlesWithPerformance);
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch titles with performance" });
+      }
+    },
+  );
+
+  // Manual title rotation
+  app.post(
+    "/api/tests/:testId/rotate-now",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        const test = await storage.getTest(testId);
+        if (!test || test.userId !== user.id) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        // Trigger immediate rotation
+        await scheduler.rotateToNextTitle(testId);
+        
+        res.json({ success: true, message: "Title rotated manually" });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to rotate title" });
+      }
+    },
+  );
+
+  // YouTube quota usage monitoring
+  let quotaUsage = {
+    used: 0,
+    limit: 10000, // YouTube API daily quota
+    resetTime: new Date().setHours(24, 0, 0, 0)
+  };
+
+  const trackQuotaUsage = (units: number) => {
+    const now = Date.now();
+    if (now > quotaUsage.resetTime) {
+      quotaUsage.used = 0;
+      quotaUsage.resetTime = new Date().setHours(24, 0, 0, 0);
+    }
+    quotaUsage.used += units;
+  };
+
+  app.get(
+    "/api/analytics/youtube-quota",
+    requireAuth,
+    (req: Request, res: Response) => {
+      res.json({
+        ...quotaUsage,
+        remaining: quotaUsage.limit - quotaUsage.used,
+        percentUsed: ((quotaUsage.used / quotaUsage.limit) * 100).toFixed(2)
+      });
+    }
+  );
+
   // YouTube Analytics API accuracy status and enablement
   app.get(
     "/api/analytics/accuracy-status",
@@ -2039,6 +2172,20 @@ Current system provides realistic metrics based on video engagement patterns.`,
       redirectUri: `https://${req.get('host')}/api/auth/callback/google`,
       configured: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET
     });
+  });
+
+  // Error handling middleware
+  app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+    console.error('Unhandled error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    });
+  });
+
+  // 404 handler - must be last
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({ error: 'Route not found' });
   });
 
   const httpServer = createServer(app);
