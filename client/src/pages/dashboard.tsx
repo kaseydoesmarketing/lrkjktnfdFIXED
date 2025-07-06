@@ -3,9 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { format } from 'date-fns';
 
 function DashboardContent() {
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
@@ -70,6 +73,24 @@ function DashboardContent() {
     setCurrentTitleIndex((prev) => (prev < activeTitles.length - 3 ? prev + 1 : prev));
   };
 
+  // Fetch analytics for the selected test (for demo, use first active test)
+  const selectedTest = activeTests[0] || null;
+
+  const { data: analytics } = useQuery({
+    queryKey: ['/api/tests/' + (selectedTest?.id || '') + '/analytics'],
+    enabled: !!selectedTest,
+    retry: false,
+  });
+
+  // Use new lifetimeStats and rotationEvents
+  const lifetimeStats = analytics?.lifetimeStats || {};
+  const rotationEvents = analytics?.rotationEvents || [];
+  // Optionally map titleId to titleText if needed
+  const titleIdToText = (analytics?.titleMetrics || []).reduce((acc: any, t: any) => {
+    acc[t.titleId] = t.titleText;
+    return acc;
+  }, {});
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -99,7 +120,7 @@ function DashboardContent() {
       </header>
 
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Stats Cards */}
+        {/* Stats Cards - use lifetimeStats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Active Tests Card */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
@@ -114,7 +135,6 @@ function DashboardContent() {
               <div className="text-green-600 text-sm font-medium">+18%</div>
             </div>
           </div>
-
           {/* Total Views Card */}
           <div style={{ backgroundColor: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -123,12 +143,11 @@ function DashboardContent() {
                   <TrendingUp style={{ width: '16px', height: '16px', color: '#2563eb' }} />
                   <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb' }}>Total Views</span>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{stats?.totalViews || '1,955'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{lifetimeStats.views ?? stats?.totalViews ?? '0'}</div>
               </div>
               <div style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500' }}>+12%</div>
             </div>
           </div>
-
           {/* Average CTR Card */}
           <div style={{ backgroundColor: '#faf5ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -137,12 +156,11 @@ function DashboardContent() {
                   <MousePointer style={{ width: '16px', height: '16px', color: '#9333ea' }} />
                   <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9333ea' }}>Average CTR</span>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '8.0%'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{lifetimeStats.ctr ? `${lifetimeStats.ctr.toFixed(1)}%` : stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '0.0%'}</div>
               </div>
               <div style={{ color: '#9333ea', fontSize: '0.875rem', fontWeight: '500' }}>+16%</div>
             </div>
           </div>
-
           {/* Completed Tests Card */}
           <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -156,6 +174,44 @@ function DashboardContent() {
               <div style={{ color: '#ea580c', fontSize: '0.875rem', fontWeight: '500' }}>+9%</div>
             </div>
           </div>
+        </div>
+
+        {/* Impression Chart */}
+        <div style={{ marginBottom: '2rem', background: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Impression Chart</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={rotationEvents.map((e: any) => ({
+              ...e,
+              title: titleIdToText[e.titleId] || e.titleId,
+              rotatedAt: format(new Date(e.rotatedAt), 'MMM d, HH:mm'),
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="rotatedAt" />
+              <YAxis />
+              <Tooltip formatter={(value: any, name: string, props: any) => [value, name === 'impressions' ? 'Impressions' : name]} labelFormatter={(label: string, payload: any) => {
+                if (payload && payload.length > 0) {
+                  return `${payload[0].payload.title} (${label})`;
+                }
+                return label;
+              }} />
+              <Line type="monotone" dataKey="impressions" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Title Rotation History Log */}
+        <div style={{ marginBottom: '2rem', background: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Title Rotation History</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {rotationEvents.length === 0 && <li style={{ color: '#6b7280' }}>No rotations yet.</li>}
+            {rotationEvents.map((e: any) => (
+              <li key={e.id} style={{ marginBottom: '0.5rem', fontSize: '0.95rem', color: '#374151' }}>
+                <span style={{ color: '#6b7280', marginRight: '0.5rem' }}>{format(new Date(e.rotatedAt), 'MMM d, HH:mm')}</span>
+                — <span style={{ fontWeight: 500 }}>{titleIdToText[e.titleId] || e.titleId}</span>
+                <span style={{ color: '#2563eb', marginLeft: '0.5rem' }}>({e.impressions} impressions)</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Channel Selector and New Test Button */}

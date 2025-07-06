@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../db';
 import { tests, titles, analyticsPolls, testRotationLogs } from '../../shared/schema';
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+import { youtubeService } from '../youtubeService';
 
 interface RotationLog {
   id: string;
@@ -39,8 +40,21 @@ export async function getTestAnalytics(req: Request, res: Response) {
       return res.status(404).json({ error: 'Test not found' });
     }
 
+    // Fetch latest YouTube stats for the video (lifetime-to-date)
+    let lifetimeStats = null;
+    try {
+      lifetimeStats = await youtubeService.getVideoAnalytics(
+        userId,
+        test.videoId,
+        test.createdAt.toISOString().split('T')[0], // start from test creation
+        new Date().toISOString().split('T')[0]      // up to now
+      );
+    } catch (err) {
+      console.error('Failed to fetch YouTube lifetime stats:', err);
+    }
+
     // Get all analytics polls for this test
-    const testTitleIds = test.titles.map(t => t.id);
+    const testTitleIds = test.titles.map((t: any) => t.id);
     const polls = testTitleIds.length > 0 
       ? await db
           .select()
@@ -49,37 +63,37 @@ export async function getTestAnalytics(req: Request, res: Response) {
           .orderBy(desc(analyticsPolls.polledAt))
       : [];
 
-    // Get rotation logs
-    const rotationLogs = await db
+    // Get rotation logs (now including impressions, views, ctr at rotation)
+    const rotationEvents = await db
       .select({
         id: testRotationLogs.id,
-        titleText: testRotationLogs.titleText,
-        titleOrder: testRotationLogs.rotationOrder,
+        titleId: testRotationLogs.titleId,
+        rotationNumber: testRotationLogs.rotationNumber,
         rotatedAt: testRotationLogs.rotatedAt,
-        durationMinutes: testRotationLogs.durationMinutes,
-        viewsAtRotation: testRotationLogs.viewsAtRotation,
-        ctrAtRotation: testRotationLogs.ctrAtRotation,
-        impressionsAtRotation: sql<number>`0`.as('impressionsAtRotation'), // Field doesn't exist in schema, using 0 as placeholder
+        impressions: testRotationLogs.impressionsAtRotation,
+        views: testRotationLogs.viewsAtRotation,
+        ctr: testRotationLogs.ctrAtRotation,
+        // Optionally join to get the title text
       })
       .from(testRotationLogs)
       .where(eq(testRotationLogs.testId, testId))
       .orderBy(desc(testRotationLogs.rotatedAt));
 
     // Calculate aggregate metrics
-    const totalViews = polls.reduce((sum, poll) => sum + (poll.views || 0), 0);
-    const totalImpressions = polls.reduce((sum, poll) => sum + (poll.impressions || 0), 0);
-    const totalClicks = polls.reduce((sum, poll) => sum + (poll.clicks || 0), 0);
+    const totalViews = polls.reduce((sum: number, poll: any) => sum + (poll.views || 0), 0);
+    const totalImpressions = polls.reduce((sum: number, poll: any) => sum + (poll.impressions || 0), 0);
+    const totalClicks = polls.reduce((sum: number, poll: any) => sum + (poll.clicks || 0), 0);
     const overallCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
 
     // Per-title metrics
-    const titleMetrics = test.titles.map(title => {
-      const titlePolls = polls.filter(p => p.titleId === title.id);
-      const views = titlePolls.reduce((sum, p) => sum + (p.views || 0), 0);
-      const impressions = titlePolls.reduce((sum, p) => sum + (p.impressions || 0), 0);
-      const clicks = titlePolls.reduce((sum, p) => sum + (p.clicks || 0), 0);
+    const titleMetrics = test.titles.map((title: any) => {
+      const titlePolls = polls.filter((p: any) => p.titleId === title.id);
+      const views = titlePolls.reduce((sum: number, p: any) => sum + (p.views || 0), 0);
+      const impressions = titlePolls.reduce((sum: number, p: any) => sum + (p.impressions || 0), 0);
+      const clicks = titlePolls.reduce((sum: number, p: any) => sum + (p.clicks || 0), 0);
       const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
       const avgViewDuration = titlePolls.length > 0
-        ? titlePolls.reduce((sum, p) => sum + (p.averageViewDuration || 0), 0) / titlePolls.length
+        ? titlePolls.reduce((sum: number, p: any) => sum + (p.averageViewDuration || 0), 0) / titlePolls.length
         : 0;
 
       return {
@@ -115,8 +129,10 @@ export async function getTestAnalytics(req: Request, res: Response) {
         pollCount: polls.length,
       },
       titleMetrics,
-      rotationLogs: rotationLogs as RotationLog[],
+      rotationLogs: rotationEvents as RotationLog[],
+      rotationEvents,
       recentPolls: polls.slice(0, 10), // Last 10 polls
+      lifetimeStats,
     });
   } catch (error) {
     console.error('Error fetching test analytics:', error);

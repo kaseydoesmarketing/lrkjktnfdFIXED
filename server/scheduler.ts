@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { db } from './db';
-import { tests, titles, analyticsPolls } from '@shared/schema';
+import { tests, titles, analyticsPolls, testRotationLogs } from '@shared/schema';
 import { eq, and, isNull, gte, lte, sql } from 'drizzle-orm';
 import { youtubeService } from './youtubeService';
 
@@ -132,7 +132,36 @@ async function rotateTitle(testId: string) {
       .where(eq(titles.id, nextTitle.id));
     
     log(`✅ Activated title ${nextOrder + 1}/${test.titles.length}: "${nextTitle.text}"`);
-    
+
+    // Fetch latest analytics for the video at the time of rotation
+    let analytics = null;
+    try {
+      analytics = await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
+        return await youtubeService.getVideoAnalytics(
+          test.videoId,
+          accessToken
+        );
+      });
+    } catch (err) {
+      error('Failed to fetch analytics for rotation log', err);
+    }
+
+    // Log rotation event in testRotationLogs
+    try {
+      await db.insert(testRotationLogs).values({
+        testId: test.id,
+        titleId: nextTitle.id,
+        rotatedAt: new Date(),
+        rotationNumber: nextOrder,
+        impressionsAtRotation: analytics?.impressions || 0,
+        viewsAtRotation: analytics?.views || 0,
+        ctrAtRotation: analytics?.ctr || 0
+      });
+      log(`Logged rotation event for title: "${nextTitle.text}"`);
+    } catch (err) {
+      error('Failed to log rotation event', err);
+    }
+
     // Log rotation summary
     log(`Rotation complete:`, {
       testId,
