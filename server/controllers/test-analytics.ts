@@ -53,16 +53,15 @@ export async function getTestAnalytics(req: Request, res: Response) {
     const rotationLogs = await db
       .select({
         id: testRotationLogs.id,
-        titleText: titles.text,
-        titleOrder: titles.order,
+        titleText: testRotationLogs.titleText,
+        titleOrder: testRotationLogs.rotationOrder,
         rotatedAt: testRotationLogs.rotatedAt,
         durationMinutes: testRotationLogs.durationMinutes,
         viewsAtRotation: testRotationLogs.viewsAtRotation,
         ctrAtRotation: testRotationLogs.ctrAtRotation,
-        impressionsAtRotation: testRotationLogs.impressionsAtRotation,
+        impressionsAtRotation: sql<number>`0`.as('impressionsAtRotation'), // Field doesn't exist in schema, using 0 as placeholder
       })
       .from(testRotationLogs)
-      .innerJoin(titles, eq(testRotationLogs.titleId, titles.id))
       .where(eq(testRotationLogs.testId, testId))
       .orderBy(desc(testRotationLogs.rotatedAt));
 
