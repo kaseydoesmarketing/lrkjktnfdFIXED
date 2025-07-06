@@ -172,6 +172,44 @@ function DashboardContent() {
           </button>
         </div>
 
+        {/* Active Tests Section */}
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Active Tests</h2>
+            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Real-time A/B testing with live analytics</span>
+          </div>
+          
+          {activeTests.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {activeTests.map((test: any) => (
+                <div key={test.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', backgroundColor: 'white' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <h3 style={{ fontWeight: '500', color: '#111827' }}>{test.videoTitle}</h3>
+                    <span style={{ backgroundColor: '#22c55e', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>
+                      {test.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
+                    {test.titles?.length || 0} title variants • {test.rotationInterval || 60} min rotation
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                    Next rotation: {test.nextRotation ? new Date(test.nextRotation).toLocaleString() : 'Not scheduled'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {[1, 2].map((i) => (
+                <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', backgroundColor: 'white' }}>
+                  <div style={{ backgroundColor: '#e5e7eb', height: '20px', borderRadius: '4px', marginBottom: '0.5rem', animation: 'pulse 2s infinite' }}></div>
+                  <div style={{ backgroundColor: '#e5e7eb', height: '16px', width: '60%', borderRadius: '4px', animation: 'pulse 2s infinite' }}></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Video Selection Section */}
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Select video to test</h2>
@@ -333,11 +371,15 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Add keyframes for spinner */}
+      {/* Add keyframes for animations */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .5; }
         }
       `}</style>
     </div>
