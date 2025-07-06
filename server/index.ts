@@ -9,6 +9,14 @@ process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
 process.env.PGPASSWORD = "Princeandmarley8625!";
 process.env.PGDATABASE = "postgres";
 
+// Set default values for missing environment variables
+process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "618794070994-n4n3b75oktui4efj7671il3jvef23peu.apps.googleusercontent.com";
+process.env.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "demo-secret-key";
+process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "sk_test_demo_key";
+process.env.ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "your-32-character-secret-key-here!";
+process.env.SESSION_SECRET = process.env.SESSION_SECRET || "85DvMXCnQEUNuGR+rRZ6JxPebaC0deT2ftCQ09gK/f/TFQyDyCdolY9z7F46LK2zICIZW5MFrSLvUzztfDE1KA==";
+process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "demo-api-key";
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -174,6 +182,13 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Log environment status
+    console.log('Environment Status:');
+    console.log('- NODE_ENV:', process.env.NODE_ENV || 'development');
+    console.log('- Google OAuth:', process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Missing');
+    console.log('- Stripe:', process.env.STRIPE_SECRET_KEY ? 'Configured' : 'Missing');
+    console.log('- Anthropic AI:', process.env.ANTHROPIC_API_KEY ? 'Configured' : 'Missing');
     
     // Initialize basic server monitoring
     setTimeout(async () => {

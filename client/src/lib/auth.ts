@@ -5,13 +5,15 @@ export interface User {
   email: string;
   name?: string;
   image?: string;
+  subscriptionStatus?: string;
+  subscriptionTier?: string;
+  youtubeChannelId?: string;
+  youtubeChannelTitle?: string;
 }
 
 class AuthService {
-  private sessionToken: string | null = null;
-
   constructor() {
-    this.sessionToken = this.getSessionTokenFromCookie();
+    // Remove localStorage dependency - use cookies only
   }
 
   private getSessionTokenFromCookie(): string | null {
@@ -38,6 +40,7 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
+      credentials: 'include', // Always include cookies
     });
 
     if (!response.ok) {
@@ -45,66 +48,38 @@ class AuthService {
     }
 
     const data = await response.json();
-    this.sessionToken = data.sessionToken;
-    localStorage.setItem('sessionToken', data.sessionToken);
-    
     return data.user;
   }
 
   async logout() {
-    if (this.sessionToken) {
+    try {
       await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.sessionToken}`,
-        },
+        method: 'GET',
+        credentials: 'include', // Always include cookies
       });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear any cached data
+      queryClient.clear();
+      
+      // Clear any localStorage data (cleanup)
+      localStorage.removeItem('sessionToken');
     }
-    
-    this.sessionToken = null;
-    localStorage.removeItem('sessionToken');
-    queryClient.clear();
   }
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      // Always use credentials: 'include' to send cookies
-      // Try cookie-based authentication first (production OAuth)
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include',
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include', // Always use cookie-based authentication
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('User authenticated via cookie:', data.email);
-        }
-        return data;
+        return data.user;
       }
       
-      // If cookie auth fails, try localStorage token (demo mode)
-      const localStorageToken = localStorage.getItem('sessionToken');
-      if (localStorageToken) {
-        const tokenResponse = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${localStorageToken}`,
-          },
-          credentials: 'include',
-        });
-
-        if (tokenResponse.ok) {
-          const data = await tokenResponse.json();
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('User authenticated via localStorage token:', data.email);
-          }
-          return data;
-        }
-      }
-
       // No valid authentication found
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('No valid authentication found');
-      }
       return null;
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -118,6 +93,7 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -126,25 +102,21 @@ class AuthService {
 
     const data = await response.json();
     
-    // Check if we have a sessionToken in the response
-    if (!data.sessionToken) {
-      console.error('No sessionToken in response:', data);
-      throw new Error('No session token received');
+    if (!data.user) {
+      console.error('No user data in response:', data);
+      throw new Error('No user data received');
     }
     
-    this.sessionToken = data.sessionToken;
-    localStorage.setItem('sessionToken', data.sessionToken);
-    
-    console.log('Demo login successful, token stored:', data.sessionToken);
+    console.log('Demo login successful');
     return data.user;
   }
 
   getSessionToken(): string | null {
-    return this.sessionToken;
+    return this.getSessionTokenFromCookie();
   }
 
   isAuthenticated(): boolean {
-    return !!this.sessionToken;
+    return !!this.getSessionTokenFromCookie();
   }
 }
 

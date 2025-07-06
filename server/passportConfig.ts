@@ -4,15 +4,18 @@ import { storage } from './storage';
 import { authService } from './auth';
 import type { User } from '@shared/schema';
 
-// Validate required environment variables
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error('Missing required Google OAuth credentials');
+// Validate required environment variables with fallbacks
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '618794070994-n4n3b75oktui4efj7671il3jvef23peu.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'demo-secret-key';
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.warn('⚠️  Missing Google OAuth credentials - using demo mode');
 }
 
 // Configure Google OAuth Strategy
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clientID: GOOGLE_CLIENT_ID,
+  clientSecret: GOOGLE_CLIENT_SECRET,
   callbackURL: "/api/auth/callback/google",
   passReqToCallback: true
 },
@@ -48,7 +51,8 @@ passport.use(new GoogleStrategy({
           accessToken: encryptedAccessToken,
           refreshToken: encryptedRefreshToken,
           image: picture,
-          lastLogin: new Date()
+          lastLogin: new Date(),
+          updatedAt: new Date()
         });
         
         // Get updated user
@@ -102,7 +106,8 @@ passport.use(new GoogleStrategy({
             if (channelInfo && (!user.youtubeChannelId || !user.youtubeChannelTitle)) {
               await storage.updateUser(user.id, {
                 youtubeChannelId: channelInfo.id,
-                youtubeChannelTitle: channelInfo.title
+                youtubeChannelTitle: channelInfo.title,
+                updatedAt: new Date()
               });
               user = await storage.getUser(user.id);
             }

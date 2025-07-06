@@ -27,6 +27,7 @@ router.get('/callback/google',
       const user = req.user as any;
       
       if (!user) {
+        console.error('No user in OAuth callback');
         return res.redirect('/login?error=no_user');
       }
       
@@ -61,7 +62,7 @@ router.get('/callback/google',
             });
           }
         } catch (error) {
-          console.log('YouTube channel fetch failed, continuing without it');
+          console.log('YouTube channel fetch failed, continuing without it:', error);
         }
       }
       
@@ -79,6 +80,7 @@ router.get('/callback/google',
 router.get('/logout', (req: Request, res: Response) => {
   req.logout((err) => {
     if (err) {
+      console.error('Logout error:', err);
       return res.status(500).json({ error: 'Logout failed' });
     }
     
@@ -100,11 +102,15 @@ router.get('/user', async (req: Request, res: Response) => {
   try {
     const session = await storage.getSession(sessionToken);
     if (!session || session.expires < new Date()) {
+      // Clear expired cookie
+      res.clearCookie('session-token');
       return res.status(401).json({ error: 'Session expired' });
     }
     
     const user = await storage.getUser(session.userId);
     if (!user) {
+      // Clear invalid session
+      res.clearCookie('session-token');
       return res.status(404).json({ error: 'User not found' });
     }
     
@@ -124,6 +130,58 @@ router.get('/user', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Demo login route for testing
+router.post('/demo-login', async (req: Request, res: Response) => {
+  try {
+    // Create a demo user or get existing one
+    let user = await storage.getUserByEmail('demo@titletesterpro.com');
+    
+    if (!user) {
+      user = await storage.createUser({
+        email: 'demo@titletesterpro.com',
+        name: 'Demo User',
+        subscriptionTier: 'pro',
+        subscriptionStatus: 'active'
+      });
+    }
+    
+    // Create session
+    const sessionToken = authService.generateSessionToken();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    await storage.createSession({
+      sessionToken,
+      userId: user.id,
+      expires
+    });
+    
+    // Set session cookie
+    res.cookie('session-token', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    
+    // Return safe user data
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionTier: user.subscriptionTier,
+      youtubeChannelId: user.youtubeChannelId,
+      youtubeChannelTitle: user.youtubeChannelTitle
+    };
+    
+    res.json({ user: safeUser });
+  } catch (error) {
+    console.error('Demo login error:', error);
+    res.status(500).json({ error: 'Demo login failed' });
   }
 });
 
