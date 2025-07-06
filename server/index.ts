@@ -1,13 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// Force Supabase database configuration (override system env vars)
-process.env.DATABASE_URL = "postgresql://postgres.dnezcshuzdkhzrcjfwaq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
-process.env.PGHOST = "aws-0-us-east-2.pooler.supabase.com";
-process.env.PGPORT = "6543";
-process.env.PGUSER = "postgres.dnezcshuzdkhzrcjfwaq";
-process.env.PGPASSWORD = "Princeandmarley8625!";
-process.env.PGDATABASE = "postgres";
+// Database configuration from environment variables
+// Ensure these are set in .env file or Replit secrets
 
 // Set default values for missing environment variables
 process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "618794070994-n4n3b75oktui4efj7671il3jvef23peu.apps.googleusercontent.com";
