@@ -68,12 +68,12 @@ export async function getTestAnalytics(req: Request, res: Response) {
       .select({
         id: testRotationLogs.id,
         titleId: testRotationLogs.titleId,
-        rotationNumber: testRotationLogs.rotationNumber,
+        rotationOrder: testRotationLogs.rotationOrder,
         rotatedAt: testRotationLogs.rotatedAt,
-        impressions: testRotationLogs.impressionsAtRotation,
+        titleText: testRotationLogs.titleText,
+        durationMinutes: testRotationLogs.durationMinutes,
         views: testRotationLogs.viewsAtRotation,
         ctr: testRotationLogs.ctrAtRotation,
-        // Optionally join to get the title text
       })
       .from(testRotationLogs)
       .where(eq(testRotationLogs.testId, testId))
