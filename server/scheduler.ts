@@ -149,11 +149,15 @@ async function rotateTitle(testId: string) {
     // Log rotation event in testRotationLogs
     try {
       await db.insert(testRotationLogs).values({
+        id: `rot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         testId: test.id,
         titleId: nextTitle.id,
+        titleText: nextTitle.text,
         rotatedAt: new Date(),
-        rotationNumber: nextOrder,
-        impressionsAtRotation: analytics?.impressions || 0,
+        rotationOrder: nextOrder,
+        durationMinutes: currentTitle && currentTitle.activatedAt 
+          ? Math.floor((new Date().getTime() - currentTitle.activatedAt.getTime()) / 60000)
+          : null,
         viewsAtRotation: analytics?.views || 0,
         ctrAtRotation: analytics?.ctr || 0
       });

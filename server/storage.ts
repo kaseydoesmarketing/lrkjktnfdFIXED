@@ -379,6 +379,23 @@ export class DatabaseStorage implements IStorage {
   async getAllTests(): Promise<Test[]> {
     return await db.select().from(tests).orderBy(desc(tests.createdAt));
   }
+
+  async getAccountByUserId(userId: string, provider: string): Promise<any> {
+    const [account] = await db.select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)));
+    return account || undefined;
+  }
+
+  async updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken: string; expiresAt?: number | null }): Promise<void> {
+    await db.update(accounts)
+      .set({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt
+      })
+      .where(eq(accounts.id, accountId));
+  }
 }
 
 export const storage = new DatabaseStorage();
