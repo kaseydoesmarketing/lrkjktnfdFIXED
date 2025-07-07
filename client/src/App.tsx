@@ -18,9 +18,16 @@ import Terms from "@/pages/terms";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/auth/user'],
-    queryFn: () => authService.getCurrentUser(),
+    queryFn: async () => {
+      const user = await authService.getCurrentUser();
+      // If no user returned, throw to trigger error state
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+      return user;
+    },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -37,14 +44,8 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show error state
-  if (error) {
-    console.error('Authentication error:', error);
-    return <Login />;
-  }
-
-  // Show login if no user
-  if (!user) {
+  // Show login if error or no user
+  if (error || !data) {
     return <Login />;
   }
 

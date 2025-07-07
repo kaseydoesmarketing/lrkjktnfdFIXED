@@ -79,6 +79,13 @@ class AuthService {
         return data.user;
       }
       
+      // Log the error for debugging
+      if (response.status === 401) {
+        console.log('User not authenticated or session expired');
+      } else {
+        console.error('Auth check failed:', response.status, response.statusText);
+      }
+      
       // No valid authentication found
       return null;
     } catch (error) {
