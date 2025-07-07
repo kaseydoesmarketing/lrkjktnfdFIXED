@@ -1,958 +1,456 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft, Edit2 } from 'lucide-react';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'wouter';
+import {
+  Play, Pause, CheckCircle, Plus, Eye, TrendingUp,
+  Clock, ChevronDown, ChevronUp, BarChart3, Target
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import CreateTestModal from '@/components/CreateTestModal';
 
-function DashboardContent() {
-  const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
-  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
-  const [editingTest, setEditingTest] = useState<any>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editInterval, setEditInterval] = useState('60');
-  const [editTitles, setEditTitles] = useState<string[]>([]);
-  const [countdowns, setCountdowns] = useState<Record<string, string>>({});
-  const [showCreateTest, setShowCreateTest] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
-  const [createTitles, setCreateTitles] = useState(['', '']);
-  const [createInterval, setCreateInterval] = useState('60');
-  const [createWinnerMetric, setCreateWinnerMetric] = useState('ctr');
-  const [createStartDate, setCreateStartDate] = useState('');
-  const [createEndDate, setCreateEndDate] = useState('');
+interface DashboardStats {
+  activeTests: number;
+  totalViews: number;
+  totalImpressions: number;
+  averageCtr: number;
+}
+
+interface Test {
+  id: string;
+  videoId: string;
+  videoTitle: string;
+  thumbnailUrl: string;
+  status: 'active' | 'paused' | 'completed';
+  rotationInterval: number;
+  variants: Array<{
+    id: string;
+    title: string;
+    metrics: {
+      views: number;
+      impressions: number;
+      ctr: number;
+      avgDuration: number;
+    };
+  }>;
+  currentVariantIndex: number;
+  nextRotationTime: string;
+  createdAt: string;
+}
+
+export default function Dashboard() {
+  const [navigate] = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(0);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
 
-  // Fetch videos for create test modal
-  const { data: videos = [], isLoading: videosLoading } = useQuery({
-    queryKey: ['/api/videos/recent'],
-    enabled: showCreateTest,
-  });
-
-  // Create test mutation
-  const createTestMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest('POST', '/api/tests', data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      setShowCreateTest(false);
-      setSelectedVideo(null);
-      setCreateTitles(['', '']);
-      toast({
-        title: "Test created successfully",
-        description: "Your A/B test is now active and will start rotating titles.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to create test",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Check for successful OAuth login and refresh auth state
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionToken = urlParams.get('sessionToken');
-    
-    if (sessionToken) {
-      console.log('OAuth login successful, storing session token');
-      localStorage.setItem('sessionToken', sessionToken);
-      
-      const url = new URL(window.location.href);
-      url.searchParams.delete('sessionToken');
-      window.history.replaceState({}, '', url.pathname);
-    }
-    
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-  }, []);
-
-  // Moved below to fix reference issue
-
-  // Simplified queries to prevent crashes
+  // Fetch user data
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/user'],
-    retry: false,
+    queryKey: ['/api/auth/me'],
   });
 
-  const { data: stats } = useQuery({
+  // Fetch dashboard stats
+  const { data: stats = {
+    activeTests: 0,
+    totalViews: 0,
+    totalImpressions: 0,
+    averageCtr: 0
+  }} = useQuery<DashboardStats>({
     queryKey: ['/api/dashboard/stats'],
     enabled: !!user,
-    retry: false,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const { data: tests = [] } = useQuery({
-    queryKey: ['/api/tests'],
+  // Fetch active tests
+  const { data: tests = [] } = useQuery<Test[]>({
+    queryKey: ['/api/tests/active'],
     enabled: !!user,
-    retry: false,
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
-  const { data: recentVideos = [] } = useQuery({
-    queryKey: ['/api/videos/recent'],
-    enabled: !!user,
-    retry: false,
-  });
-
-  // Safe data processing with error handling
-  const activeTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'active') : [];
-  const completedTests = Array.isArray(tests) ? tests.filter((test: any) => test?.status === 'completed') : [];
-
-  // Countdown timer effect - moved here after activeTests is defined
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newCountdowns: Record<string, string> = {};
-      
-      activeTests.forEach((test: any) => {
-        if (test.nextRotationAt) {
-          const now = new Date().getTime();
-          const rotationTime = new Date(test.nextRotationAt).getTime();
-          const difference = rotationTime - now;
-          
-          if (difference > 0) {
-            const hours = Math.floor(difference / (1000 * 60 * 60));
-            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-            
-            newCountdowns[test.id] = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          } else {
-            newCountdowns[test.id] = 'Rotating...';
-          }
-        }
-      });
-      
-      setCountdowns(newCountdowns);
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [activeTests]);
-
-  // Mock data for active test demonstration
-  const activeTitles = [
-    { title: "Y'all Cancel Everybody But Diddy?", ctr: 7.4, views: 1182, status: "tested" },
-    { title: "Nobody Wants to Admit This About Cassie and Diddy", ctr: 8.6, views: 773, status: "current" },
-    { title: "If Diddy Walks, It's Proof This System Ain't Built for Us", ctr: 0, views: 0, status: "pending" },
-    { title: "The Truth About Diddy That Nobody Talks About", ctr: 0, views: 0, status: "pending" },
-    { title: "Why Diddy's Case Changes Everything for Hip-Hop", ctr: 0, views: 0, status: "pending" }
-  ];
-
-  const handlePrevTitle = () => {
-    setCurrentTitleIndex((prev) => (prev > 0 ? prev - 1 : 0));
-  };
-
-  const handleNextTitle = () => {
-    setCurrentTitleIndex((prev) => (prev < activeTitles.length - 3 ? prev + 1 : prev));
-  };
-
-  // Update test configuration mutation
-  const updateTestMutation = useMutation({
-    mutationFn: async (data: { testId: string; rotationIntervalMinutes?: number; titles?: string[] }) => {
-      const response = await apiRequest('PUT', `/api/tests/${data.testId}/config`, {
-        rotationIntervalMinutes: data.rotationIntervalMinutes,
-        titles: data.titles,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
-      toast({
-        title: 'Success',
-        description: 'Test configuration updated successfully!',
-      });
-      setEditModalOpen(false);
-      setEditingTest(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update test configuration',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleEditTest = (test: any) => {
-    setEditingTest(test);
-    setEditInterval(test.rotationIntervalMinutes?.toString() || '60');
-    setEditTitles(test.titles || []);
-    setEditModalOpen(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingTest) return;
-
-    const validTitles = editTitles.filter(title => title.trim() !== '');
-    if (validTitles.length < 2) {
-      toast({
-        title: 'Error',
-        description: 'Please enter at least 2 title variants',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    updateTestMutation.mutate({
-      testId: editingTest.id,
-      rotationIntervalMinutes: parseInt(editInterval),
-      titles: validTitles,
+  const toggleTest = (testId: string) => {
+    setExpandedTests(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(testId)) {
+        newSet.delete(testId);
+      } else {
+        newSet.add(testId);
+      }
+      return newSet;
     });
   };
 
-  const addEditTitle = () => {
-    if (editTitles.length < 5) {
-      setEditTitles([...editTitles, '']);
-    }
-  };
-
-  const removeEditTitle = (index: number) => {
-    if (editTitles.length > 2) {
-      setEditTitles(editTitles.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateEditTitle = (index: number, value: string) => {
-    const newTitles = [...editTitles];
-    newTitles[index] = value;
-    setEditTitles(newTitles);
-  };
-
-  // Fetch analytics for the selected test (for demo, use first active test)
-  const selectedTest = activeTests[0] || null;
-
-  const { data: analytics } = useQuery({
-    queryKey: ['/api/tests/' + (selectedTest?.id || '') + '/analytics'],
-    enabled: !!selectedTest,
-    retry: false,
-  });
-
-  // Use new lifetimeStats and rotationEvents
-  const lifetimeStats = analytics?.lifetimeStats || {};
-  const rotationEvents = analytics?.rotationEvents || [];
-  // Optionally map titleId to titleText if needed
-  const titleIdToText = (analytics?.titleMetrics || []).reduce((acc: any, t: any) => {
-    acc[t.titleId] = t.titleText;
-    return acc;
-  }, {});
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('.account-selector')) {
+        setShowAccountDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Premium Header with Gradient - UPDATED */}
-      <header className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-lg">
-              <Play className="w-6 h-6 text-blue-600 fill-blue-600" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <a href="/" className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-lg flex items-center justify-center text-white font-bold">
+                  ▶
+                </div>
+                <span className="font-bold text-xl">TitleTesterPro</span>
+              </a>
+              <nav className="hidden md:flex space-x-6">
+                <a href="/dashboard" className="text-[#5865F2] font-medium">Dashboard</a>
+                <a href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
+                <a href="/help" className="text-gray-600 hover:text-gray-900">Help</a>
+              </nav>
             </div>
-            <h1 className="text-3xl font-bold text-white">
-              TitleTesterPro
-              <span className="text-blue-100 font-normal ml-2 text-xl">Premium Dashboard</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-white/90">
-              <span className="font-medium">{user?.email || 'Creator'}</span>
-            </div>
-            <Bell className="w-6 h-6 text-white/80 hover:text-white cursor-pointer transition-colors" />
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-              <User className="w-5 h-5 text-purple-600" />
+            {/* Account Selector */}
+            <div className="relative account-selector">
+              <button
+                onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                className="flex items-center space-x-3 p-2 rounded-lg border hover:bg-gray-50 transition"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  {user?.name?.charAt(0) || 'M'}
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold">{user?.youtube_channel_name || 'Maschine Kulture TV'}</div>
+                  <div className="text-xs text-gray-500">Pro Plan • 1 Account</div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </button>
+              
+              {showAccountDropdown && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border overflow-hidden">
+                  <div className="p-3 border-b bg-gray-50">
+                    <p className="text-sm text-gray-600">Your YouTube Channels (1/1 used)</p>
+                  </div>
+                  <div className="p-2">
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                            M
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold">Maschine Kulture TV</div>
+                            <div className="text-xs text-gray-600">Primary Account</div>
+                          </div>
+                        </div>
+                        <CheckCircle className="w-5 h-5 text-[#5865F2]" />
+                      </div>
+                    </div>
+                    <div className="mt-2 p-3 rounded-lg border border-gray-200 opacity-50">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-400">
+                          +
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-400">Add Another Channel</div>
+                          <div className="text-xs text-gray-400">Upgrade to Authority</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-amber-50 border-t">
+                    <p className="text-xs text-amber-800">
+                      💡 Pro plan includes 1 YouTube channel. Upgrade to Authority for up to 3 channels.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* NEW FEATURES BANNER */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold mb-3">🚀 ALL FEATURES FIXED & WORKING!</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="font-semibold mb-2">✅ Fixed in this update:</p>
-              <ul className="space-y-1 text-sm">
-                <li>• Red countdown timers showing next rotation</li>
-                <li>• Blue-to-purple gradient premium theme</li>
-                <li>• Edit Test button with modal functionality</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold mb-2">✅ API & Backend:</p>
-              <ul className="space-y-1 text-sm">
-                <li>• YouTube Analytics API v2 with real metrics</li>
-                <li>• Supports 200+ videos (no 50 limit)</li>
-                <li>• Stripe Pro ($29) & Authority ($99) ready</li>
-              </ul>
-            </div>
-          </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Monitor your A/B tests and optimize your titles with data</p>
         </div>
-      </div>
 
-      <div className="p-6 max-w-7xl mx-auto">
-        {/* Stats Cards - use lifetimeStats */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Active Tests Card */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <TestTube className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">Active Tests</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900">{activeTests.length}</div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Active Tests</CardTitle>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Play className="w-5 h-5 text-[#5865F2]" />
               </div>
-              <div className="text-green-600 text-sm font-medium">+18%</div>
-            </div>
-          </div>
-          {/* Total Views Card */}
-          <div style={{ backgroundColor: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <TrendingUp style={{ width: '16px', height: '16px', color: '#2563eb' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#2563eb' }}>Total Views</span>
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{lifetimeStats.views ?? stats?.totalViews ?? '0'}</div>
-              </div>
-              <div style={{ color: '#2563eb', fontSize: '0.875rem', fontWeight: '500' }}>+12%</div>
-            </div>
-          </div>
-          {/* Average CTR Card */}
-          <div style={{ backgroundColor: '#faf5ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <MousePointer style={{ width: '16px', height: '16px', color: '#9333ea' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9333ea' }}>Average CTR</span>
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{lifetimeStats.ctr ? `${lifetimeStats.ctr.toFixed(1)}%` : stats?.avgCtr ? `${stats.avgCtr.toFixed(1)}%` : '0.0%'}</div>
-              </div>
-              <div style={{ color: '#9333ea', fontSize: '0.875rem', fontWeight: '500' }}>+16%</div>
-            </div>
-          </div>
-          {/* Completed Tests Card */}
-          <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <Eye style={{ width: '16px', height: '16px', color: '#ea580c' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#ea580c' }}>Completed</span>
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>{completedTests.length}</div>
-              </div>
-              <div style={{ color: '#ea580c', fontSize: '0.875rem', fontWeight: '500' }}>+9%</div>
-            </div>
-          </div>
-        </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.activeTests}</div>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                ↑ 2 from last week
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Impression Chart */}
-        <div style={{ marginBottom: '2rem', background: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Impression Chart</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={rotationEvents.map((e: any) => ({
-              ...e,
-              title: titleIdToText[e.titleId] || e.titleId,
-              rotatedAt: format(new Date(e.rotatedAt), 'MMM d, HH:mm'),
-            }))}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="rotatedAt" />
-              <YAxis />
-              <Tooltip formatter={(value: any, name: string, props: any) => [value, name === 'impressions' ? 'Impressions' : name]} labelFormatter={(label: string, payload: any) => {
-                if (payload && payload.length > 0) {
-                  return `${payload[0].payload.title} (${label})`;
-                }
-                return label;
-              }} />
-              <Line type="monotone" dataKey="impressions" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Views</CardTitle>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Eye className="w-5 h-5 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(stats.totalViews / 1000).toFixed(1)}K</div>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                ↑ 12.4% increase
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Title Rotation History Log */}
-        <div style={{ marginBottom: '2rem', background: 'white', borderRadius: '8px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Title Rotation History</h2>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {rotationEvents.length === 0 && <li style={{ color: '#6b7280' }}>No rotations yet.</li>}
-            {rotationEvents.map((e: any) => (
-              <li key={e.id} style={{ marginBottom: '0.5rem', fontSize: '0.95rem', color: '#374151' }}>
-                <span style={{ color: '#6b7280', marginRight: '0.5rem' }}>{format(new Date(e.rotatedAt), 'MMM d, HH:mm')}</span>
-                — <span style={{ fontWeight: 500 }}>{titleIdToText[e.titleId] || e.titleId}</span>
-                <span style={{ color: '#2563eb', marginLeft: '0.5rem' }}>({e.impressions} impressions)</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Impressions</CardTitle>
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-[#7C3AED]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(stats.totalImpressions / 1000000).toFixed(1)}M</div>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                ↑ 8.7% increase
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Channel Selector and New Test Button */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <select style={{ width: '256px', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
-            <option>Select YouTube Channel</option>
-            <option>Main Channel</option>
-            <option>Secondary Channel</option>
-          </select>
-          
-          <button 
-            onClick={() => setShowCreateTest(true)}
-            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <Plus style={{ width: '16px', height: '16px' }} />
-            New Test
-          </button>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Average CTR</CardTitle>
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <Target className="w-5 h-5 text-amber-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.averageCtr.toFixed(1)}%</div>
+              <p className="text-xs text-green-600 font-medium mt-1">
+                ↑ 1.2% improvement
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Active Tests Section */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>Active Tests</h2>
-            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Real-time A/B testing with live analytics</span>
-          </div>
-          
-          {activeTests.length > 0 ? (
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              {activeTests.map((test: any) => (
-                <div key={test.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', backgroundColor: 'white' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <h3 style={{ fontWeight: '500', color: '#111827' }}>{test.videoTitle}</h3>
-                    <span style={{ backgroundColor: '#22c55e', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>
-                      {test.status}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                    {test.titles?.length || 0} title variants • {test.rotationInterval || 60} min rotation
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-2"
-                      onClick={() => {
-                        setEditingTest(test);
-                        setEditInterval(test.rotationInterval?.toString() || '60');
-                        setEditTitles(test.titles || []);
-                        setEditModalOpen(true);
-                      }}
-                    >
-                      <Edit2 className="w-3 h-3 mr-1" />
-                      Edit Test
-                    </Button>
-                  </div>
-                  <div style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ color: '#6b7280' }}>Next rotation:</span>
-                    <span style={{ 
-                      color: '#dc2626', 
-                      fontWeight: '600', 
-                      fontFamily: 'monospace',
-                      fontSize: '1rem',
-                      backgroundColor: '#fee2e2',
-                      padding: '2px 8px',
-                      borderRadius: '4px'
-                    }}>
-                      {countdowns[test.id] || 'Calculating...'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              {[1, 2].map((i) => (
-                <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', backgroundColor: 'white' }}>
-                  <div style={{ backgroundColor: '#e5e7eb', height: '20px', borderRadius: '4px', marginBottom: '0.5rem', animation: 'pulse 2s infinite' }}></div>
-                  <div style={{ backgroundColor: '#e5e7eb', height: '16px', width: '60%', borderRadius: '4px', animation: 'pulse 2s infinite' }}></div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Active Tests</h2>
         </div>
 
-        {/* Video Selection Section */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>Select video to test</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {recentVideos.slice(0, 2).map((video: any, index: number) => (
-              <div key={index} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', cursor: 'pointer', transition: 'box-shadow 0.2s' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ position: 'relative' }}>
-                    <img 
-                      src={video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
-                      alt="Video thumbnail" 
-                      style={{ width: '128px', height: '72px', objectFit: 'cover', borderRadius: '4px' }}
-                    />
-                    <div style={{ position: 'absolute', bottom: '4px', right: '4px', backgroundColor: 'rgba(0,0,0,0.75)', color: 'white', fontSize: '0.75rem', padding: '2px 4px', borderRadius: '2px' }}>
-                      {video.duration || '4:05'}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '0.25rem' }}>{video.title}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Eye style={{ width: '12px', height: '12px' }} />
-                        {video.viewCount || '405'} views
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Clock style={{ width: '12px', height: '12px' }} />
-                        {video.publishedAt || '4 days ago'}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '0.25rem' }}>{video.description || 'What if i told your Diddy\'s walking fart is about Cassie and Diddy, i dreak Todd/k about a better...'}</p>
-                  </div>
-                  <ChevronRight style={{ width: '20px', height: '20px', color: '#9ca3af' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Active Test Section - Show if there are tests or for demonstration */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>
-              This Diddy Story Proves Cancel Culture is a Lie
-            </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                <RotateCcw style={{ width: '16px', height: '16px' }} />
-                <span>{activeTests[0]?.rotationIntervalMinutes || 60} min Rotation</span>
-              </div>
-              <button
-                onClick={() => handleEditTest(activeTests[0])}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '0.875rem',
-                  color: '#2563eb',
-                  backgroundColor: 'transparent',
-                  border: '1px solid #2563eb',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#2563eb';
-                }}
-              >
-                <Edit2 style={{ width: '14px', height: '14px' }} />
-                Edit Test
-              </button>
-            </div>
-          </div>
-
-          {/* Title Carousel */}
-          <div style={{ position: 'relative' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-              {activeTitles.slice(currentTitleIndex, currentTitleIndex + 3).map((titleData, index) => (
-                <div key={index} style={{ 
-                  backgroundColor: titleData.status === 'current' ? '#f0fdf4' : 'white', 
-                  border: titleData.status === 'current' ? '1px solid #bbf7d0' : '1px solid #e5e7eb', 
-                  borderRadius: '8px', 
-                  padding: '1.5rem' 
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4b5563' }}>
-                      Title {String.fromCharCode(65 + currentTitleIndex + index)}
-                    </span>
-                    {titleData.status === 'current' && (
-                      <span style={{ backgroundColor: '#22c55e', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>Current</span>
-                    )}
-                    {titleData.status === 'pending' && (
-                      <span style={{ border: '1px solid #2563eb', color: '#2563eb', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px' }}>Pending</span>
-                    )}
-                  </div>
-                  <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '1rem' }}>{titleData.title}</h3>
-                  
-                  {titleData.status === 'pending' ? (
-                    <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                      <button style={{ border: '1px solid #2563eb', color: '#2563eb', backgroundColor: 'transparent', padding: '0.5rem 1rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 auto', cursor: 'pointer' }}>
-                        <Plus style={{ width: '16px', height: '16px' }} />
-                        Generate Title With AI
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>CTR</span>
-                        <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{titleData.ctr}%</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Views</span>
-                        <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{titleData.views.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Navigation Buttons */}
-            {activeTitles.length > 3 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
-                <button 
-                  onClick={handlePrevTitle}
-                  disabled={currentTitleIndex === 0}
-                  style={{ 
-                    padding: '0.5rem', 
-                    borderRadius: '50%', 
-                    border: '1px solid #d1d5db', 
-                    backgroundColor: 'white', 
-                    cursor: currentTitleIndex === 0 ? 'not-allowed' : 'pointer',
-                    opacity: currentTitleIndex === 0 ? 0.5 : 1
-                  }}
+        {tests.length > 0 ? (
+          <div className="space-y-4">
+            {tests.map(test => (
+              <Card key={test.id} className={expandedTests.has(test.id) ? 'ring-2 ring-[#5865F2]' : ''}>
+                <div
+                  className="p-6 cursor-pointer"
+                  onClick={() => toggleTest(test.id)}
                 >
-                  <ChevronLeft style={{ width: '16px', height: '16px' }} />
-                </button>
-                <button 
-                  onClick={handleNextTitle}
-                  disabled={currentTitleIndex >= activeTitles.length - 3}
-                  style={{ 
-                    padding: '0.5rem', 
-                    borderRadius: '50%', 
-                    border: '1px solid #d1d5db', 
-                    backgroundColor: 'white', 
-                    cursor: currentTitleIndex >= activeTitles.length - 3 ? 'not-allowed' : 'pointer',
-                    opacity: currentTitleIndex >= activeTitles.length - 3 ? 0.5 : 1
-                  }}
-                >
-                  <ChevronRight style={{ width: '16px', height: '16px' }} />
-                </button>
-              </div>
-            )}
-
-            {/* Page Indicators */}
-            {activeTitles.length > 3 && (
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                {Array.from({ length: Math.ceil(activeTitles.length / 3) }, (_, i) => (
-                  <div 
-                    key={i}
-                    style={{ 
-                      width: '8px', 
-                      height: '8px', 
-                      borderRadius: '50%', 
-                      backgroundColor: Math.floor(currentTitleIndex / 3) === i ? '#3b82f6' : '#d1d5db'
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Title Variants Info */}
-          <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-            <h3 style={{ fontWeight: '500', color: '#111827', marginBottom: '0.5rem' }}>Title Variants</h3>
-            <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '1rem' }}>
-              Enter 3-5 titles to A/B test. TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. Best click-through rate determines the winner.
-            </p>
-            <button style={{ border: '1px solid #2563eb', color: '#2563eb', backgroundColor: 'transparent', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>
-              Cancel test
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Edit Test Modal */}
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Test Configuration</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Rotation Interval */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
-              <Select value={editInterval} onValueChange={setEditInterval}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 minutes</SelectItem>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
-                  <SelectItem value="240">4 hours</SelectItem>
-                  <SelectItem value="480">8 hours</SelectItem>
-                  <SelectItem value="720">12 hours</SelectItem>
-                  <SelectItem value="1440">24 hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Title Variants */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Title Variants</Label>
-              <div className="space-y-3">
-                {editTitles.map((title, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      value={title}
-                      onChange={(e) => updateEditTitle(index, e.target.value)}
-                      placeholder={`Title ${index + 1}`}
-                      className="flex-1"
-                    />
-                    {editTitles.length > 2 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeEditTitle(index)}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {editTitles.length < 5 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addEditTitle}
-                  className="mt-3"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Title
-                </Button>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setEditModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveEdit}
-                disabled={updateTestMutation.isPending}
-              >
-                {updateTestMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Test Modal */}
-      <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New A/B Test</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Video Selection */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Select Video</Label>
-              {videosLoading ? (
-                <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-lg">
-                  <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2" />
-                    <p className="text-gray-600">Loading your videos...</p>
-                  </div>
-                </div>
-              ) : videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                  {videos.map((video: any) => (
-                    <div
-                      key={video.id}
-                      onClick={() => setSelectedVideo(video)}
-                      className={`cursor-pointer border rounded-lg p-3 transition-all ${
-                        selectedVideo?.id === video.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex gap-3">
-                        <img 
-                          src={video.thumbnailUrl} 
-                          alt={video.title}
-                          className="w-24 h-16 object-cover rounded"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{video.title}</h4>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {Number(video.viewCount).toLocaleString()} views • {video.duration}
-                          </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 flex-1">
+                      <img
+                        src={test.thumbnailUrl}
+                        alt={test.videoTitle}
+                        className="w-32 h-18 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 line-clamp-2">
+                          {test.videoTitle}
+                        </h3>
+                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <span>Active</span>
+                          </div>
+                          <span>•</span>
+                          <span>{test.variants.length} variants</span>
+                          <span>•</span>
+                          <span>{test.rotationInterval}m rotation</span>
+                          <span>•</span>
+                          <span>Started {new Date(test.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    {expandedTests.has(test.id) ? (
+                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center p-8 border-2 border-dashed border-gray-200 rounded-lg">
-                  <p className="text-gray-600">No videos found. Please upload videos to your YouTube channel.</p>
-                </div>
-              )}
-            </div>
 
-            {/* Title Variants */}
-            {selectedVideo && (
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Title Variants</Label>
-                <p className="text-sm text-gray-600 mb-3">Enter 2-5 title variants to test</p>
-                <div className="space-y-3">
-                  {createTitles.map((title, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        value={title}
-                        onChange={(e) => {
-                          const newTitles = [...createTitles];
-                          newTitles[index] = e.target.value;
-                          setCreateTitles(newTitles);
-                        }}
-                        placeholder={`Title ${index + 1}`}
-                        className="flex-1"
-                      />
-                      {createTitles.length > 2 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setCreateTitles(createTitles.filter((_, i) => i !== index));
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      )}
+                {expandedTests.has(test.id) && (
+                  <div className="border-t">
+                    {/* Test Metrics */}
+                    <div className="p-6 bg-gray-50 grid grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-sm text-gray-600">Total Views</div>
+                        <div className="text-2xl font-bold">
+                          {test.variants.reduce((sum, v) => sum + v.metrics.views, 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-gray-600">Impressions</div>
+                        <div className="text-2xl font-bold">
+                          {test.variants.reduce((sum, v) => sum + v.metrics.impressions, 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-gray-600">CTR</div>
+                        <div className="text-2xl font-bold">
+                          {(test.variants.reduce((sum, v) => sum + v.metrics.ctr, 0) / test.variants.length).toFixed(1)}%
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-gray-600">Avg Duration</div>
+                        <div className="text-2xl font-bold">
+                          {Math.floor(test.variants.reduce((sum, v) => sum + v.metrics.avgDuration, 0) / test.variants.length / 60)}:{(test.variants.reduce((sum, v) => sum + v.metrics.avgDuration, 0) / test.variants.length % 60).toFixed(0).padStart(2, '0')}
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-                
-                {createTitles.length < 5 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCreateTitles([...createTitles, ''])}
-                    className="mt-3"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Title
-                  </Button>
+
+                    {/* Title Variants */}
+                    <div className="p-6">
+                      <h4 className="font-semibold mb-4">Title Performance</h4>
+                      <div className="space-y-3">
+                        {test.variants.map((variant, index) => (
+                          <div
+                            key={variant.id}
+                            className={`p-4 rounded-lg border ${
+                              index === test.currentVariantIndex
+                                ? 'border-[#5865F2] bg-blue-50'
+                                : 'border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                {index === test.currentVariantIndex && (
+                                  <span className="inline-block px-2 py-1 text-xs font-semibold text-white bg-[#5865F2] rounded mb-2">
+                                    ACTIVE
+                                  </span>
+                                )}
+                                <p className="font-medium">{variant.title}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Views: </span>
+                                <span className="font-semibold">{variant.metrics.views.toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">CTR: </span>
+                                <span className="font-semibold">{variant.metrics.ctr.toFixed(1)}%</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Impressions: </span>
+                                <span className="font-semibold">{variant.metrics.impressions.toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Avg Duration: </span>
+                                <span className="font-semibold">{Math.floor(variant.metrics.avgDuration / 60)}:{(variant.metrics.avgDuration % 60).toFixed(0).padStart(2, '0')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Next Rotation Timer */}
+                    <div className="p-6 bg-gradient-to-r from-[#5865F2] to-[#7C3AED] text-white">
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold">Next Title Rotation</div>
+                        <CountdownTimer targetTime={test.nextRotationTime} />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="p-4 bg-gray-50 border-t flex justify-end space-x-3">
+                      <Button variant="outline" size="sm">Pause Test</Button>
+                      <Button variant="outline" size="sm">Edit Variants</Button>
+                      <Button variant="outline" size="sm">Complete Test</Button>
+                      <Button size="sm" className="bg-[#5865F2] hover:bg-[#4752C4]">
+                        View Full Report
+                      </Button>
+                    </div>
+                  </div>
                 )}
-              </div>
-            )}
-
-            {/* Test Configuration */}
-            {selectedVideo && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
-                  <Select value={createInterval} onValueChange={setCreateInterval}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                      <SelectItem value="480">8 hours</SelectItem>
-                      <SelectItem value="720">12 hours</SelectItem>
-                      <SelectItem value="1440">24 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Winner Metric</Label>
-                  <Select value={createWinnerMetric} onValueChange={setCreateWinnerMetric}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ctr">Highest CTR</SelectItem>
-                      <SelectItem value="views">Highest Views</SelectItem>
-                      <SelectItem value="combined">Combined Metrics</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowCreateTest(false);
-                  setSelectedVideo(null);
-                  setCreateTitles(['', '']);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!selectedVideo || createTitles.filter(t => t.trim()).length < 2) {
-                    toast({
-                      title: "Validation Error",
-                      description: "Please select a video and enter at least 2 titles",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  
-                  createTestMutation.mutate({
-                    videoId: selectedVideo.id,
-                    videoTitle: selectedVideo.title,
-                    titles: createTitles.filter(t => t.trim()),
-                    rotationIntervalMinutes: parseInt(createInterval),
-                    winnerDeterminationMethod: createWinnerMetric,
-                    startDate: createStartDate || null,
-                    endDate: createEndDate || null,
-                  });
-                }}
-                disabled={!selectedVideo || createTitles.filter(t => t.trim()).length < 2 || createTestMutation.isPending}
-              >
-                {createTestMutation.isPending ? 'Creating...' : 'Create Test'}
-              </Button>
-            </div>
+              </Card>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        ) : (
+          <Card className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No active tests</h3>
+            <p className="text-gray-500 mb-4">Create your first A/B test to start optimizing your video titles</p>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#5865F2] hover:bg-[#4752C4]"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Test
+            </Button>
+          </Card>
+        )}
+      </main>
 
-      {/* Add keyframes for animations */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: .5; }
-        }
-      `}</style>
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-[#5865F2] to-[#7C3AED] text-white rounded-full px-6 py-3 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-shadow"
+      >
+        <Plus className="w-5 h-5" />
+        <span>Launch New Test</span>
+      </button>
+
+      {/* Create Test Modal */}
+      {showCreateModal && (
+        <CreateTestModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            queryClient.invalidateQueries({ queryKey: ['/api/tests/active'] });
+          }}
+        />
+      )}
     </div>
   );
 }
 
-// Proper React Error Boundary wrapper
-export default function Dashboard() {
-  return (
-    <ErrorBoundary>
-      <DashboardContent />
-    </ErrorBoundary>
-  );
+// Countdown Timer Component
+function CountdownTimer({ targetTime }: { targetTime: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const target = new Date(targetTime).getTime();
+      const difference = target - now;
+
+      if (difference > 0) {
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      } else {
+        setTimeLeft('Rotating...');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [targetTime]);
+
+  return <div className="text-2xl font-bold font-mono">{timeLeft}</div>;
 }
