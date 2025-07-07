@@ -36,15 +36,14 @@ function DashboardContent() {
       window.history.replaceState({}, '', url.pathname);
     }
     
-    queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
   }, []);
 
   // Moved below to fix reference issue
 
   // Simplified queries to prevent crashes
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
-    enabled: !!localStorage.getItem('sessionToken'),
+    queryKey: ['/api/auth/user'],
     retry: false,
   });
 
