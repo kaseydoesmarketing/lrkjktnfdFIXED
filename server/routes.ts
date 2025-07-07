@@ -581,14 +581,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             nextRotationTime = nextRotation.toISOString();
           }
           
-          // Get the current video info
-          const videoInfo = await youtubeService.getVideoInfo(test.videoId, user.id);
-          
           return {
             id: test.id,
             videoId: test.videoId,
-            videoTitle: videoInfo?.title || test.videoTitle || 'Unknown Video',
-            thumbnailUrl: videoInfo?.thumbnailUrl || `https://img.youtube.com/vi/${test.videoId}/hqdefault.jpg`,
+            videoTitle: test.videoTitle || 'Unknown Video',
+            thumbnailUrl: `https://img.youtube.com/vi/${test.videoId}/hqdefault.jpg`,
             status: test.status,
             rotationInterval: test.rotationIntervalMinutes || 60,
             variants,

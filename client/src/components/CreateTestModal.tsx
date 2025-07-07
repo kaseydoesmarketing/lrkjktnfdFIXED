@@ -185,7 +185,7 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
             </TabsList>
             
             <TabsContent value="select" className="mt-4">
-              <VideoSelector 
+              <FuturisticVideoSelector 
                 onSelectVideo={handleVideoSelect}
                 selectedVideoId={selectedVideo?.id}
               />
