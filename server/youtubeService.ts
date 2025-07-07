@@ -25,24 +25,15 @@ export class YouTubeService {
       throw new Error('User not found');
     }
 
-    // Try to get tokens from accounts table first (new approach)
+    // Get tokens from accounts table (exclusive source of truth)
     const account = await storage.getAccountByUserId(userId, 'google');
     
-    let accessToken: string;
-    let refreshToken: string;
-    
-    if (account && account.accessToken && account.refreshToken) {
-      // Use tokens from accounts table (preferred)
-      accessToken = account.accessToken;
-      refreshToken = account.refreshToken;
-    } else if (user.accessToken && user.refreshToken) {
-      // Fall back to user table tokens if they exist (legacy)
-      const { authService } = await import('./auth');
-      accessToken = authService.decryptToken(user.accessToken);
-      refreshToken = authService.decryptToken(user.refreshToken);
-    } else {
+    if (!account || !account.accessToken || !account.refreshToken) {
       throw new Error('User account missing OAuth tokens - re-authentication required');
     }
+    
+    const accessToken = account.accessToken;
+    const refreshToken = account.refreshToken;
 
     try {
       // Try the operation with current access token
@@ -56,25 +47,12 @@ export class YouTubeService {
           // Refresh the access token
           const refreshedTokens = await googleAuthService.refreshAccessToken(refreshToken);
           
-          // Update tokens in the appropriate location
-          if (account) {
-            // Update account table (preferred)
-            await storage.updateAccountTokens(account.id, {
-              accessToken: refreshedTokens.access_token!,
-              refreshToken: refreshedTokens.refresh_token || refreshToken,
-              expiresAt: refreshedTokens.expiry_date || null
-            });
-          } else if (user.accessToken) {
-            // Update user table (legacy)
-            const { authService } = await import('./auth');
-            const encryptedAccessToken = authService.encryptToken(refreshedTokens.access_token!);
-            const encryptedRefreshToken = refreshedTokens.refresh_token ? authService.encryptToken(refreshedTokens.refresh_token) : refreshToken;
-            
-            await storage.updateUser(userId, {
-              accessToken: encryptedAccessToken,
-              refreshToken: encryptedRefreshToken
-            });
-          }
+          // Update tokens in accounts table
+          await storage.updateAccountTokens(account.id, {
+            accessToken: refreshedTokens.access_token!,
+            refreshToken: refreshedTokens.refresh_token || refreshToken,
+            expiresAt: refreshedTokens.expiry_date || null
+          });
           
           
           // Retry the operation with fresh access token
