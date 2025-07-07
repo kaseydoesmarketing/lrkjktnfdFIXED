@@ -528,6 +528,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get active tests for dashboard
+  app.get("/api/tests/active", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user!;
+      console.log('📊 [/api/tests/active] Fetching active tests for user:', user.id, user.email);
+      
+      const tests = await storage.getTestsByUserId(user.id);
+      const activeTests = tests.filter(test => test.status === 'active');
+      console.log('✅ [/api/tests/active] Found active tests:', activeTests.length);
+      
+      // Get titles and analytics for each active test
+      const testsWithData = await Promise.all(
+        activeTests.map(async (test) => {
+          const titles = await storage.getTitlesByTestId(test.id);
+          console.log(`📝 [/api/tests/active] Test ${test.id} has ${titles.length} titles`);
+          
+          // Get analytics for each title
+          const variants = await Promise.all(
+            titles.map(async (title) => {
+              const analytics = await storage.getLatestAnalytics(test.id, title.id);
+              return {
+                id: title.id,
+                title: title.title,
+                metrics: {
+                  views: analytics?.views || 0,
+                  impressions: analytics?.impressions || 0,
+                  ctr: analytics?.ctr || 0,
+                  avgDuration: analytics?.averageViewDuration || 0,
+                },
+              };
+            })
+          );
+          
+          // Calculate next rotation time
+          let nextRotationTime = '';
+          if (test.lastRotatedAt) {
+            const lastRotation = new Date(test.lastRotatedAt);
+            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+            const nextRotation = new Date(lastRotation.getTime() + intervalMs);
+            nextRotationTime = nextRotation.toISOString();
+          } else if (test.createdAt) {
+            // If no rotation yet, use creation time + interval
+            const created = new Date(test.createdAt);
+            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+            const nextRotation = new Date(created.getTime() + intervalMs);
+            nextRotationTime = nextRotation.toISOString();
+          }
+          
+          // Get the current video info
+          const videoInfo = await youtubeService.getVideoInfo(test.videoId, user.id);
+          
+          return {
+            id: test.id,
+            videoId: test.videoId,
+            videoTitle: videoInfo?.title || test.videoTitle || 'Unknown Video',
+            thumbnailUrl: videoInfo?.thumbnailUrl || `https://img.youtube.com/vi/${test.videoId}/hqdefault.jpg`,
+            status: test.status,
+            rotationInterval: test.rotationIntervalMinutes || 60,
+            variants,
+            currentVariantIndex: test.currentTitleIndex || 0,
+            nextRotationTime,
+            createdAt: test.createdAt,
+          };
+        }),
+      );
+
+      console.log('🎯 [/api/tests/active] Returning active tests with data:', testsWithData.length);
+      res.json(testsWithData);
+    } catch (error) {
+      console.error('❌ [/api/tests/active] Error:', error);
+      res.status(500).json({ error: "Failed to fetch active tests" });
+    }
+  });
+
   app.post("/api/tests", requireAuth, async (req: Request, res: Response) => {
     try {
       // Validate input with comprehensive schema
