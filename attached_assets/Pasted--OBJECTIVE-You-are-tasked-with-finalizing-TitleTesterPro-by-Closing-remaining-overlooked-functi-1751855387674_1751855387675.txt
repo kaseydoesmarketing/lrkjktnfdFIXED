@@ -1,0 +1,87 @@
+🎯 OBJECTIVE
+You are tasked with finalizing TitleTesterPro by:
+✅ Closing remaining overlooked functionality gaps.
+✅ Adding the ability to edit active campaigns (including intervals) from the dashboard.
+✅ Verifying — with proof — that TitleTesterPro is accurately collecting YouTube API & Analytics data and is no longer failing at 100%.
+
+🔍 REQUIRED DELIVERABLES
+🔷 1️⃣ Editable Active Campaigns
+Currently, active campaigns are locked to the interval set at creation (e.g., 1 hour). This is unacceptable for a live product.
+You MUST:
+
+Add functionality to allow editing of:
+
+Interval time (e.g., change from 60 → 30 → 15 minutes).
+
+Titles in the rotation (if required).
+
+Ensure the updated interval applies immediately to the scheduler & persists.
+
+Ensure updated campaigns do NOT break logging, DB schema, or dashboard display.
+
+Update frontend/dashboard to support editing:
+
+Provide clear UX: “Edit Interval” & “Save Changes.”
+
+Validate & sanitize user input.
+
+Show proof: screenshot/video of editing an active campaign & observing new interval reflected in DB & logs.
+
+🔷 2️⃣ API Data Verification
+YouTube Data & Analytics APIs are the core of this product. You MUST:
+
+Re-test both APIs end-to-end.
+
+Confirm that Analytics API v2 no longer fails at 100% error rate.
+
+Show actual metrics returned:
+
+views
+
+estimatedMinutesWatched
+
+averageViewDuration
+
+subscribersGained
+
+Prove that the data is being written to the DB & surfaced in the dashboard.
+
+Run GCP monitoring → confirm >95% success on /TargetedQueriesService.Query.
+
+Show proof:
+✅ Sample API response payload with real data rows.
+✅ DB rows showing the data inserted.
+✅ GCP metrics screenshot.
+
+🔷 3️⃣ Final QA on Overlooked Areas
+From prior audits, also validate & deliver proof of:
+✅ OAuth token refresh flow (does NOT break after expiry — refreshes properly).
+✅ Brand Account support (ensure correct channelId even for Brand accounts).
+✅ Test data hygiene (DB does NOT contain old/junk users/tests/logs).
+✅ Frontend responsiveness & graceful fallback when no data yet.
+✅ Quota & rate limit safety — demonstrate no risk of hitting GCP limits.
+
+📄 RULES
+⚠️ Do NOT assume — VERIFY everything.
+⚠️ Do NOT stop until you can show all deliverables above with clear proof.
+⚠️ Do NOT break existing functionality while adding editability.
+⚠️ DO provide:
+
+Screenshot/video of editable campaign working live.
+
+API response log proving Analytics API is returning valid data.
+
+DB queries proving rotations + metrics logged properly.
+
+GCP metrics screenshot showing >95% success rate.
+
+Any updated code snippets or schema changes.
+
+📄 SUMMARY OF EXPECTED OUTCOMES
+✅ Active campaigns can be edited mid-flight (interval & optionally titles).
+✅ Analytics & Data APIs are working at >95% success rate and logging accurate metrics.
+✅ Dashboard reflects correct data & intervals.
+✅ DB & API flow is stable, clean, and production-ready.
+✅ No critical overlooked issues remain.
+
+👊 Now execute and deliver full proof for ALL points above. Do NOT come back with partial work or questions — finish it fully and deliver evidence.

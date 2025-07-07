@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { Bell, Play, Plus, User, Clock, ChevronRight, RotateCcw, Eye, MousePointer, TrendingUp, TestTube, ChevronLeft, Edit2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 function DashboardContent() {
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [editingTest, setEditingTest] = useState<any>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editInterval, setEditInterval] = useState('60');
+  const [editTitles, setEditTitles] = useState<string[]>([]);
+  const { toast } = useToast();
 
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
@@ -71,6 +82,78 @@ function DashboardContent() {
 
   const handleNextTitle = () => {
     setCurrentTitleIndex((prev) => (prev < activeTitles.length - 3 ? prev + 1 : prev));
+  };
+
+  // Update test configuration mutation
+  const updateTestMutation = useMutation({
+    mutationFn: async (data: { testId: string; rotationIntervalMinutes?: number; titles?: string[] }) => {
+      const response = await apiRequest('PUT', `/api/tests/${data.testId}/config`, {
+        rotationIntervalMinutes: data.rotationIntervalMinutes,
+        titles: data.titles,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      toast({
+        title: 'Success',
+        description: 'Test configuration updated successfully!',
+      });
+      setEditModalOpen(false);
+      setEditingTest(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update test configuration',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleEditTest = (test: any) => {
+    setEditingTest(test);
+    setEditInterval(test.rotationIntervalMinutes?.toString() || '60');
+    setEditTitles(test.titles || []);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingTest) return;
+
+    const validTitles = editTitles.filter(title => title.trim() !== '');
+    if (validTitles.length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Please enter at least 2 title variants',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    updateTestMutation.mutate({
+      testId: editingTest.id,
+      rotationIntervalMinutes: parseInt(editInterval),
+      titles: validTitles,
+    });
+  };
+
+  const addEditTitle = () => {
+    if (editTitles.length < 5) {
+      setEditTitles([...editTitles, '']);
+    }
+  };
+
+  const removeEditTitle = (index: number) => {
+    if (editTitles.length > 2) {
+      setEditTitles(editTitles.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateEditTitle = (index: number, value: string) => {
+    const newTitles = [...editTitles];
+    newTitles[index] = value;
+    setEditTitles(newTitles);
   };
 
   // Fetch analytics for the selected test (for demo, use first active test)
@@ -310,9 +393,38 @@ function DashboardContent() {
             <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827' }}>
               This Diddy Story Proves Cancel Culture is a Lie
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-              <RotateCcw style={{ width: '16px', height: '16px' }} />
-              <span>10 min Rotation</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                <RotateCcw style={{ width: '16px', height: '16px' }} />
+                <span>{activeTests[0]?.rotationIntervalMinutes || 60} min Rotation</span>
+              </div>
+              <button
+                onClick={() => handleEditTest(activeTests[0])}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.25rem 0.75rem',
+                  fontSize: '0.875rem',
+                  color: '#2563eb',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #2563eb',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#2563eb';
+                }}
+              >
+                <Edit2 style={{ width: '14px', height: '14px' }} />
+                Edit Test
+              </button>
             </div>
           </div>
 
@@ -426,6 +538,93 @@ function DashboardContent() {
           </div>
         </div>
       </div>
+
+      {/* Edit Test Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Test Configuration</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Rotation Interval */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
+              <Select value={editInterval} onValueChange={setEditInterval}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 minutes</SelectItem>
+                  <SelectItem value="30">30 minutes</SelectItem>
+                  <SelectItem value="60">1 hour</SelectItem>
+                  <SelectItem value="120">2 hours</SelectItem>
+                  <SelectItem value="240">4 hours</SelectItem>
+                  <SelectItem value="480">8 hours</SelectItem>
+                  <SelectItem value="720">12 hours</SelectItem>
+                  <SelectItem value="1440">24 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Title Variants */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Title Variants</Label>
+              <div className="space-y-3">
+                {editTitles.map((title, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={title}
+                      onChange={(e) => updateEditTitle(index, e.target.value)}
+                      placeholder={`Title ${index + 1}`}
+                      className="flex-1"
+                    />
+                    {editTitles.length > 2 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeEditTitle(index)}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              {editTitles.length < 5 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addEditTitle}
+                  className="mt-3"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Title
+                </Button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setEditModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={updateTestMutation.isPending}
+              >
+                {updateTestMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add keyframes for animations */}
       <style>{`

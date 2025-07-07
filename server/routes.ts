@@ -606,6 +606,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Update test configuration (interval and titles)
+  app.put(
+    "/api/tests/:testId/config",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { testId } = req.params;
+        const user = req.user!;
+
+        // Verify the test belongs to the user
+        const test = await storage.getTest(testId);
+        if (!test) {
+          return res.status(404).json({ error: "Test not found" });
+        }
+
+        if (test.userId !== user.id) {
+          return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        // Validate input
+        const updateSchema = z.object({
+          rotationIntervalMinutes: z.number().min(15).max(10080).optional(), // 15 minutes to 1 week
+          titles: z.array(z.string().min(1).max(200)).min(2).max(5).optional(),
+        });
+
+        const validationResult = updateSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          return res.status(400).json({
+            error: "Invalid input",
+            details: validationResult.error.errors,
+          });
+        }
+
+        const { rotationIntervalMinutes, titles } = validationResult.data;
+
+        // Update test interval if provided
+        if (rotationIntervalMinutes !== undefined) {
+          await storage.updateTest(testId, { rotationIntervalMinutes });
+
+          // Reschedule rotation with new interval if test is active
+          if (test.status === "active") {
+            scheduler.cancelJob(`rotation-${testId}`);
+            scheduler.scheduleRotation(testId, 0, rotationIntervalMinutes);
+          }
+        }
+
+        // Update titles if provided
+        if (titles) {
+          // Delete existing titles
+          await storage.deleteTitlesByTestId(testId);
+
+          // Create new titles
+          for (let i = 0; i < titles.length; i++) {
+            await storage.createTitle({
+              testId,
+              title: titles[i],
+              order: i,
+            });
+          }
+        }
+
+        // Get updated test with titles
+        const updatedTest = await storage.getTest(testId);
+        const updatedTitles = await storage.getTitlesByTestId(testId);
+
+        res.json({
+          ...updatedTest,
+          titles: updatedTitles.map(t => t.title),
+        });
+      } catch (error) {
+        console.error("Error updating test config:", error);
+        res.status(500).json({ error: "Failed to update test configuration" });
+      }
+    },
+  );
+
   app.delete(
     "/api/tests/:testId",
     requireAuth,
