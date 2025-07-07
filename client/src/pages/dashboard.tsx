@@ -29,6 +29,37 @@ function DashboardContent() {
   const [createEndDate, setCreateEndDate] = useState('');
   const { toast } = useToast();
 
+  // Fetch videos for create test modal
+  const { data: videos = [], isLoading: videosLoading } = useQuery({
+    queryKey: ['/api/videos/recent'],
+    enabled: showCreateTest,
+  });
+
+  // Create test mutation
+  const createTestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('POST', '/api/tests', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      setShowCreateTest(false);
+      setSelectedVideo(null);
+      setCreateTitles(['', '']);
+      toast({
+        title: "Test created successfully",
+        description: "Your A/B test is now active and will start rotating titles.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create test",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Check for successful OAuth login and refresh auth state
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -374,7 +405,9 @@ function DashboardContent() {
             <option>Secondary Channel</option>
           </select>
           
-          <button style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <button 
+            onClick={() => setShowCreateTest(true)}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
             <Plus style={{ width: '16px', height: '16px' }} />
             New Test
           </button>
@@ -714,6 +747,186 @@ function DashboardContent() {
                 disabled={updateTestMutation.isPending}
               >
                 {updateTestMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Test Modal */}
+      <Dialog open={showCreateTest} onOpenChange={setShowCreateTest}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New A/B Test</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Video Selection */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Select Video</Label>
+              {videosLoading ? (
+                <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-200 rounded-lg">
+                  <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2" />
+                    <p className="text-gray-600">Loading your videos...</p>
+                  </div>
+                </div>
+              ) : videos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                  {videos.map((video: any) => (
+                    <div
+                      key={video.id}
+                      onClick={() => setSelectedVideo(video)}
+                      className={`cursor-pointer border rounded-lg p-3 transition-all ${
+                        selectedVideo?.id === video.id 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <img 
+                          src={video.thumbnailUrl} 
+                          alt={video.title}
+                          className="w-24 h-16 object-cover rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">{video.title}</h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {Number(video.viewCount).toLocaleString()} views • {video.duration}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 border-2 border-dashed border-gray-200 rounded-lg">
+                  <p className="text-gray-600">No videos found. Please upload videos to your YouTube channel.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Title Variants */}
+            {selectedVideo && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Title Variants</Label>
+                <p className="text-sm text-gray-600 mb-3">Enter 2-5 title variants to test</p>
+                <div className="space-y-3">
+                  {createTitles.map((title, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        value={title}
+                        onChange={(e) => {
+                          const newTitles = [...createTitles];
+                          newTitles[index] = e.target.value;
+                          setCreateTitles(newTitles);
+                        }}
+                        placeholder={`Title ${index + 1}`}
+                        className="flex-1"
+                      />
+                      {createTitles.length > 2 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCreateTitles(createTitles.filter((_, i) => i !== index));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {createTitles.length < 5 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCreateTitles([...createTitles, ''])}
+                    className="mt-3"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Title
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Test Configuration */}
+            {selectedVideo && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Rotation Interval</Label>
+                  <Select value={createInterval} onValueChange={setCreateInterval}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                      <SelectItem value="240">4 hours</SelectItem>
+                      <SelectItem value="480">8 hours</SelectItem>
+                      <SelectItem value="720">12 hours</SelectItem>
+                      <SelectItem value="1440">24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Winner Metric</Label>
+                  <Select value={createWinnerMetric} onValueChange={setCreateWinnerMetric}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ctr">Highest CTR</SelectItem>
+                      <SelectItem value="views">Highest Views</SelectItem>
+                      <SelectItem value="combined">Combined Metrics</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateTest(false);
+                  setSelectedVideo(null);
+                  setCreateTitles(['', '']);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!selectedVideo || createTitles.filter(t => t.trim()).length < 2) {
+                    toast({
+                      title: "Validation Error",
+                      description: "Please select a video and enter at least 2 titles",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  createTestMutation.mutate({
+                    videoId: selectedVideo.id,
+                    videoTitle: selectedVideo.title,
+                    titles: createTitles.filter(t => t.trim()),
+                    rotationIntervalMinutes: parseInt(createInterval),
+                    winnerDeterminationMethod: createWinnerMetric,
+                    startDate: createStartDate || null,
+                    endDate: createEndDate || null,
+                  });
+                }}
+                disabled={!selectedVideo || createTitles.filter(t => t.trim()).length < 2 || createTestMutation.isPending}
+              >
+                {createTestMutation.isPending ? 'Creating...' : 'Create Test'}
               </Button>
             </div>
           </div>
