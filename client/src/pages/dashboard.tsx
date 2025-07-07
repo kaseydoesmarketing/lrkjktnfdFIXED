@@ -39,7 +39,6 @@ interface Test {
 }
 
 export default function Dashboard() {
-  const [navigate] = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
