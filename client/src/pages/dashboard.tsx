@@ -415,15 +415,10 @@ export default function Dashboard() {
       </button>
 
       {/* Create Test Modal */}
-      {showCreateModal && (
-        <CreateTestModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            setShowCreateModal(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/tests/active'] });
-          }}
-        />
-      )}
+      <CreateTestModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
     </div>
   );
 }
