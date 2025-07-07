@@ -215,20 +215,32 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
   ];
 
   useEffect(() => {
-    // Simulate loading and fetching videos with staged AI analysis
+    // Reset and show loading state whenever component mounts
     setIsLoading(true);
+    setVideos([]); // Clear videos to ensure fresh loading experience
     
-    // Stage 1: Initial video analysis
-    setTimeout(() => {
-      // Stage 2: AI insights generation
-      setTimeout(() => {
-        // Stage 3: Optimization recommendations
-        setTimeout(() => {
+    // Simulate loading and fetching videos with staged AI analysis
+    const timer1 = setTimeout(() => {
+      // Stage 1: Initial video analysis
+      const timer2 = setTimeout(() => {
+        // Stage 2: AI insights generation
+        const timer3 = setTimeout(() => {
+          // Stage 3: Optimization recommendations
           setVideos(demoVideos);
           setIsLoading(false);
-        }, 800);
-      }, 1000);
-    }, 1200);
+        }, 400);
+        
+        return () => clearTimeout(timer3);
+      }, 600);
+      
+      return () => clearTimeout(timer2);
+    }, 800);
+    
+    // Cleanup function to clear timers if component unmounts
+    return () => {
+      clearTimeout(timer1);
+      setIsLoading(false);
+    };
   }, []);
 
   const generateAIInsights = async (videoId: string) => {
