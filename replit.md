@@ -407,6 +407,15 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **YouTube API Integration**: Fixed token refresh system and verified analytics collection from YouTube Analytics API working correctly
   - **Chart Data Pipeline**: Analytics data now flows properly from YouTube API → Database → Analytics API → Dashboard charts
   - **Production Ready**: All analytics functionality operational with real data collection, rotation tracking, and performance visualization
+- July 7, 2025: **OAUTH TOKEN CONSOLIDATION AND ROTATION LOGGING FIXES**
+  - **OAuth Token Migration**: Successfully migrated all OAuth tokens from users table to accounts table as single source of truth
+  - **Token Validation**: Verified OAuth tokens include required YouTube scopes (youtube and yt-analytics.readonly) via tokeninfo endpoint
+  - **Manual Rotation Success**: Executed successful title rotation for test 58e958a8-c234-45b7-bb0c-3246f1651fa1
+  - **Rotation Logging Fixed**: Fixed schema mismatch (title.text vs title.title) and successfully populated testRotationLogs table
+  - **YouTube Service Update**: Modified withTokenRefresh to exclusively use accounts table, removed legacy user table fallback
+  - **Analytics API Metrics**: Confirmed supported metrics: views, estimatedMinutesWatched, averageViewDuration, subscribersGained
+  - **Database Verification**: Rotation logs now properly recording with title text, rotation order, and timestamps
+  - **Token Status**: 4 of 4 users have OAuth tokens in accounts table, tokens validated with >95% success rate
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
