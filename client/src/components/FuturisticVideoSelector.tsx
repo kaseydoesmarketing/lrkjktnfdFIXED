@@ -220,27 +220,13 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
     setVideos([]); // Clear videos to ensure fresh loading experience
     
     // Simulate loading and fetching videos with staged AI analysis
-    const timer1 = setTimeout(() => {
-      // Stage 1: Initial video analysis
-      const timer2 = setTimeout(() => {
-        // Stage 2: AI insights generation
-        const timer3 = setTimeout(() => {
-          // Stage 3: Optimization recommendations
-          setVideos(demoVideos);
-          setIsLoading(false);
-        }, 400);
-        
-        return () => clearTimeout(timer3);
-      }, 600);
-      
-      return () => clearTimeout(timer2);
-    }, 800);
-    
-    // Cleanup function to clear timers if component unmounts
-    return () => {
-      clearTimeout(timer1);
+    const loadVideos = async () => {
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      setVideos(demoVideos);
       setIsLoading(false);
     };
+    
+    loadVideos();
   }, []);
 
   const generateAIInsights = async (videoId: string) => {

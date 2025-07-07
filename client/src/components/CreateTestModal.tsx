@@ -162,7 +162,7 @@ export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-screen overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-screen overflow-y-auto bg-white">
         <DialogHeader>
           <DialogTitle>Create New A/B Test</DialogTitle>
           <p className="text-sm text-gray-600">
