@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Bell, Play, Plus, User, TestTube, TrendingUp, MousePointer, Eye } from 'lucide-react';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function SimpleDashboardContent() {
   const [isReady, setIsReady] = useState(false);

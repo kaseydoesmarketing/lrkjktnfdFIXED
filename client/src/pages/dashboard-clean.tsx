@@ -47,7 +47,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { ErrorBoundary, ChartErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary, { ChartErrorBoundary } from '@/components/ErrorBoundary';
 
 interface User {
   id: string;
