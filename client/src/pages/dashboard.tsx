@@ -20,6 +20,13 @@ function DashboardContent() {
   const [editInterval, setEditInterval] = useState('60');
   const [editTitles, setEditTitles] = useState<string[]>([]);
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
+  const [showCreateTest, setShowCreateTest] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [createTitles, setCreateTitles] = useState(['', '']);
+  const [createInterval, setCreateInterval] = useState('60');
+  const [createWinnerMetric, setCreateWinnerMetric] = useState('ctr');
+  const [createStartDate, setCreateStartDate] = useState('');
+  const [createEndDate, setCreateEndDate] = useState('');
   const { toast } = useToast();
 
   // Check for successful OAuth login and refresh auth state
