@@ -276,7 +276,6 @@ export default function CreateTestModal({ onClose, onSuccess }: { onClose: () =>
               {createTestMutation.isPending ? 'Creating...' : 'Start A/B Test'}
             </Button>
           </div>
-        </form>
       </DialogContent>
     </Dialog>
   );
