@@ -40,9 +40,9 @@ export async function createOAuthTables() {
       console.log('⚠️  Some OAuth columns might already exist');
     }
 
-    // Create ab_tests table if it doesn't exist
+    // Create tests table if it doesn't exist
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS ab_tests (
+      CREATE TABLE IF NOT EXISTS tests (
         id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
         video_id VARCHAR(255) NOT NULL,
@@ -64,7 +64,7 @@ export async function createOAuthTables() {
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS test_results (
         id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-        test_id TEXT REFERENCES ab_tests(id) ON DELETE CASCADE,
+        test_id TEXT REFERENCES tests(id) ON DELETE CASCADE,
         title_variant TEXT NOT NULL,
         views INTEGER DEFAULT 0,
         impressions INTEGER DEFAULT 0,
@@ -79,7 +79,7 @@ export async function createOAuthTables() {
     // Create indexes for better performance
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_ab_tests_user_id ON ab_tests(user_id);`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_tests_user_id ON tests(user_id);`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_test_results_test_id ON test_results(test_id);`);
     
     console.log('✅ All OAuth tables and indexes created successfully');

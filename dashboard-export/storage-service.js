@@ -345,7 +345,7 @@ class StorageService {
 
       // Create test
       const testQuery = `
-        INSERT INTO ab_tests (
+        INSERT INTO tests (
           user_id, video_id, test_name, status, rotation_interval_minutes,
           winner_metric, start_date, end_date
         )
@@ -377,7 +377,7 @@ class StorageService {
   async getTest(testId) {
     const client = await this.pool.connect();
     try {
-      const query = 'SELECT * FROM ab_tests WHERE id = $1';
+      const query = 'SELECT * FROM tests WHERE id = $1';
       const result = await client.query(query, [testId]);
       return result.rows[0] || null;
     } finally {
@@ -390,7 +390,7 @@ class StorageService {
     try {
       const query = `
         SELECT t.*, v.youtube_video_id, v.title as video_title, v.thumbnail_url
-        FROM ab_tests t
+        FROM tests t
         JOIN youtube_videos v ON t.video_id = v.id
         WHERE t.user_id = $1
         ORDER BY t.created_at DESC
@@ -410,7 +410,7 @@ class StorageService {
         .join(', ');
       
       const query = `
-        UPDATE ab_tests 
+        UPDATE tests 
         SET ${setClause}, updated_at = NOW()
         WHERE id = $1 
         RETURNING *
@@ -427,7 +427,7 @@ class StorageService {
   async deleteTest(testId) {
     const client = await this.pool.connect();
     try {
-      const query = 'DELETE FROM ab_tests WHERE id = $1';
+      const query = 'DELETE FROM tests WHERE id = $1';
       await client.query(query, [testId]);
       return true;
     } finally {
@@ -838,8 +838,8 @@ class StorageService {
       const queries = [
         'SELECT COUNT(*) as total_users FROM users',
         'SELECT COUNT(*) as active_subscriptions FROM users WHERE subscription_status = \'active\'',
-        'SELECT COUNT(*) as active_tests FROM ab_tests WHERE status = \'active\'',
-        'SELECT COUNT(*) as total_tests FROM ab_tests',
+        'SELECT COUNT(*) as active_tests FROM tests WHERE status = \'active\'',
+        'SELECT COUNT(*) as total_tests FROM tests',
         'SELECT COUNT(*) as total_videos FROM youtube_videos'
       ];
 

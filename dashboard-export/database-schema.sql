@@ -192,7 +192,7 @@ CREATE TABLE youtube_analytics (
 -- ========================================
 
 -- A/B Tests
-CREATE TABLE ab_tests (
+CREATE TABLE tests (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     video_id UUID NOT NULL REFERENCES youtube_videos(id) ON DELETE CASCADE,
@@ -225,7 +225,7 @@ CREATE TABLE ab_tests (
 -- Title variants for A/B tests
 CREATE TABLE title_variants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    test_id UUID NOT NULL REFERENCES ab_tests(id) ON DELETE CASCADE,
+    test_id UUID NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
     
     -- Title details
     text TEXT NOT NULL,
@@ -256,7 +256,7 @@ CREATE TABLE title_variants (
 CREATE TABLE title_performance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title_id UUID NOT NULL REFERENCES title_variants(id) ON DELETE CASCADE,
-    test_id UUID NOT NULL REFERENCES ab_tests(id) ON DELETE CASCADE,
+    test_id UUID NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
     
     -- Performance metrics for this rotation period
     views BIGINT DEFAULT 0,
@@ -280,7 +280,7 @@ CREATE TABLE title_performance (
 -- Title rotation history
 CREATE TABLE title_rotations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    test_id UUID NOT NULL REFERENCES ab_tests(id) ON DELETE CASCADE,
+    test_id UUID NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
     title_id UUID NOT NULL REFERENCES title_variants(id) ON DELETE CASCADE,
     
     -- Rotation details
@@ -392,7 +392,7 @@ SELECT
     COUNT(DISTINCT v.id) as total_videos
     
 FROM users u
-LEFT JOIN ab_tests t ON u.id = t.user_id
+LEFT JOIN tests t ON u.id = t.user_id
 LEFT JOIN title_variants tv ON t.id = tv.test_id
 LEFT JOIN youtube_videos v ON u.id = v.user_id
 GROUP BY u.id, u.name, u.email, u.subscription_tier, u.subscription_status;
@@ -424,7 +424,7 @@ SELECT
     COALESCE(SUM(tv.total_views), 0) as total_test_views,
     COALESCE(AVG(tv.final_ctr), 0) as average_test_ctr
     
-FROM ab_tests t
+FROM tests t
 JOIN youtube_videos v ON t.video_id = v.id
 LEFT JOIN title_variants tv ON t.id = tv.test_id
 LEFT JOIN title_variants active_title ON t.id = active_title.test_id AND active_title.is_active = true
@@ -449,7 +449,7 @@ $$ language 'plpgsql';
 -- Apply updated_at triggers to relevant tables
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_accounts_updated_at BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_tests_updated_at BEFORE UPDATE ON ab_tests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_tests_updated_at BEFORE UPDATE ON tests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_titles_updated_at BEFORE UPDATE ON title_variants FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON background_jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -500,13 +500,13 @@ ON CONFLICT DO NOTHING;
 -- ========================================
 
 -- Composite indexes for common queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tests_user_status_date ON ab_tests(user_id, status, created_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tests_user_status_date ON tests(user_id, status, created_at DESC);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_performance_title_rotation ON title_performance(title_id, rotation_start DESC);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_analytics_user_date ON youtube_analytics(user_id, analytics_date DESC);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payments_user_date ON payment_records(user_id, paid_at DESC);
 
 -- Partial indexes for active records
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_active_tests ON ab_tests(user_id, created_at DESC) WHERE status = 'active';
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_active_tests ON tests(user_id, created_at DESC) WHERE status = 'active';
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_active_titles ON title_variants(test_id) WHERE is_active = true;
 
 -- Full-text search index for video titles and descriptions
@@ -568,7 +568,7 @@ $$ LANGUAGE plpgsql;
 -- ========================================
 
 COMMENT ON TABLE users IS 'Core user accounts with authentication and subscription data';
-COMMENT ON TABLE ab_tests IS 'A/B test configurations and results';
+COMMENT ON TABLE tests IS 'A/B test configurations and results';
 COMMENT ON TABLE title_variants IS 'Individual title variations within each A/B test';
 COMMENT ON TABLE title_performance IS 'Time-series performance data for each title rotation';
 COMMENT ON TABLE youtube_analytics IS 'Historical YouTube analytics data';
