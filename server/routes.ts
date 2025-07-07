@@ -497,12 +497,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tests = await storage.getTestsByUserId(user.id);
       console.log('✅ [/api/tests] Found tests:', tests.length);
       
-      // Get titles for each test
+      // Get titles for each test and calculate next rotation time
       const testsWithTitles = await Promise.all(
         tests.map(async (test) => {
           const titles = await storage.getTitlesByTestId(test.id);
           console.log(`📝 [/api/tests] Test ${test.id} has ${titles.length} titles`);
-          return { ...test, titles };
+          
+          // Calculate next rotation time
+          let nextRotationAt = null;
+          if (test.status === 'active' && test.lastRotatedAt) {
+            const lastRotation = new Date(test.lastRotatedAt);
+            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+            nextRotationAt = new Date(lastRotation.getTime() + intervalMs);
+          } else if (test.status === 'active' && test.createdAt) {
+            // If no rotation yet, use creation time + interval
+            const created = new Date(test.createdAt);
+            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+            nextRotationAt = new Date(created.getTime() + intervalMs);
+          }
+          
+          return { ...test, titles, nextRotationAt };
         }),
       );
 
@@ -748,6 +762,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ error: "Failed to fetch test results" });
       }
     },
+  );
+
+  // Get real-time video metrics (YouTube Data API v3)
+  app.get(
+    "/api/videos/:videoId/realtime",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { videoId } = req.params;
+        const user = req.user!;
+        
+        const metrics = await youtubeService.getRealTimeMetrics(user.id, videoId);
+        res.json(metrics);
+      } catch (error) {
+        console.error('Real-time metrics error:', error);
+        res.status(500).json({ error: 'Failed to fetch real-time metrics' });
+      }
+    }
   );
 
   // Get recent videos from user's channel

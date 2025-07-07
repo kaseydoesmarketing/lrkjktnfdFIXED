@@ -19,6 +19,7 @@ function DashboardContent() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editInterval, setEditInterval] = useState('60');
   const [editTitles, setEditTitles] = useState<string[]>([]);
+  const [countdowns, setCountdowns] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Check for successful OAuth login and refresh auth state
@@ -37,6 +38,35 @@ function DashboardContent() {
     
     queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
   }, []);
+
+  // Countdown timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newCountdowns: Record<string, string> = {};
+      
+      activeTests.forEach((test: any) => {
+        if (test.nextRotationAt) {
+          const now = new Date().getTime();
+          const rotationTime = new Date(test.nextRotationAt).getTime();
+          const difference = rotationTime - now;
+          
+          if (difference > 0) {
+            const hours = Math.floor(difference / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            
+            newCountdowns[test.id] = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            newCountdowns[test.id] = 'Rotating...';
+          }
+        }
+      });
+      
+      setCountdowns(newCountdowns);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [activeTests]);
 
   // Simplified queries to prevent crashes
   const { data: user } = useQuery({
@@ -184,19 +214,27 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Premium Header with Gradient */}
+      <header className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center">
-              <Play className="w-4 h-4 text-white fill-white" />
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+              <Play className="w-5 h-5 text-white fill-white" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">TitleTesterPro Dashboard</h1>
+            <h1 className="text-2xl font-bold">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+                TitleTesterPro
+              </span>
+              <span className="text-gray-400 font-normal ml-2">Dashboard</span>
+            </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Bell className="w-5 h-5 text-gray-500" />
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-600" />
+            <div className="text-sm text-gray-500">
+              <span className="font-medium">{user?.email || 'Creator'}</span>
+            </div>
+            <Bell className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+            <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
@@ -330,9 +368,34 @@ function DashboardContent() {
                   </div>
                   <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
                     {test.titles?.length || 0} title variants • {test.rotationInterval || 60} min rotation
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2"
+                      onClick={() => {
+                        setEditingTest(test);
+                        setEditInterval(test.rotationInterval?.toString() || '60');
+                        setEditTitles(test.titles || []);
+                        setEditModalOpen(true);
+                      }}
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" />
+                      Edit Test
+                    </Button>
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                    Next rotation: {test.nextRotation ? new Date(test.nextRotation).toLocaleString() : 'Not scheduled'}
+                  <div style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: '#6b7280' }}>Next rotation:</span>
+                    <span style={{ 
+                      color: '#dc2626', 
+                      fontWeight: '600', 
+                      fontFamily: 'monospace',
+                      fontSize: '1rem',
+                      backgroundColor: '#fee2e2',
+                      padding: '2px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      {countdowns[test.id] || 'Calculating...'}
+                    </span>
                   </div>
                 </div>
               ))}
