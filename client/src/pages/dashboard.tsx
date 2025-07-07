@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'wouter';
 import {
   Play, Pause, CheckCircle, Plus, Eye, TrendingUp,
   Clock, ChevronDown, ChevronUp, BarChart3, Target
