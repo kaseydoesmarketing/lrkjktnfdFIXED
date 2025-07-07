@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           // Fetch videos using automatic token refresh system
-          const videos = await youtubeService.getChannelVideos(user.id, 50);
+          const videos = await youtubeService.getChannelVideos(user.id, 200);
 
           // Map thumbnail field to thumbnailUrl for frontend consistency
           const videosWithThumbnailUrl = videos.map((video) => ({
