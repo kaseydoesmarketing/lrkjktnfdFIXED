@@ -265,18 +265,3 @@ export default function CreateTestModal({ onClose, onSuccess }: { onClose: () =>
     </div>
   );
 }
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={createTestMutation.isPending}
-            >
-              {createTestMutation.isPending ? 'Creating...' : 'Start A/B Test'}
-            </Button>
-          </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
