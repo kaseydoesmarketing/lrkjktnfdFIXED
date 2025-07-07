@@ -21,7 +21,9 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/auth/user'],
     queryFn: async () => {
+      console.log('Checking authentication...');
       const user = await authService.getCurrentUser();
+      console.log('Auth check result:', user);
       // If no user returned, throw to trigger error state
       if (!user) {
         throw new Error('Not authenticated');
@@ -31,6 +33,8 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  console.log('AuthWrapper state:', { isLoading, error, data });
 
   // Show loading state
   if (isLoading) {
@@ -54,6 +58,10 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  // Log current path for debugging
+  const currentPath = window.location.pathname;
+  console.log('Current path:', currentPath);
+  
   return (
     <ErrorBoundary>
       <Switch>
