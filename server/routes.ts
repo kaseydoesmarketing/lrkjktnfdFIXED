@@ -47,7 +47,6 @@ const generateTitlesValidation = z.object({
 
 import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
-import { google } from "googleapis";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -913,120 +912,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Logout failed" });
     }
   });
-
-  // Get active tests for dashboard with YouTube Analytics integration
-  app.get(
-    "/api/tests/active",
-    requireAuth,
-    async (req: Request, res: Response) => {
-      try {
-        const user = req.user!;
-        const tests = await storage.getTestsByUserId(user.id);
-        const activeTests = tests.filter(test => test.status === 'active');
-        
-        // Return empty array if no active tests
-        if (activeTests.length === 0) {
-          return res.json([]);
-        }
-        
-        // Initialize YouTube Analytics API
-        const youtube = google.youtube('v3');
-        const youtubeAnalytics = google.youtubeAnalytics('v2');
-        
-        // Set up OAuth2Client with user's tokens
-        const oauth2Client = new google.auth.OAuth2();
-        if (user.accessToken && user.refreshToken) {
-          oauth2Client.setCredentials({
-            access_token: user.accessToken,
-            refresh_token: user.refreshToken
-          });
-        }
-        
-        // Get additional data for each test
-        const testsWithDetails = await Promise.all(
-          activeTests.map(async (test) => {
-            const titles = await storage.getTitlesByTestId(test.id);
-            
-            // Calculate date range for analytics
-            const endDate = new Date().toISOString().split('T')[0];
-            const startDate = new Date(test.createdAt).toISOString().split('T')[0];
-            
-            let analyticsData: any = null;
-            
-            // Try to fetch YouTube Analytics data if user has tokens
-            if (user.accessToken && user.refreshToken) {
-              try {
-                const analyticsResponse = await youtubeAnalytics.reports.query({
-                  auth: oauth2Client,
-                  ids: 'channel==MINE',
-                  startDate,
-                  endDate,
-                  metrics: 'views,impressions,impressionClickThroughRate,averageViewDuration',
-                  filters: `video==${test.videoId}`
-                });
-                
-                analyticsData = analyticsResponse.data.rows?.[0] || [0, 0, 0, 0];
-              } catch (analyticsError) {
-                console.error(`Analytics error for test ${test.id}:`, analyticsError);
-                // Continue without analytics data
-              }
-            }
-            
-            // Calculate metrics for each title variant
-            const variants = titles.map((title, index) => {
-              // If we have YouTube Analytics data, distribute it among variants
-              let metrics = {
-                views: 0,
-                impressions: 0,
-                ctr: 0,
-                avgDuration: 0
-              };
-              
-              if (analyticsData) {
-                // Simple distribution: divide by number of titles
-                // In production, you'd track per-title metrics
-                metrics = {
-                  views: Math.floor(analyticsData[0] / titles.length),
-                  impressions: Math.floor(analyticsData[1] / titles.length),
-                  ctr: (analyticsData[2] * 100) || 0,
-                  avgDuration: Math.floor(analyticsData[3]) || 0
-                };
-              }
-              
-              return {
-                id: title.id,
-                title: title.title,
-                metrics
-              };
-            });
-            
-            // Calculate next rotation time
-            const lastRotation = test.lastRotation || test.createdAt;
-            const nextRotationTime = new Date(lastRotation);
-            nextRotationTime.setMinutes(nextRotationTime.getMinutes() + test.rotationIntervalMinutes);
-            
-            return {
-              id: test.id,
-              videoId: test.videoId,
-              videoTitle: test.videoTitle || `Video ${test.videoId}`,
-              thumbnailUrl: test.thumbnailUrl || `https://i.ytimg.com/vi/${test.videoId}/mqdefault.jpg`,
-              status: test.status,
-              rotationInterval: test.rotationIntervalMinutes,
-              variants,
-              currentVariantIndex: test.currentTitleIndex || 0,
-              nextRotationTime: nextRotationTime.toISOString(),
-              createdAt: test.createdAt.toISOString()
-            };
-          })
-        );
-        
-        res.json(testsWithDetails);
-      } catch (error) {
-        console.error('Active tests error:', error);
-        res.status(500).json({ error: 'Failed to fetch active tests' });
-      }
-    }
-  );
 
   // Dashboard stats with real-time data from active tests only
   app.get(

@@ -1,267 +1,376 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { X, Plus, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Video, Calendar } from 'lucide-react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
+import FuturisticVideoSelector from '@/components/FuturisticVideoSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 
-interface Video {
-  id: string;
-  title: string;
-  thumbnail: string;
-  viewCount: number;
-  publishedAt: string;
-  analytics?: {
-    impressions: number;
-    ctr: number;
-  };
+interface CreateTestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function CreateTestModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+export default function CreateTestModal({ isOpen, onClose }: CreateTestModalProps) {
+  const [videoUrl, setVideoUrl] = useState('');
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [rotationInterval, setRotationInterval] = useState('30');
+  const [titles, setTitles] = useState(['', '']);
+  const [winnerMetric, setWinnerMetric] = useState('ctr');
+  const [activeTab, setActiveTab] = useState('select');
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // 7 days from now
   const { toast } = useToast();
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [titleVariants, setTitleVariants] = useState(['', '']);
-  const [rotationInterval, setRotationInterval] = useState(30);
-  const [testDuration, setTestDuration] = useState(24);
-
-  // Fetch user's YouTube videos with analytics
-  const { data: videos = [], isLoading } = useQuery<Video[]>({
-    queryKey: ['/api/youtube/videos-with-analytics'],
-    queryFn: async () => {
-      const response = await fetch('/api/youtube/videos-with-analytics', {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch videos');
-      return response.json();
-    }
-  });
 
   const createTestMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch('/api/tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to create test');
+    mutationFn: async (testData: any) => {
+      const response = await apiRequest('POST', '/api/tests', testData);
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: 'Test created successfully!' });
-      onSuccess();
-    },
-    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
-        title: 'Failed to create test',
-        variant: 'destructive'
+        title: 'Success',
+        description: 'A/B test created successfully!',
       });
-    }
+      handleClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create test',
+        variant: 'destructive',
+      });
+    },
   });
 
-  const handleSubmit = () => {
-    if (!selectedVideo || titleVariants.some(t => !t.trim())) {
-      toast({ 
-        title: 'Please select a video and enter all title variants',
-        variant: 'destructive'
+  const extractVideoId = (url: string) => {
+    const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    let videoId = '';
+    let videoTitle = '';
+    
+    if (activeTab === 'select' && selectedVideo) {
+      videoId = selectedVideo.id;
+      videoTitle = selectedVideo.title;
+    } else if (activeTab === 'manual') {
+      const extractedId = extractVideoId(videoUrl);
+      if (!extractedId) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid YouTube URL',
+          variant: 'destructive',
+        });
+        return;
+      }
+      videoId = extractedId;
+      videoTitle = titles[0] || 'YouTube Video';
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Please select a video or enter a YouTube URL',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const validTitles = titles.filter(title => title.trim() !== '');
+    if (validTitles.length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Please enter at least 2 title variants',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate dates
+    if (endDate <= startDate) {
+      toast({
+        title: 'Error',
+        description: 'End date must be after start date',
+        variant: 'destructive',
       });
       return;
     }
 
     createTestMutation.mutate({
-      videoId: selectedVideo.id,
-      videoTitle: selectedVideo.title,
-      thumbnailUrl: selectedVideo.thumbnail,
-      titles: titleVariants.filter(t => t.trim()),
-      rotationIntervalMinutes: rotationInterval,
-      winnerMetric: 'ctr',
-      testDurationHours: testDuration
+      videoId,
+      videoTitle,
+      titles: validTitles,
+      rotationIntervalMinutes: parseInt(rotationInterval),
+      winnerMetric,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     });
   };
 
+  const handleClose = () => {
+    setVideoUrl('');
+    setSelectedVideo(null);
+    setRotationInterval('30');
+    setTitles(['', '']);
+    setWinnerMetric('ctr');
+    setActiveTab('select');
+    setStartDate(new Date());
+    setEndDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    onClose();
+  };
+
+  const handleVideoSelect = (video: any) => {
+    setSelectedVideo(video);
+    // Pre-populate first title with current video title
+    const newTitles = [...titles];
+    if (newTitles[0] === '') {
+      newTitles[0] = video.title;
+      setTitles(newTitles);
+    }
+  };
+
   const addTitleVariant = () => {
-    if (titleVariants.length < 5) {
-      setTitleVariants([...titleVariants, '']);
+    if (titles.length < 5) {
+      setTitles([...titles, '']);
     }
   };
 
   const removeTitleVariant = (index: number) => {
-    if (titleVariants.length > 2) {
-      setTitleVariants(titleVariants.filter((_, i) => i !== index));
+    if (titles.length > 2) {
+      setTitles(titles.filter((_, i) => i !== index));
     }
   };
 
-  const updateTitleVariant = (index: number, value: string) => {
-    const updated = [...titleVariants];
-    updated[index] = value;
-    setTitleVariants(updated);
+  const updateTitle = (index: number, value: string) => {
+    const newTitles = [...titles];
+    newTitles[index] = value;
+    setTitles(newTitles);
   };
 
-
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-8 py-6 border-b flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Create New A/B Test</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-screen overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New A/B Test</DialogTitle>
+          <p className="text-sm text-gray-600">
+            Select a video from your channel or enter a YouTube URL to start testing titles
+          </p>
+        </DialogHeader>
 
-        {/* Content */}
-        <div className="px-8 py-6 max-h-[calc(90vh-200px)] overflow-y-auto">
-          {/* Video Selection */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4">Select Video</h3>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Video Selection Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="select" className="flex items-center space-x-2">
+                <Video className="w-4 h-4" />
+                <span>Select from Channel</span>
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Enter URL Manually</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="select" className="mt-4">
+              <VideoSelector 
+                onSelectVideo={handleVideoSelect}
+                selectedVideoId={selectedVideo?.id}
+              />
+              {selectedVideo && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Selected:</strong> {selectedVideo.title}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Video ID: {selectedVideo.id}
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="manual" className="mt-4">
+              <div>
+                <Label htmlFor="videoUrl">YouTube Video URL</Label>
+                <Input
+                  id="videoUrl"
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  required={activeTab === 'manual'}
+                />
               </div>
-            ) : videos.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No videos found. Upload videos to your YouTube channel first.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto">
-                {videos.map((video) => (
-                  <div
-                    key={video.id}
-                    onClick={() => setSelectedVideo(video)}
-                    className={`
-                      border-2 rounded-lg p-3 cursor-pointer transition-all
-                      ${selectedVideo?.id === video.id 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                      }
-                    `}
+            </TabsContent>
+          </Tabs>
+
+          {/* Rotation Interval */}
+          <div>
+            <Label>Rotation Interval</Label>
+            <Select value={rotationInterval} onValueChange={setRotationInterval}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+                <SelectItem value="120">2 hours</SelectItem>
+                <SelectItem value="240">4 hours</SelectItem>
+                <SelectItem value="480">8 hours</SelectItem>
+                <SelectItem value="720">12 hours</SelectItem>
+                <SelectItem value="1440">24 hours</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Test Duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
                   >
-                    <img 
-                      src={video.thumbnail} 
-                      alt={video.title}
-                      className="w-full h-24 object-cover rounded mb-2"
-                    />
-                    <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {video.viewCount.toLocaleString()} views
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(startDate, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <input
+                    type="date"
+                    className="w-full p-3 border rounded-md"
+                    value={format(startDate, "yyyy-MM-dd")}
+                    onChange={(e) => setStartDate(new Date(e.target.value))}
+                    min={format(new Date(), "yyyy-MM-dd")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <Label>End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(endDate, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <input
+                    type="date"
+                    className="w-full p-3 border rounded-md"
+                    value={format(endDate, "yyyy-MM-dd")}
+                    onChange={(e) => setEndDate(new Date(e.target.value))}
+                    min={format(new Date(startDate.getTime() + 24 * 60 * 60 * 1000), "yyyy-MM-dd")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-sm text-gray-600 mt-1">
+                No maximum time limit - run tests as long as needed
+              </p>
+            </div>
           </div>
 
           {/* Title Variants */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Title Variants</h3>
-              <Button
-                onClick={addTitleVariant}
-                disabled={titleVariants.length >= 5}
-                size="sm"
-                variant="outline"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Variant
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {titleVariants.map((title, index) => (
-                <div key={index} className="flex gap-2">
+          <div>
+            <Label>Title Variants (2-5 titles)</Label>
+            <p className="text-sm text-gray-600 mb-3">
+              TitleTesterPro will automatically change your video's title on YouTube according to the rotation schedule. 
+              Each title will be tested for the duration you specify, and analytics will be collected to determine the winner.
+            </p>
+            <div className="space-y-3 mt-2">
+              {titles.map((title, index) => (
+                <div key={index} className="flex items-center space-x-3">
                   <Input
-                    placeholder={`Title variant ${index + 1}`}
                     value={title}
-                    onChange={(e) => updateTitleVariant(index, e.target.value)}
-                    className="flex-1"
+                    onChange={(e) => updateTitle(index, e.target.value)}
+                    placeholder={`Enter title variant ${index + 1}...`}
+                    required
                   />
-                  {titleVariants.length > 2 && (
+                  {titles.length > 2 && (
                     <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => removeTitleVariant(index)}
-                      size="icon"
-                      variant="ghost"
                       className="text-red-500 hover:text-red-700"
                     >
-                      <X className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Test Settings */}
-          <div className="space-y-6">
-            <div>
-              <Label className="text-base font-semibold mb-2">Rotation Interval</Label>
-              <Select 
-                value={rotationInterval.toString()} 
-                onValueChange={(v) => setRotationInterval(parseInt(v))}
+            {titles.length < 5 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTitleVariant}
+                className="mt-3 text-primary hover:text-indigo-700"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">Every 30 minutes</SelectItem>
-                  <SelectItem value="60">Every hour</SelectItem>
-                  <SelectItem value="120">Every 2 hours</SelectItem>
-                  <SelectItem value="360">Every 6 hours</SelectItem>
-                  <SelectItem value="1440">Every 24 hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-base font-semibold mb-2">Test Duration</Label>
-              <Select 
-                value={testDuration.toString()} 
-                onValueChange={(v) => setTestDuration(parseInt(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="24">24 hours</SelectItem>
-                  <SelectItem value="48">48 hours</SelectItem>
-                  <SelectItem value="72">3 days</SelectItem>
-                  <SelectItem value="168">7 days</SelectItem>
-                  <SelectItem value="336">14 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 py-6 border-t flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!selectedVideo || titleVariants.some(t => !t.trim()) || createTestMutation.isPending}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            {createTestMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              'Create Test'
+                <Plus className="w-4 h-4 mr-1" />
+                Add another variant
+              </Button>
             )}
-          </Button>
-        </div>
-      </div>
-    </div>
+          </div>
+
+          {/* Winner Metric */}
+          <div>
+            <Label>Winner Determination</Label>
+            <RadioGroup value={winnerMetric} onValueChange={setWinnerMetric} className="mt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <Label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <RadioGroupItem value="ctr" />
+                  <div>
+                    <div className="font-medium text-gray-900">Click-Through Rate</div>
+                    <div className="text-sm text-gray-600">Best CTR wins</div>
+                  </div>
+                </Label>
+                <Label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <RadioGroupItem value="avd" />
+                  <div>
+                    <div className="font-medium text-gray-900">View Duration</div>
+                    <div className="text-sm text-gray-600">Longest AVD wins</div>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-4 pt-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={createTestMutation.isPending}
+            >
+              {createTestMutation.isPending ? 'Creating...' : 'Start A/B Test'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
