@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import {
   Play, Pause, CheckCircle, Plus, Eye, TrendingUp,
   Clock, ChevronDown, ChevronUp, BarChart3, Target
@@ -40,7 +40,7 @@ interface Test {
 }
 
 export default function Dashboard() {
-  const [navigate] = useNavigate();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
@@ -50,7 +50,7 @@ export default function Dashboard() {
 
   // Fetch user data
   const { data: user } = useQuery({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/auth/user'],
   });
 
   // Fetch dashboard stats
