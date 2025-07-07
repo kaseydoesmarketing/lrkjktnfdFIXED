@@ -235,7 +235,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.averageCtr.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">{(stats.averageCtr || 0).toFixed(1)}%</div>
               <p className="text-xs text-green-600 font-medium mt-1">
                 ↑ 1.2% improvement
               </p>

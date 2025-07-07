@@ -547,15 +547,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Get analytics for each title
           const variants = await Promise.all(
             titles.map(async (title) => {
-              const analytics = await storage.getLatestAnalytics(test.id, title.id);
+              const analyticsPolls = await storage.getAnalyticsPollsByTitleId(title.id);
+              // Get the latest analytics poll
+              const latestAnalytics = analyticsPolls.sort((a, b) => 
+                new Date(b.polledAt).getTime() - new Date(a.polledAt).getTime()
+              )[0];
+              
               return {
                 id: title.id,
                 title: title.title,
                 metrics: {
-                  views: analytics?.views || 0,
-                  impressions: analytics?.impressions || 0,
-                  ctr: analytics?.ctr || 0,
-                  avgDuration: analytics?.averageViewDuration || 0,
+                  views: latestAnalytics?.views || 0,
+                  impressions: latestAnalytics?.impressions || 0,
+                  ctr: latestAnalytics?.ctr || 0,
+                  avgDuration: latestAnalytics?.averageViewDuration || 0,
                 },
               };
             })
