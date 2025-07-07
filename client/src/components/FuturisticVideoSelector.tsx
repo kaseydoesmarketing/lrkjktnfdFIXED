@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Video {
   id: string;
@@ -214,12 +215,20 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
   ];
 
   useEffect(() => {
-    // Simulate loading and fetching videos with AI analysis
+    // Simulate loading and fetching videos with staged AI analysis
     setIsLoading(true);
+    
+    // Stage 1: Initial video analysis
     setTimeout(() => {
-      setVideos(demoVideos);
-      setIsLoading(false);
-    }, 1500);
+      // Stage 2: AI insights generation
+      setTimeout(() => {
+        // Stage 3: Optimization recommendations
+        setTimeout(() => {
+          setVideos(demoVideos);
+          setIsLoading(false);
+        }, 800);
+      }, 1000);
+    }, 1200);
   }, []);
 
   const generateAIInsights = async (videoId: string) => {
@@ -294,23 +303,135 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
     }
   };
 
+  // Enhanced Video Card Skeleton Component with Shimmer Effects
+  const VideoCardSkeleton = ({ index = 0 }: { index?: number }) => (
+    <div 
+      className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden animate-fade-in"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      <div className="flex p-4 space-x-4">
+        {/* Thumbnail Skeleton with Shimmer */}
+        <div className="relative flex-shrink-0">
+          <div className="w-32 h-20 rounded-lg bg-gray-200 skeleton-shimmer relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-pulse"></div>
+          </div>
+          <div className="absolute bottom-1 right-1">
+            <div className="w-8 h-4 bg-gray-300 rounded skeleton-shimmer"></div>
+          </div>
+          {/* Play button overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 bg-gray-300 rounded-full skeleton-shimmer flex items-center justify-center">
+              <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Content Skeleton with Staggered Animation */}
+        <div className="flex-1 space-y-3">
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded skeleton-shimmer w-full"></div>
+            <div className="h-4 bg-gray-200 rounded skeleton-shimmer w-3/4"></div>
+          </div>
+          
+          {/* Stats Row Skeleton */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-gray-200 rounded skeleton-shimmer"></div>
+              <div className="w-12 h-3 bg-gray-200 rounded skeleton-shimmer"></div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-gray-200 rounded skeleton-shimmer"></div>
+              <div className="w-16 h-3 bg-gray-200 rounded skeleton-shimmer"></div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-4 h-4 bg-gray-200 rounded skeleton-shimmer"></div>
+              <div className="w-8 h-3 bg-gray-200 rounded skeleton-shimmer"></div>
+            </div>
+          </div>
+          
+          {/* AI Insights Skeleton with Pill Shapes */}
+          <div className="flex items-center space-x-2">
+            <div className="w-16 h-5 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full skeleton-shimmer"></div>
+            <div className="w-20 h-5 bg-gradient-to-r from-purple-200 to-purple-300 rounded-full skeleton-shimmer"></div>
+            <div className="w-12 h-5 bg-gradient-to-r from-green-200 to-green-300 rounded-full skeleton-shimmer"></div>
+          </div>
+        </div>
+        
+        {/* Action Button Skeleton */}
+        <div className="flex-shrink-0">
+          <div className="w-20 h-8 bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg skeleton-shimmer"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Enhanced Loading State with Multiple Skeletons
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center py-12 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-100">
-          <div className="text-center space-y-4">
+      <div className="space-y-6">
+        {/* Header Section Skeleton */}
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-72" />
+            </div>
             <div className="relative">
-              <div className="w-16 h-16 mx-auto bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse">
-                <Bot className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse">
+                <Bot className="w-8 h-8 text-white animate-bounce" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce delay-300">
                 <Sparkles className="w-3 h-3 text-yellow-800" />
               </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">AI is analyzing your videos</h3>
-              <p className="text-sm text-gray-600">Generating intelligent insights and optimization recommendations...</p>
+          </div>
+          
+          {/* Progress Indicators */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <Skeleton className="h-3 w-40" />
             </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse delay-150"></div>
+              <Skeleton className="h-3 w-56" />
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-300"></div>
+              <Skeleton className="h-3 w-48" />
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Skeleton */}
+        <div className="flex space-x-4">
+          <Skeleton className="h-10 flex-1 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+          <Skeleton className="h-10 w-28 rounded-lg" />
+        </div>
+
+        {/* Video Grid Skeleton */}
+        <div className="space-y-4">
+          {[...Array(6)].map((_, index) => (
+            <VideoCardSkeleton key={index} index={index} />
+          ))}
+        </div>
+
+        {/* Loading Text with Enhanced Animation */}
+        <div className="text-center py-4">
+          <div className="inline-flex items-center space-x-3 text-sm text-gray-600">
+            <div className="relative">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+            </div>
+            <span className="animate-pulse font-medium">Analyzing your YouTube videos...</span>
+          </div>
+          
+          {/* Progress indicators */}
+          <div className="mt-4 flex justify-center space-x-2">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-150"></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-300"></div>
           </div>
         </div>
       </div>
@@ -318,7 +439,7 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {/* Clean Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Select Video</h3>
