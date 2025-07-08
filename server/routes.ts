@@ -966,7 +966,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/videos/channel', requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const account = await storage.getAccountByUserId(userId);
+      console.log('User ID:', userId);
+      
+      const account = await storage.getAccountByUserId(userId, 'google');
+      console.log('Account found:', account);
+      console.log('Has access token:', !!account?.accessToken);
       
       if (!account || !account.accessToken) {
         return res.status(401).json({ error: 'YouTube account not connected' });
