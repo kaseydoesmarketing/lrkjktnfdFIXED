@@ -25,6 +25,7 @@ import session from "express-session";
 // Passport removed - using Supabase auth
 import { initializeScheduler } from "./scheduler";
 import rotationRoutes from "./routes/rotation";
+import { sessionCleanupJob } from "./jobs/sessionCleanup";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -194,6 +195,11 @@ app.use((req, res, next) => {
         console.log('Initializing title rotation scheduler...');
         await initializeScheduler();
         console.log('✅ Scheduler initialized successfully');
+        
+        // Start session cleanup job
+        console.log('Starting session cleanup job...');
+        sessionCleanupJob.start();
+        console.log('✅ Session cleanup job started successfully');
       } catch (error) {
         console.error('Server initialization error:', error);
       }

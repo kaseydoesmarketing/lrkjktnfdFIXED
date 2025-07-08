@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { googleAuthService } from './googleAuth';
 import { supabase, getYouTubeTokens } from './auth/supabase';
+import { rateLimiter } from './services/rateLimiter';
 
 export class YouTubeService {
   private youtube;

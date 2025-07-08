@@ -10,6 +10,7 @@ import { registerAdminRoutes } from "./adminRoutes";
 import authSupabaseRoutes from "./routes/auth-supabase";
 import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
+import stripeWebhookRoutes from "./routes/stripe-webhook";
 import {
   apiCache,
   youtubeCache,
@@ -105,6 +106,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register rotation routes
   app.use(rotationRoutes);
+  
+  // Register Stripe webhook routes - MUST be before body parser
+  app.use(stripeWebhookRoutes);
 
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {
