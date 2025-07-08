@@ -188,14 +188,20 @@ export class YouTubeService {
 
   // Direct method that accepts tokens without looking up user
   async getChannelVideosDirect(accessToken: string, maxResults: number = 200) {
-    const authClient = googleAuthService.createAuthenticatedClient(accessToken);
-    const youtube = google.youtube({ version: 'v3', auth: authClient });
+    console.log('🚀 [getChannelVideosDirect] Starting with maxResults:', maxResults);
+    console.log('🔑 [getChannelVideosDirect] Access token present:', !!accessToken);
+    console.log('🔑 [getChannelVideosDirect] Token preview:', accessToken.substring(0, 20) + '...');
+    
+    try {
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const youtube = google.youtube({ version: 'v3', auth: authClient });
 
-    // First get the channel's uploads playlist
-    const channelResponse = await youtube.channels.list({
-      part: ['contentDetails'],
-      mine: true
-    });
+      // First get the channel's uploads playlist
+      console.log('📺 [getChannelVideosDirect] Fetching channel details...');
+      const channelResponse = await youtube.channels.list({
+        part: ['contentDetails'],
+        mine: true
+      });
 
     if (!channelResponse.data.items?.length) {
       throw new Error('No channel found');
@@ -253,6 +259,8 @@ export class YouTubeService {
       }
     }
 
+    console.log(`✅ [getChannelVideosDirect] Successfully fetched ${videoDetails.length} videos`);
+    
     return videoDetails.map((video: any) => ({
       id: video.id!,
       title: video.snippet?.title,
@@ -265,6 +273,23 @@ export class YouTubeService {
       duration: video.contentDetails?.duration,
       status: video.snippet?.liveBroadcastContent === 'none' ? 'published' : video.snippet?.liveBroadcastContent
     }));
+    } catch (error: any) {
+      console.error('❌ [getChannelVideosDirect] Error occurred:', error);
+      console.error('❌ [getChannelVideosDirect] Error message:', error.message);
+      console.error('❌ [getChannelVideosDirect] Error code:', error.code);
+      console.error('❌ [getChannelVideosDirect] Error status:', error.status);
+      
+      if (error.response) {
+        console.error('❌ [getChannelVideosDirect] Response data:', JSON.stringify(error.response.data, null, 2));
+        console.error('❌ [getChannelVideosDirect] Response status:', error.response.status);
+      }
+      
+      if (error.errors && error.errors.length > 0) {
+        console.error('❌ [getChannelVideosDirect] API errors:', JSON.stringify(error.errors, null, 2));
+      }
+      
+      throw error;
+    }
   }
 
   async updateVideoTitle(userId: string, videoId: string, newTitle: string) {

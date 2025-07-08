@@ -965,14 +965,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get channel videos endpoint
   app.get('/api/videos/channel', requireAuth, async (req: Request, res: Response) => {
     try {
+      console.log('🎥 [/api/videos/channel] Starting request for user:', req.user!.email);
       const userId = req.user!.id;
       const account = await storage.getAccountByUserId(userId, 'google');
+      
+      console.log('📊 [/api/videos/channel] Account found:', {
+        hasAccount: !!account,
+        hasAccessToken: !!account?.accessToken,
+        hasRefreshToken: !!account?.refreshToken,
+        expiresAt: account?.expiresAt
+      });
       
       if (!account || !account.accessToken) {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }
 
       // Get YouTube videos using the direct method with access token
+      console.log('🔄 [/api/videos/channel] Calling getChannelVideosDirect...');
       const videos = await youtubeService.getChannelVideosDirect(account.accessToken);
       
       // Format the response with proper data structure
@@ -995,14 +1004,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       res.json(formattedVideos);
-    } catch (error) {
-      console.error('Error fetching YouTube videos:', error);
+    } catch (error: any) {
+      console.error('❌ Detailed error in /api/videos/channel:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      if (error.response) {
+        console.error('❌ Error response data:', error.response.data);
+        console.error('❌ Error response status:', error.response.status);
+      }
       
       if (error.message?.includes('401')) {
         return res.status(401).json({ error: 'Authentication expired. Please reconnect your YouTube account.' });
       }
       
-      res.status(500).json({ error: 'Failed to fetch videos' });
+      res.status(500).json({ error: error.message || 'Failed to fetch videos' });
     }
   });
 
