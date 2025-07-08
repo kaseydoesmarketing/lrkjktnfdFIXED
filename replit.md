@@ -18,7 +18,7 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript for type safety
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Custom session-based auth with Google OAuth integration
+- **Authentication**: Supabase Auth with Google OAuth integration
 - **Scheduler**: Node.js cron jobs for automated title rotation and data polling
 - **API Integration**: YouTube Data API v3 for video analytics
 
@@ -32,10 +32,10 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
 ## Key Components
 
 ### Authentication System
-- Google OAuth 2.0 integration for YouTube API access
-- Session-based authentication with encrypted token storage
-- Automatic token refresh handling
-- Protected routes requiring authentication
+- Supabase Auth with Google OAuth 2.0 for YouTube API access
+- Cookie-based authentication using Supabase JWT tokens (sb-access-token)
+- Automatic token refresh handled by Supabase
+- Protected routes requiring authentication via Supabase middleware
 
 ### Test Management
 - Create A/B tests with multiple title variants
@@ -424,6 +424,15 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Methods Updated**: getChannelVideos, updateVideoTitle, getVideoAnalytics, getRealTimeMetrics now use proper signature
   - **Token Storage Flow**: OAuth login → Encrypt tokens → Store in accounts table → Use accounts table as single source of truth
   - **Architecture Alignment**: All authentication flows now properly use accounts table for OAuth token management
+- July 8, 2025: **SUPABASE AUTH MIGRATION - PERMANENT OAUTH TOKEN FIX**
+  - **Architecture Change**: Migrated from custom OAuth implementation to Supabase Auth for robust token management
+  - **Supabase Integration**: Installed @supabase/supabase-js and configured Supabase client with existing project credentials
+  - **Auth Routes**: Created new Supabase auth endpoints (/api/auth/google, /api/auth/logout, /api/auth/user)
+  - **Middleware Update**: Replaced custom session-based auth with Supabase cookie authentication (sb-access-token)
+  - **YouTube Service**: Updated withTokenRefresh to work with Supabase provider tokens and automatic refresh
+  - **Token Management**: Supabase handles OAuth complexity, token storage, and automatic refresh without manual intervention
+  - **Database Simplification**: No longer need accounts table for OAuth tokens - Supabase manages all authentication state
+  - **Security Enhancement**: Tokens stored securely in Supabase with built-in encryption and refresh mechanisms
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

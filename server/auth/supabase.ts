@@ -1,6 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Missing Supabase environment variables');
+  console.error('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'Missing');
+  console.error('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing');
   throw new Error('Missing Supabase environment variables');
 }
 

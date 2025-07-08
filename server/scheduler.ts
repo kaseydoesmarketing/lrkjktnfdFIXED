@@ -91,13 +91,11 @@ async function rotateTitle(testId: string) {
     log(`Updating YouTube video ${test.videoId} to: "${nextTitle.text}"`);
     
     try {
-      await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
-        await youtubeService.updateVideoTitle(
-          test.videoId,
-          nextTitle.text,
-          tokens.accessToken!
-        );
-      });
+      await youtubeService.updateVideoTitle(
+        test.userId,
+        test.videoId,
+        nextTitle.text
+      );
       
       log(`✅ Successfully updated YouTube title to: "${nextTitle.text}"`);
     } catch (err: any) {
@@ -137,12 +135,10 @@ async function rotateTitle(testId: string) {
     // Fetch initial analytics for the new title
     let analytics = null;
     try {
-      analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
-        return await youtubeService.getVideoAnalytics(
-          test.videoId,
-          tokens.accessToken!
-        );
-      });
+      analytics = await youtubeService.getVideoAnalytics(
+        test.userId,
+        test.videoId
+      );
     } catch (err) {
       error('Failed to fetch analytics for rotation log', err);
     }

@@ -22,7 +22,7 @@ import helmet from "helmet";
 import cors from "cors";
 import pg from "pg";
 import session from "express-session";
-import passport from "./passportConfig";
+// Passport removed - using Supabase auth
 import { initializeScheduler } from "./scheduler";
 import rotationRoutes from "./routes/rotation";
 
@@ -63,9 +63,7 @@ app.use(session({
   }
 }));
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
+// Passport removed - using Supabase auth instead
 
 // Rate limiting
 const limiter = rateLimit({

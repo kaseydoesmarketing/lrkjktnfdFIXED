@@ -7,7 +7,8 @@ import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import { registerAdminRoutes } from "./adminRoutes";
-import oauthRoutes from "./oauthRoutes";
+import authSupabaseRoutes from "./routes/auth-supabase";
+import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
 import {
   apiCache,
@@ -86,77 +87,8 @@ OPTIMIZATION REQUIREMENTS:
 
 Generate titles that balance emotional appeal with content accuracy for maximum CTR and viewer satisfaction.`;
 
-// Enhanced authentication middleware with proper TypeScript typing
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
-}
-
-async function requireAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  const sessionToken = req.cookies["session-token"];
-
-  // Authentication check
-
-  if (!sessionToken) {
-    res.status(401).json({
-      error: "Authentication required",
-      code: "NO_SESSION_TOKEN",
-      timestamp: new Date().toISOString(),
-    });
-    return;
-  }
-
-  try {
-    const session = await storage.getSession(sessionToken);
-    if (!session) {
-      res.status(401).json({
-        error: "Invalid session",
-        code: "INVALID_SESSION",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    if (session.expires < new Date()) {
-      // Clear the expired cookie
-      res.clearCookie("session-token");
-      res.status(401).json({
-        error: "Session expired",
-        code: "SESSION_EXPIRED",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    const user = await storage.getUser(session.userId);
-    if (!user) {
-      res.status(401).json({
-        error: "User not found",
-        code: "USER_NOT_FOUND",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    res.status(500).json({
-      error: "Authentication error",
-      code: "AUTH_ERROR",
-      timestamp: new Date().toISOString(),
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-}
+// Import requireAuth from the Supabase auth middleware
+import { requireAuth } from "./middleware/auth";
 
 import { registerSimpleAdminRoutes } from "./simpleAdminRoutes";
 
@@ -165,7 +97,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerSimpleAdminRoutes(app);
   
   // Register OAuth routes with Passport.js
-  app.use('/api/auth', oauthRoutes);
+  // Inject session token middleware
+  app.use(injectSessionToken);
+  
+  // Use Supabase auth routes
+  app.use(authSupabaseRoutes);
   
   // Register rotation routes
   app.use(rotationRoutes);
