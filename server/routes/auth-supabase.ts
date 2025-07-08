@@ -6,10 +6,15 @@ const router = Router();
 
 // Initiate Google OAuth
 router.get('/api/auth/google', async (req: Request, res: Response) => {
+  // Get the current domain dynamically
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const currentDomain = `${protocol}://${host}`;
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `https://xyehwoacgpsxakhjwglq.supabase.co/auth/v1/callback`,
+      redirectTo: `${currentDomain}/auth/callback`,
       scopes: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly',
       queryParams: {
         access_type: 'offline',

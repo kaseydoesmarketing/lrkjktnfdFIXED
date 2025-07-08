@@ -6,7 +6,7 @@ const { Pool } = pg;
 
 // Force Supabase database URL (override any system env vars)
 // Using transaction pooler with prepared statements disabled for Drizzle ORM
-const SUPABASE_DATABASE_URL = "postgresql://postgres.xyehwoacgpsxakhjwglq:Princeandmarley8625!@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
+const SUPABASE_DATABASE_URL = "postgresql://postgres.xyehwoacgpsxakhjwglq:TitleTester2025ProdXyeh@aws-0-us-east-2.pooler.supabase.com:6543/postgres";
 process.env.DATABASE_URL = SUPABASE_DATABASE_URL;
 
 // Debug: Log the DATABASE_URL being used (masked for security)

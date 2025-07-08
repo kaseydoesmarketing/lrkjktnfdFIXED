@@ -433,6 +433,14 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Token Management**: Supabase handles OAuth complexity, token storage, and automatic refresh without manual intervention
   - **Database Simplification**: No longer need accounts table for OAuth tokens - Supabase manages all authentication state
   - **Security Enhancement**: Tokens stored securely in Supabase with built-in encryption and refresh mechanisms
+- July 8, 2025: **SUPABASE DATABASE MIGRATION TO NEW PROJECT (TTPRO3)**
+  - **Database Migration**: Successfully migrated from old Supabase project (dnezcshuzdkhzrcjfwaq) to new TTPRO3 project (xyehwoacgpsxakhjwglq)
+  - **Configuration Updates**: Updated database URL with new password (TitleTester2025ProdXyeh) and service role key
+  - **Auth Callback Fix**: Fixed OAuth authentication by implementing proper Supabase hash fragment handling in auth callback component
+  - **Shared Supabase Client**: Created centralized Supabase client configuration at client/src/lib/supabase.ts for consistent auth handling
+  - **OAuth Redirect**: Updated OAuth redirect URL to use application's /auth/callback route with dynamic domain detection
+  - **Authentication Flow**: Users authenticate via Google → Supabase handles OAuth → Returns with tokens in URL hash → Session established → Redirect to dashboard
+  - **Database Status**: New Supabase instance requires table creation through migrations (tests table and others not yet created)
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
