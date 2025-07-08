@@ -17,6 +17,7 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Tests from "@/pages/Tests";
 import AuthTest from "@/pages/auth-test";
+import AuthDiagnostic from "@/pages/auth-diagnostic";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -170,6 +171,7 @@ function Router() {
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/oauth-test" component={OAuthTest} />
         <Route path="/auth-test" component={() => <AuthTest />} />
+        <Route path="/auth-diagnostic" component={() => <AuthDiagnostic />} />
         <Route path="/privacy" component={() => <Privacy />} />
         <Route path="/terms" component={() => <Terms />} />
         <Route path="/" component={HomePage} />
