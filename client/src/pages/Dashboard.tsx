@@ -26,6 +26,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Title {
   id: string;
@@ -351,6 +361,10 @@ export default function DashboardFixed() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [testToDelete, setTestToDelete] = useState<string | null>(null);
 
   // Fetch user data
   const { data: user, isLoading: userLoading } = useQuery({
@@ -396,8 +410,11 @@ export default function DashboardFixed() {
   // Test action mutations
   const testActionMutation = useMutation({
     mutationFn: async ({ testId, action }: { testId: string; action: string }) => {
-      const response = await fetch(`/api/tests/${testId}/${action}`, {
-        method: 'POST',
+      const method = action === 'delete' ? 'DELETE' : 'POST';
+      const url = action === 'delete' ? `/api/tests/${testId}` : `/api/tests/${testId}/${action}`;
+      
+      const response = await fetch(url, {
+        method,
         credentials: 'include',
       });
       
@@ -409,10 +426,11 @@ export default function DashboardFixed() {
     },
     onSuccess: (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/tests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tests/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
         title: "Success",
-        description: `Test ${action}d successfully`,
+        description: action === 'delete' ? 'Test cancelled successfully' : `Test ${action}d successfully`,
       });
     },
     onError: (error, { action }) => {
@@ -425,7 +443,20 @@ export default function DashboardFixed() {
   });
 
   const handleTestAction = (testId: string, action: 'pause' | 'resume' | 'complete' | 'delete') => {
-    testActionMutation.mutate({ testId, action });
+    if (action === 'delete') {
+      setTestToDelete(testId);
+      setDeleteDialogOpen(true);
+    } else {
+      testActionMutation.mutate({ testId, action });
+    }
+  };
+  
+  const confirmDelete = () => {
+    if (testToDelete) {
+      testActionMutation.mutate({ testId: testToDelete, action: 'delete' });
+      setDeleteDialogOpen(false);
+      setTestToDelete(null);
+    }
   };
 
   if (userLoading) {
@@ -563,6 +594,30 @@ export default function DashboardFixed() {
           )}
         </div>
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this test? This action cannot be undone. 
+              All test data and analytics will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTestToDelete(null)}>
+              Keep Test
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Cancel Test
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
