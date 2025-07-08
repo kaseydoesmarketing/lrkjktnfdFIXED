@@ -9,7 +9,7 @@ router.get('/api/auth/google', async (req: Request, res: Response) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `https://ttro3.replit.app/api/auth/callback`,
+      redirectTo: 'https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google',
       scopes: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly',
       queryParams: {
         access_type: 'offline',
@@ -31,7 +31,7 @@ router.get('/api/auth/google', async (req: Request, res: Response) => {
 });
 
 // Handle OAuth callback
-router.get('/api/auth/callback', async (req: Request, res: Response) => {
+router.get('/api/auth/callback/google', async (req: Request, res: Response) => {
   const { code, error } = req.query;
   
   if (error) {
