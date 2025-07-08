@@ -4,22 +4,31 @@ import { storage } from '../storage';
 
 const router = Router();
 
+// Dynamic redirect URI detection
+function getRedirectUri(req: Request): string {
+  const host = req.get('host') || 'localhost:5000';
+  const protocol = req.protocol || 'http';
+  
+  // Check if we're in production
+  if (host.includes('titletesterpro.com')) {
+    return 'https://titletesterpro.com/api/auth/callback/google';
+  }
+  
+  // Otherwise use current host
+  return `${protocol}://${host}/api/auth/callback/google`;
+}
+
 // Initiate Google OAuth
 router.get('/api/auth/google', async (req: Request, res: Response) => {
   console.log('🚀 [AUTH] Starting Google OAuth flow');
   
-  // Get the current domain dynamically
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const currentDomain = `${protocol}://${host}`;
-  
-  console.log('🌐 [AUTH] Current domain:', currentDomain);
-  console.log('🔗 [AUTH] Redirect URL will be:', `${currentDomain}/api/auth/callback/google`);
+  const redirectUri = getRedirectUri(req);
+  console.log('🔗 [AUTH] Using redirect URI:', redirectUri);
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${currentDomain}/api/auth/callback/google`,
+      redirectTo: redirectUri,
       scopes: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly',
       queryParams: {
         access_type: 'offline',
