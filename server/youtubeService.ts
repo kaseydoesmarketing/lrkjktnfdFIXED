@@ -13,50 +13,29 @@ export class YouTubeService {
   }
 
   /**
-   * Get YouTube tokens from accounts table
+   * Get YouTube tokens from Supabase session
    */
-  async getTokensFromUserId(userId: string) {
-    const { storage } = await import('./storage');
-    const account = await storage.getAccountByUserId(userId, 'google');
+  async getTokensFromSession(sessionToken: string) {
+    const { data: { user }, error } = await supabase.auth.getUser(sessionToken);
     
-    if (!account) {
-      throw new Error('No Google account found for user');
+    if (error || !user) {
+      throw new Error('Invalid session');
     }
     
-    // Check if token is expired
-    if (account.expiresAt && new Date(account.expiresAt) < new Date()) {
-      // Token expired, need to refresh
-      const { OAuth2Client } = await import('google-auth-library');
-      const oauth2Client = new OAuth2Client(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        'https://ttro3.replit.app/api/auth/callback/google'
-      );
-      
-      oauth2Client.setCredentials({
-        refresh_token: account.refreshToken
-      });
-      
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      
-      // Update tokens in database
-      await storage.updateAccountTokens(account.id, {
-        accessToken: credentials.access_token!,
-        refreshToken: credentials.refresh_token || account.refreshToken,
-        expiresAt: credentials.expiry_date || null
-      });
-      
-      return {
-        accessToken: credentials.access_token!,
-        refreshToken: credentials.refresh_token || account.refreshToken,
-        userId
-      };
+    // Supabase stores provider tokens in identities
+    const googleIdentity = user.identities?.find(id => id.provider === 'google');
+    
+    if (!googleIdentity) {
+      throw new Error('No Google identity found');
     }
+    
+    // Get fresh tokens - Supabase handles refresh automatically
+    const { data: { session } } = await supabase.auth.getSession();
     
     return {
-      accessToken: account.accessToken,
-      refreshToken: account.refreshToken,
-      userId
+      accessToken: session?.provider_token || '',
+      refreshToken: session?.provider_refresh_token || '',
+      userId: user.id
     };
   }
 
@@ -67,13 +46,22 @@ export class YouTubeService {
     userId: string,
     operation: (tokens: { accessToken: string; refreshToken: string }) => Promise<T>
   ): Promise<T> {
+    // For Supabase, we need the session token from the request context
+    // This should be passed from the route handler
+    const sessionToken = (global as any).currentRequestToken;
+    
+    if (!sessionToken) {
+      throw new Error('No session token available');
+    }
+    
     try {
-      const tokens = await this.getTokensFromUserId(userId);
+      const tokens = await this.getTokensFromSession(sessionToken);
       return await operation(tokens);
     } catch (error: any) {
       console.error('[YOUTUBE] API Error:', error);
       
-      // If authentication fails, user needs to re-authenticate
+      // Supabase automatically refreshes tokens
+      // If still failing, user needs to re-authenticate
       if (error.code === 401 || error.message?.includes('401')) {
         throw new Error('Authentication expired - please sign in again');
       }

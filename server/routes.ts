@@ -7,7 +7,7 @@ import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import { registerAdminRoutes } from "./adminRoutes";
-import authDirectRoutes from "./routes/auth-direct";
+import authSupabaseRoutes from "./routes/auth-supabase";
 import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
 import {
@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(injectSessionToken);
   
   // Use Supabase auth routes
-  app.use(authDirectRoutes);
+  app.use(authSupabaseRoutes);
   
   // Register rotation routes
   app.use(rotationRoutes);
