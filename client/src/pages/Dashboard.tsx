@@ -210,6 +210,49 @@ const TestCard: React.FC<{
               </div>
             </div>
             <div className="flex items-center space-x-4 ml-4">
+              {/* Quick Actions */}
+              <div className="flex items-center space-x-2 mr-4">
+                {test.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTestAction(test.id, 'pause');
+                    }}
+                    className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                  >
+                    <Pause className="w-4 h-4" />
+                  </Button>
+                )}
+                
+                {test.status === 'paused' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTestAction(test.id, 'resume');
+                    }}
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                  >
+                    <Play className="w-4 h-4" />
+                  </Button>
+                )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTestAction(test.id, 'delete');
+                  }}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+              
               <div className="text-right">
                 <div className="text-2xl font-bold text-gray-900">
                   {safeToFixed(analytics.averageCtr, 1)}%
