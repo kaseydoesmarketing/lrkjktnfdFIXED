@@ -33,7 +33,7 @@ router.get('/api/auth/callback/google', async (req, res) => {
   const { code } = req.query;
   
   if (!code) {
-    return res.redirect('/login?error=no_code');
+    return res.redirect('/?error=no_code');
   }
   
   try {
@@ -92,11 +92,11 @@ router.get('/api/auth/callback/google', async (req, res) => {
       maxAge: 60 * 60 * 24 * 30
     });
     
-    res.redirect('/dashboard');
+    res.redirect('/');
     
   } catch (error) {
     console.error('OAuth error:', error);
-    res.redirect('/login?error=oauth_failed');
+    res.redirect('/?error=oauth_failed');
   }
 });
 
