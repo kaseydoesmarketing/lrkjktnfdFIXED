@@ -8,13 +8,17 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      console.log('🎯 [AUTH-CALLBACK] Starting auth callback processing');
+      console.log('📍 [AUTH-CALLBACK] Current URL:', window.location.href);
+      
       try {
         // Check for error in query params first
         const urlParams = new URLSearchParams(window.location.search);
         const queryError = urlParams.get('error');
+        console.log('❓ [AUTH-CALLBACK] Query params:', Object.fromEntries(urlParams.entries()));
         
         if (queryError) {
-          console.error('OAuth error:', queryError);
+          console.error('❌ [AUTH-CALLBACK] OAuth error:', queryError);
           setLocation('/login?error=' + queryError);
           return;
         }
@@ -23,8 +27,14 @@ export default function AuthCallback() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
+        console.log('🔑 [AUTH-CALLBACK] Hash params found:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          allHashParams: Object.fromEntries(hashParams.entries())
+        });
         
         if (accessToken) {
+          console.log('🔐 [AUTH-CALLBACK] Setting session with access token');
           // Set the session in Supabase client
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -32,32 +42,37 @@ export default function AuthCallback() {
           });
 
           if (error) {
-            console.error('Error setting session:', error);
+            console.error('❌ [AUTH-CALLBACK] Error setting session:', error);
             setLocation('/login?error=session_error');
             return;
           }
 
           if (session) {
-            console.log('✅ Session established successfully');
+            console.log('✅ [AUTH-CALLBACK] Session established successfully:', {
+              user: session.user.email,
+              expiresAt: new Date(session.expires_at! * 1000).toISOString()
+            });
             // Clear the hash from URL
             window.history.replaceState({}, '', window.location.pathname);
             // Redirect to dashboard
+            console.log('🚀 [AUTH-CALLBACK] Redirecting to dashboard');
             setLocation('/dashboard');
           }
         } else {
+          console.log('🔍 [AUTH-CALLBACK] No access token in hash, checking existing session');
           // Check if we already have a session
           const { data: { session }, error } = await supabase.auth.getSession();
           
           if (session) {
-            console.log('✅ Existing session found');
+            console.log('✅ [AUTH-CALLBACK] Existing session found:', session.user.email);
             setLocation('/dashboard');
           } else {
-            console.log('❌ No session found, redirecting to login');
+            console.log('❌ [AUTH-CALLBACK] No session found, redirecting to login');
             setLocation('/login');
           }
         }
       } catch (error) {
-        console.error('Auth callback error:', error);
+        console.error('💥 [AUTH-CALLBACK] Auth callback error:', error);
         setLocation('/login?error=callback_error');
       }
     };

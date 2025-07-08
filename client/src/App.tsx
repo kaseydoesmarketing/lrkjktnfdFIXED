@@ -16,6 +16,7 @@ import OAuthTest from "@/pages/OAuthTest";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Tests from "@/pages/Tests";
+import AuthTest from "@/pages/auth-test";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -26,6 +27,13 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     queryFn: () => authService.getCurrentUser(),
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  console.log('🛡️ [AUTH-WRAPPER] Auth state:', {
+    isLoading,
+    hasError: !!error,
+    hasUser: !!data,
+    userEmail: data?.email
   });
 
   // Show loading state
@@ -42,10 +50,12 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   // Show login if error or no user
   if (error || !data) {
+    console.log('🚫 [AUTH-WRAPPER] No auth, showing login. Error:', error);
     return <Login />;
   }
 
   // User authenticated, render dashboard
+  console.log('✅ [AUTH-WRAPPER] User authenticated, rendering protected content');
   return <>{children}</>;
 }
 
@@ -77,13 +87,34 @@ function Router() {
           }
 
           if (session) {
-            console.log('✅ Session established successfully');
-            // Clear the hash from URL
-            window.history.replaceState({}, '', window.location.pathname);
-            // Redirect to dashboard
-            setLocation('/dashboard');
-            // Refresh the query client to update auth state
-            queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+            console.log('✅ Session established in Supabase');
+            
+            // Send tokens to backend to set cookies
+            console.log('🍪 Sending tokens to backend to set cookies');
+            const response = await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              })
+            });
+            
+            if (response.ok) {
+              console.log('✅ Cookies set successfully');
+              // Clear the hash from URL
+              window.history.replaceState({}, '', window.location.pathname);
+              // Redirect to dashboard
+              setLocation('/dashboard');
+              // Refresh the query client to update auth state
+              queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+            } else {
+              console.error('❌ Failed to set cookies');
+              setLocation('/login?error=cookie_error');
+            }
           }
         } else {
           // Check if we already have a session
@@ -138,6 +169,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/oauth-test" component={OAuthTest} />
+        <Route path="/auth-test" component={() => <AuthTest />} />
         <Route path="/privacy" component={() => <Privacy />} />
         <Route path="/terms" component={() => <Terms />} />
         <Route path="/" component={Home} />

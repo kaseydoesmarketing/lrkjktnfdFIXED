@@ -52,14 +52,17 @@ class AuthService {
   }
 
   async logout() {
+    console.log('🚪 [LOGOUT] Starting logout process');
     try {
-      await fetch('/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'GET',
         credentials: 'include', // Always include cookies
       });
+      console.log('📡 [LOGOUT] Logout response status:', response.status);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ [LOGOUT] Logout error:', error);
     } finally {
+      console.log('🧹 [LOGOUT] Clearing client state');
       // Clear any cached data
       queryClient.clear();
       
@@ -69,27 +72,31 @@ class AuthService {
   }
 
   async getCurrentUser(): Promise<User | null> {
+    console.log('🔍 [AUTH-SERVICE] Getting current user');
     try {
       const response = await fetch('/api/auth/user', {
         credentials: 'include', // Always use cookie-based authentication
       });
 
+      console.log('📡 [AUTH-SERVICE] Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ [AUTH-SERVICE] User found:', data.user?.email);
         return data.user;
       }
       
       // Log the error for debugging
       if (response.status === 401) {
-        console.log('User not authenticated or session expired');
+        console.log('❌ [AUTH-SERVICE] User not authenticated or session expired');
       } else {
-        console.error('Auth check failed:', response.status, response.statusText);
+        console.error('❌ [AUTH-SERVICE] Auth check failed:', response.status, response.statusText);
       }
       
       // No valid authentication found
       return null;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error('💥 [AUTH-SERVICE] Error getting current user:', error);
       return null;
     }
   }

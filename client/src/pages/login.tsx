@@ -25,9 +25,11 @@ export default function Login() {
   }, []);
 
   const handleGoogleAuth = () => {
+    console.log('🚀 [LOGIN] User clicked Google login button');
     setIsLoading(true);
     setError(null);
     // Redirect to Google OAuth
+    console.log('🔗 [LOGIN] Redirecting to /api/auth/google');
     window.location.href = '/api/auth/google';
   };
 
