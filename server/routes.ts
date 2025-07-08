@@ -962,6 +962,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get channel videos endpoint
+  app.get('/api/videos/channel', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const account = await storage.getAccountByUserId(userId);
+      
+      if (!account || !account.accessToken) {
+        return res.status(401).json({ error: 'YouTube account not connected' });
+      }
+
+      // Get YouTube videos using the YouTube service
+      const videos = await youtubeService.getChannelVideos(account.accessToken, account.refreshToken);
+      
+      // Format the response with proper data structure
+      const formattedVideos = videos.map(video => ({
+        id: video.id,
+        videoId: video.id,
+        title: video.title,
+        description: video.description || '',
+        thumbnail: video.thumbnail,
+        publishedAt: video.publishedAt,
+        duration: video.duration || 'PT0S',
+        viewCount: parseInt(video.viewCount || '0'),
+        likeCount: 0,
+        commentCount: 0,
+        status: video.status || 'public',
+        analytics: {
+          ctr: null,
+          score: null,
+        }
+      }));
+
+      res.json(formattedVideos);
+    } catch (error) {
+      console.error('Error fetching YouTube videos:', error);
+      
+      if (error.message?.includes('401')) {
+        return res.status(401).json({ error: 'Authentication expired. Please reconnect your YouTube account.' });
+      }
+      
+      res.status(500).json({ error: 'Failed to fetch videos' });
+    }
+  });
+
   // Authentication endpoints
   app.get("/api/auth/me", requireAuth, async (req: Request, res: Response) => {
     res.json(req.user);
