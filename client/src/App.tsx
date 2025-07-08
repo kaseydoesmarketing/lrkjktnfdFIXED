@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,6 +17,8 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Tests from "@/pages/Tests";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { data, isLoading, error } = useQuery({
@@ -48,6 +50,72 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    // Handle Supabase auth on page load
+    const handleAuthSession = async () => {
+      try {
+        // Check if we have hash fragments with tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        if (accessToken) {
+          console.log('🔑 Found access token in URL, establishing session...');
+          
+          // Set the session in Supabase
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          });
+
+          if (error) {
+            console.error('❌ Error setting session:', error);
+            setLocation('/login?error=session_error');
+            return;
+          }
+
+          if (session) {
+            console.log('✅ Session established successfully');
+            // Clear the hash from URL
+            window.history.replaceState({}, '', window.location.pathname);
+            // Redirect to dashboard
+            setLocation('/dashboard');
+            // Refresh the query client to update auth state
+            queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+          }
+        } else {
+          // Check if we already have a session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('✅ Existing session found');
+          }
+        }
+      } catch (error) {
+        console.error('Auth session error:', error);
+      }
+    };
+
+    handleAuthSession();
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state changed:', event);
+      if (event === 'SIGNED_IN' && session) {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        setLocation('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        setLocation('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [setLocation]);
+
   return (
     <ErrorBoundary>
       <Switch>

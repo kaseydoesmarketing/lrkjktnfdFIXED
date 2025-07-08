@@ -105,6 +105,38 @@ router.get('/api/auth/callback/google', async (req: Request, res: Response) => {
 });
 
 // Get current user
+router.get('/api/auth/user', async (req: Request, res: Response) => {
+  const token = req.cookies['sb-access-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    
+    // Get user from our database
+    const dbUser = await storage.getUserByEmail(user.email!);
+    
+    res.json({ 
+      user: dbUser,
+      session: {
+        access_token: token,
+        expires_at: user.exp
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(401).json({ error: 'Session invalid' });
+  }
+});
+
+// Keep the /me endpoint for backward compatibility
 router.get('/api/auth/me', async (req: Request, res: Response) => {
   const token = req.cookies['sb-access-token'];
   
