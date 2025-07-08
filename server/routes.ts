@@ -980,9 +980,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'YouTube account not connected' });
       }
 
-      // Get YouTube videos using the direct method with access token
+      // Get YouTube videos using the direct method with access token and refresh token
       console.log('🔄 [/api/videos/channel] Calling getChannelVideosDirect...');
-      const videos = await youtubeService.getChannelVideosDirect(account.accessToken);
+      const videos = await youtubeService.getChannelVideosDirect(
+        account.accessToken, 
+        account.refreshToken || '',
+        account.id
+      );
       
       // Format the response with proper data structure
       const formattedVideos = videos.map(video => ({

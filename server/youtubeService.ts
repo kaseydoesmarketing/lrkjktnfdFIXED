@@ -187,12 +187,30 @@ export class YouTubeService {
   }
 
   // Direct method that accepts tokens without looking up user
-  async getChannelVideosDirect(accessToken: string, maxResults: number = 200) {
+  async getChannelVideosDirect(accessToken: string, refreshToken: string, accountId: string, maxResults: number = 200) {
     console.log('🚀 [getChannelVideosDirect] Starting with maxResults:', maxResults);
     console.log('🔑 [getChannelVideosDirect] Access token present:', !!accessToken);
-    console.log('🔑 [getChannelVideosDirect] Token preview:', accessToken.substring(0, 20) + '...');
+    console.log('🔑 [getChannelVideosDirect] Refresh token present:', !!refreshToken);
     
     try {
+      // Try to refresh the token first to ensure we have a valid one
+      console.log('🔄 [getChannelVideosDirect] Attempting to refresh token...');
+      const refreshResult = await googleAuthService.refreshAccessToken(refreshToken);
+      
+      if (refreshResult.access_token) {
+        console.log('✅ [getChannelVideosDirect] Token refreshed successfully');
+        
+        // Update the tokens in the database
+        await storage.updateAccountTokens(accountId, {
+          accessToken: refreshResult.access_token,
+          refreshToken: refreshResult.refresh_token || refreshToken,
+          expiresAt: Date.now() + (refreshResult.expires_in || 3600) * 1000
+        });
+        
+        // Use the fresh token
+        accessToken = refreshResult.access_token;
+      }
+      
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
