@@ -118,7 +118,7 @@ export class YouTubeService {
 
   async getChannelVideos(userId: string, maxResults: number = 200) {
     
-    return await this.withTokenRefresh(userId, async (accessToken: string) => {
+    return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
@@ -326,7 +326,7 @@ export class YouTubeService {
 
   async updateVideoTitle(userId: string, videoId: string, newTitle: string) {
     
-    return await this.withTokenRefresh(userId, async (accessToken: string) => {
+    return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
@@ -360,7 +360,7 @@ export class YouTubeService {
 
   async getVideoAnalytics(userId: string, videoId: string, startDate: string, endDate: string) {
     
-    return await this.withTokenRefresh(userId, async (accessToken: string) => {
+    return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
     
       try {
@@ -542,7 +542,7 @@ export class YouTubeService {
 
   // Get real-time metrics using YouTube Data API v3 for immediate dashboard display
   async getRealTimeMetrics(userId: string, videoId: string) {
-    return await this.withTokenRefresh(userId, async (accessToken: string) => {
+    return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
       const authClient = googleAuthService.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
       

@@ -416,6 +416,14 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Analytics API Metrics**: Confirmed supported metrics: views, estimatedMinutesWatched, averageViewDuration, subscribersGained
   - **Database Verification**: Rotation logs now properly recording with title text, rotation order, and timestamps
   - **Token Status**: 4 of 4 users have OAuth tokens in accounts table, tokens validated with >95% success rate
+- July 8, 2025: **CRITICAL OAUTH TOKEN STORAGE FIX - ACCOUNTS TABLE INTEGRATION**
+  - **Root Cause Identified**: OAuth tokens were being saved to users table but API endpoints expected them in accounts table
+  - **PassportConfig Updated**: Modified OAuth callback to create/update entries in accounts table with encrypted tokens
+  - **API Routes Fixed**: Updated /api/videos/channel to use simplified getChannelVideos method with proper token refresh
+  - **WithTokenRefresh Signature**: Fixed all YouTube service methods to use correct object parameter {accessToken, refreshToken}
+  - **Methods Updated**: getChannelVideos, updateVideoTitle, getVideoAnalytics, getRealTimeMetrics now use proper signature
+  - **Token Storage Flow**: OAuth login → Encrypt tokens → Store in accounts table → Use accounts table as single source of truth
+  - **Architecture Alignment**: All authentication flows now properly use accounts table for OAuth token management
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

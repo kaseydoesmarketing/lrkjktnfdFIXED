@@ -46,10 +46,31 @@ passport.use(new GoogleStrategy({
         const encryptedAccessToken = authService.encryptToken(accessToken);
         const encryptedRefreshToken = refreshToken ? authService.encryptToken(refreshToken) : null;
         
-        // Update user tokens and last login
+        // Update or create account entry with OAuth tokens
+        const existingAccount = await storage.getAccountByUserId(user.id, 'google');
+        
+        if (existingAccount) {
+          // Update existing account with new tokens
+          await storage.updateAccountTokens(existingAccount.id, {
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken || '',
+            expiresAt: null // Will be set based on token expiry
+          });
+        } else {
+          // Create new account entry
+          await storage.createAccount({
+            userId: user.id,
+            provider: 'google',
+            providerAccountId: googleId,
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken || '',
+            expiresAt: null,
+            scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/yt-analytics.readonly'
+          });
+        }
+        
+        // Update user info (remove token fields from user table)
         await storage.updateUser(user.id, {
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
           image: picture,
           lastLogin: new Date(),
           updatedAt: new Date()
@@ -86,12 +107,21 @@ passport.use(new GoogleStrategy({
           name,
           image: picture,
           googleId,
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
           youtubeChannelId,
           youtubeChannelTitle,
           subscriptionTier: 'free',
           subscriptionStatus: 'inactive'
+        });
+        
+        // Create account entry for OAuth tokens
+        await storage.createAccount({
+          userId: user.id,
+          provider: 'google',
+          providerAccountId: googleId,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken || '',
+          expiresAt: null,
+          scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/yt-analytics.readonly'
         });
       }
       

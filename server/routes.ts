@@ -971,26 +971,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🎥 [/api/videos/channel] Starting request for user:', req.user!.email);
       const userId = req.user!.id;
-      const account = await storage.getAccountByUserId(userId, 'google');
       
-      console.log('📊 [/api/videos/channel] Account found:', {
-        hasAccount: !!account,
-        hasAccessToken: !!account?.accessToken,
-        hasRefreshToken: !!account?.refreshToken,
-        expiresAt: account?.expiresAt
-      });
-      
-      if (!account || !account.accessToken) {
-        return res.status(401).json({ error: 'YouTube account not connected' });
-      }
-
-      // Get YouTube videos using the direct method with access token and refresh token
-      console.log('🔄 [/api/videos/channel] Calling getChannelVideosDirect...');
-      const videos = await youtubeService.getChannelVideosDirect(
-        account.accessToken, 
-        account.refreshToken || '',
-        account.id
-      );
+      // Use the getChannelVideos method which has built-in token refresh
+      console.log('🔄 [/api/videos/channel] Calling getChannelVideos with token refresh...');
+      const videos = await youtubeService.getChannelVideos(userId);
       
       // Format the response with proper data structure
       const formattedVideos = videos.map(video => ({
@@ -1011,18 +995,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }));
 
+      console.log(`✅ [/api/videos/channel] Successfully fetched ${formattedVideos.length} videos`);
       res.json(formattedVideos);
     } catch (error: any) {
       console.error('❌ Detailed error in /api/videos/channel:', error);
       console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
-      if (error.response) {
-        console.error('❌ Error response data:', error.response.data);
-        console.error('❌ Error response status:', error.response.status);
-      }
       
-      if (error.message?.includes('401')) {
-        return res.status(401).json({ error: 'Authentication expired. Please reconnect your YouTube account.' });
+      if (error.message?.includes('re-authentication required')) {
+        return res.status(401).json({ 
+          error: 'YouTube authentication required',
+          message: 'Please reconnect your YouTube account',
+          requiresAuth: true
+        });
       }
       
       res.status(500).json({ error: error.message || 'Failed to fetch videos' });
