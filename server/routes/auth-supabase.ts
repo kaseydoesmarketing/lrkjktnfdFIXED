@@ -9,7 +9,7 @@ router.get('/api/auth/google', async (req: Request, res: Response) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'https://050a0a28-8c3e-40e2-a429-c0eedc7eca5f-00-2po674nha0zje.riker.replit.dev/api/auth/callback/google',
+      redirectTo: `https://dnezcshudkhzrcjfwaq.supabase.co/auth/v1/callback`,
       scopes: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly',
       queryParams: {
         access_type: 'offline',
@@ -17,6 +17,9 @@ router.get('/api/auth/google', async (req: Request, res: Response) => {
       }
     }
   });
+  
+  console.log('OAuth URL:', data?.url);
+  console.log('OAuth error:', error);
   
   if (error) {
     console.error('OAuth initiation error:', error);
