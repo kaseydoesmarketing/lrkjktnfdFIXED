@@ -15,6 +15,7 @@ import AuthCallback from "@/pages/auth-callback";
 import OAuthTest from "@/pages/OAuthTest";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
+import Tests from "@/pages/Tests";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,11 @@ function Router() {
         <Route path="/dashboard">
           <AuthWrapper>
             <Dashboard />
+          </AuthWrapper>
+        </Route>
+        <Route path="/tests">
+          <AuthWrapper>
+            <Tests />
           </AuthWrapper>
         </Route>
         <Route path="/admin">

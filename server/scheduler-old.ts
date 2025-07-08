@@ -1,4 +1,3 @@
-// server/scheduler-fixed.ts
 import cron from 'node-cron';
 import { db } from './db';
 import { tests, titles, analyticsPolls, testRotationLogs } from '@shared/schema';
@@ -91,11 +90,11 @@ async function rotateTitle(testId: string) {
     log(`Updating YouTube video ${test.videoId} to: "${nextTitle.text}"`);
     
     try {
-      await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
+      await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
         await youtubeService.updateVideoTitle(
           test.videoId,
           nextTitle.text,
-          tokens.accessToken!
+          accessToken
         );
       });
       
@@ -134,13 +133,13 @@ async function rotateTitle(testId: string) {
     
     log(`✅ Activated title ${nextOrder + 1}/${test.titles.length}: "${nextTitle.text}"`);
 
-    // Fetch initial analytics for the new title
+    // Fetch latest analytics for the video at the time of rotation
     let analytics = null;
     try {
-      analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
+      analytics = await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
         return await youtubeService.getVideoAnalytics(
           test.videoId,
-          tokens.accessToken!
+          accessToken
         );
       });
     } catch (err) {
@@ -157,75 +156,103 @@ async function rotateTitle(testId: string) {
         rotatedAt: new Date(),
         rotationOrder: nextOrder,
         durationMinutes: currentTitle && currentTitle.activatedAt 
-          ? Math.floor((new Date().getTime() - new Date(currentTitle.activatedAt).getTime()) / 60000)
-          : test.rotationIntervalMinutes,
-        impressions: analytics?.impressions || 0,
-        clicks: analytics?.clicks || 0,
-        averageViewDuration: analytics?.averageViewDuration || 0
+          ? Math.floor((new Date().getTime() - currentTitle.activatedAt.getTime()) / 60000)
+          : null,
+        viewsAtRotation: analytics?.views || 0,
+        ctrAtRotation: analytics?.ctr || 0
       });
-      
-      log('✅ Rotation logged successfully');
+      log(`Logged rotation event for title: "${nextTitle.text}"`);
     } catch (err) {
-      error('Failed to log rotation', err);
+      error('Failed to log rotation event', err);
     }
+
+    // Log rotation summary
+    log(`Rotation complete:`, {
+      testId,
+      previousTitle: currentTitle?.text || 'None',
+      previousOrder: currentOrder,
+      newTitle: nextTitle.text,
+      newOrder: nextOrder,
+      totalTitles: test.titles.length,
+      remainingTitles: test.titles.length - nextOrder - 1
+    });
     
   } catch (err) {
-    error(`Error in title rotation for test ${testId}`, err);
+    error(`Failed to rotate title for test ${testId}`, err);
   }
 }
 
-// Poll analytics for active test
+// Analytics polling logic
 async function pollAnalytics(testId: string) {
+  log(`Polling analytics for test ${testId}`);
+  
   try {
     const test = await db.query.tests.findFirst({
       where: eq(tests.id, testId),
       with: {
         titles: true,
+        user: true,
       },
     });
 
     if (!test || test.status !== 'active') {
+      log(`Test ${testId} not active, skipping analytics poll`);
       return;
     }
 
+    // Get current active title
     const activeTitle = test.titles.find(t => t.isActive);
     if (!activeTitle) {
+      log(`No active title for test ${testId}`);
       return;
     }
 
-    log(`Polling analytics for test ${testId}, title: "${activeTitle.text}"`);
-
-    const analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
-      return await youtubeService.getVideoAnalytics(
-        test.videoId,
-        tokens.accessToken!
-      );
-    });
+    // Fetch YouTube analytics with token refresh
+    try {
+      const analytics = await youtubeService.withTokenRefresh(test.userId, async (accessToken) => {
+        return await youtubeService.getVideoAnalytics(
+          test.videoId,
+          accessToken
+        );
+      });
+      
+      // Store analytics poll
+      await db.insert(analyticsPolls).values({
+        titleId: activeTitle.id,
+        views: analytics.views || 0,
+        impressions: analytics.impressions || 0,
+        clicks: analytics.clicks || 0,
+        averageViewDuration: analytics.averageViewDuration || 0,
+        polledAt: new Date(),
+      });
+      
+      log(`✅ Analytics polled for "${activeTitle.text}":`, {
+        views: analytics.views,
+        impressions: analytics.impressions,
+        ctr: analytics.impressions > 0 ? ((analytics.clicks / analytics.impressions) * 100).toFixed(2) + '%' : '0%'
+      });
+      
+    } catch (err: any) {
+      error(`Failed to poll analytics for test ${testId}`, err);
+    }
     
-    // Store analytics poll
-    await db.insert(analyticsPolls).values({
-      titleId: activeTitle.id,
-      views: analytics.views || 0,
-      impressions: analytics.impressions || 0,
-      clicks: analytics.clicks || 0,
-      averageViewDuration: analytics.averageViewDuration || 0,
-      polledAt: new Date(),
-    });
-    
-    log(`✅ Analytics polled for "${activeTitle.text}":`, {
-      views: analytics.views,
-      impressions: analytics.impressions,
-      ctr: analytics.impressions > 0 ? ((analytics.clicks / analytics.impressions) * 100).toFixed(2) + '%' : '0%'
-    });
-    
-  } catch (err: any) {
-    error(`Failed to poll analytics for test ${testId}`, err);
+  } catch (err) {
+    error(`Error in analytics polling for test ${testId}`, err);
   }
 }
 
 // Schedule a test
 export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
   log(`Scheduling test ${testId} with ${rotationIntervalMinutes} minute intervals`);
+  
+  // Validate rotation interval to prevent memory issues
+  if (!rotationIntervalMinutes || rotationIntervalMinutes <= 0) {
+    error(`Invalid rotation interval: ${rotationIntervalMinutes} minutes for test ${testId}. Skipping scheduling.`);
+    return;
+  }
+  
+  // Ensure minimum interval of 1 minute to prevent excessive scheduling
+  const safeInterval = Math.max(1, rotationIntervalMinutes);
   
   // Clear any existing job
   const existingJob = activeJobs.get(testId);
@@ -236,15 +263,15 @@ export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
   }
   
   // Create cron pattern (run every N minutes)
-  const cronPattern = `*/${rotationIntervalMinutes} * * * *`;
+  const cronPattern = `*/${safeInterval} * * * *`;
   
   // Schedule rotation job
   const rotationJob = cron.schedule(cronPattern, async () => {
     await rotateTitle(testId);
   });
   
-  // Schedule analytics polling (every 15 minutes)
-  const analyticsJob = cron.schedule('*/15 * * * *', async () => {
+  // Schedule analytics polling (every 5 minutes)
+  const analyticsJob = cron.schedule('*/5 * * * *', async () => {
     await pollAnalytics(testId);
   });
   
@@ -283,36 +310,58 @@ export async function initializeScheduler() {
     
     // Schedule each active test
     for (const test of activeTests) {
-      // Check if test has titles to rotate
-      const activatedTitles = test.titles.filter(t => t.activatedAt).length;
-      const remainingTitles = test.titles.filter(t => !t.activatedAt).length;
-      
-      if (remainingTitles === 0) {
-        log(`Test ${test.id} has no remaining titles, marking as completed`);
-        await db.update(tests)
-          .set({ 
-            status: 'completed',
-            endDate: new Date()
-          })
-          .where(eq(tests.id, test.id));
-        continue;
+      try {
+        // Validate test has required fields
+        if (!test.id || !test.rotationIntervalMinutes) {
+          error(`Test ${test.id} missing required fields, skipping`);
+          continue;
+        }
+        
+        // Check if test has titles to rotate
+        const activatedTitles = test.titles.filter(t => t.activatedAt).length;
+        const remainingTitles = test.titles.filter(t => !t.activatedAt).length;
+        
+        if (remainingTitles === 0) {
+          log(`Test ${test.id} has no remaining titles, marking as completed`);
+          await db.update(tests)
+            .set({ 
+              status: 'completed',
+              endDate: new Date()
+            })
+            .where(eq(tests.id, test.id));
+          continue;
+        }
+        
+        // Ensure valid rotation interval
+        if (test.rotationIntervalMinutes <= 0) {
+          error(`Test ${test.id} has invalid rotation interval: ${test.rotationIntervalMinutes}, skipping`);
+          continue;
+        }
+        
+        scheduleTest(test.id, test.rotationIntervalMinutes);
+        
+        log(`Scheduled test ${test.id}:`, {
+          videoTitle: test.videoTitle,
+          titlesActivated: activatedTitles,
+          titlesRemaining: remainingTitles,
+          rotationInterval: test.rotationIntervalMinutes
+        });
+        
+      } catch (testErr) {
+        error(`Failed to schedule test ${test.id}`, testErr);
+        continue; // Continue with next test
       }
-      
-      scheduleTest(test.id, test.rotationIntervalMinutes);
-      
-      log(`Scheduled test ${test.id}:`, {
-        videoTitle: test.videoTitle,
-        titlesActivated: activatedTitles,
-        titlesRemaining: remainingTitles,
-        rotationInterval: test.rotationIntervalMinutes
-      });
     }
     
-    // Poll analytics immediately for all active tests
+    // Poll analytics immediately for all active tests with better error handling
     setTimeout(async () => {
       log('Running initial analytics poll for all active tests...');
       for (const test of activeTests) {
-        await pollAnalytics(test.id);
+        try {
+          await pollAnalytics(test.id);
+        } catch (pollErr) {
+          error(`Failed to poll analytics for test ${test.id}`, pollErr);
+        }
       }
     }, 5000); // Wait 5 seconds after startup
     
@@ -383,14 +432,22 @@ export function getSchedulerStatus() {
   return status;
 }
 
-// Export for compatibility with existing code
+// Export scheduler object for backwards compatibility with routes.ts
 export const scheduler = {
-  scheduleTest,
   startTest: scheduleTest,
-  cancelJob: stopScheduledTest,
-  rotateToNextTitle: triggerManualRotation,
-  cancelRotation: stopScheduledTest,
-  scheduleRotation: (testId: string, delayMinutes: number) => {
+  scheduleTest: (testId: string, startDate: Date) => {
+    // Calculate minutes until start date
+    const now = new Date();
+    const delayMinutes = Math.max(0, Math.floor((startDate.getTime() - now.getTime()) / 60000));
     scheduleTest(testId, delayMinutes);
-  }
+  },
+  scheduleRotation: (testId: string, delayMinutes: number, _: number) => {
+    scheduleTest(testId, delayMinutes);
+  },
+  cancelJob: (jobId: string) => {
+    const testId = jobId.replace('rotation-', '');
+    stopScheduledTest(testId);
+  },
+  rotateToNextTitle: triggerManualRotation,
+  cancelRotation: stopScheduledTest
 };

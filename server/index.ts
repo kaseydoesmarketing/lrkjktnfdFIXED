@@ -23,6 +23,8 @@ import cors from "cors";
 import pg from "pg";
 import session from "express-session";
 import passport from "./passportConfig";
+import { initializeScheduler } from "./scheduler";
+import rotationRoutes from "./routes/rotation";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -189,6 +191,11 @@ app.use((req, res, next) => {
     setTimeout(async () => {
       try {
         log(`Server initialization complete - ready to accept connections`);
+        
+        // Initialize the scheduler for title rotation
+        console.log('Initializing title rotation scheduler...');
+        await initializeScheduler();
+        console.log('✅ Scheduler initialized successfully');
       } catch (error) {
         console.error('Server initialization error:', error);
       }

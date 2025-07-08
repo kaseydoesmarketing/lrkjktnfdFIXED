@@ -17,18 +17,18 @@ export class YouTubeService {
    */
   async withTokenRefresh<T>(
     userId: string,
-    operation: (accessToken: string) => Promise<T>
+    operation: (tokens: { accessToken: string; refreshToken: string }) => Promise<T>
   ): Promise<T> {
+    console.log(`[YOUTUBE] Starting operation for user ${userId}`);
     
-    const user = await storage.getUser(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Get tokens from accounts table (exclusive source of truth)
+    // Get tokens from accounts table (single source of truth)
     const account = await storage.getAccountByUserId(userId, 'google');
     
-    if (!account || !account.accessToken || !account.refreshToken) {
+    if (!account) {
+      throw new Error('No Google account found for user - re-authentication required');
+    }
+
+    if (!account.accessToken || !account.refreshToken) {
       throw new Error('User account missing OAuth tokens - re-authentication required');
     }
     
@@ -37,15 +37,24 @@ export class YouTubeService {
 
     try {
       // Try the operation with current access token
-      return await operation(accessToken);
+      return await operation({ accessToken, refreshToken });
     } catch (error: any) {
+      console.log(`[YOUTUBE] Operation failed:`, error.message);
       
       // Check if error is authentication-related (401 Unauthorized)
-      if (error.code === 401 || error.status === 401 || error.message?.includes('authentication')) {
+      if (error.code === 401 || error.status === 401 || 
+          error.message?.includes('authentication') || 
+          error.message?.includes('Invalid Credentials')) {
+        
+        console.log(`[YOUTUBE] Authentication error detected, attempting token refresh`);
         
         try {
           // Refresh the access token
           const refreshedTokens = await googleAuthService.refreshAccessToken(refreshToken);
+          
+          if (!refreshedTokens.access_token) {
+            throw new Error('Failed to refresh access token');
+          }
           
           // Update tokens in accounts table
           await storage.updateAccountTokens(account.id, {
@@ -55,8 +64,13 @@ export class YouTubeService {
           });
           
           
-          // Retry the operation with fresh access token
-          return await operation(refreshedTokens.access_token!);
+          console.log(`[YOUTUBE] Tokens refreshed successfully, retrying operation`);
+          
+          // Retry the operation with fresh tokens
+          return await operation({ 
+            accessToken: refreshedTokens.access_token,
+            refreshToken: refreshedTokens.refresh_token || refreshToken
+          });
         } catch (refreshError: any) {
           throw new Error(`Authentication failed and token refresh unsuccessful: ${refreshError.message}`);
         }

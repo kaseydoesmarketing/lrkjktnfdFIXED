@@ -8,6 +8,7 @@ import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import { registerAdminRoutes } from "./adminRoutes";
 import oauthRoutes from "./oauthRoutes";
+import rotationRoutes from "./routes/rotation";
 import {
   apiCache,
   youtubeCache,
@@ -165,6 +166,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register OAuth routes with Passport.js
   app.use('/api/auth', oauthRoutes);
+  
+  // Register rotation routes
+  app.use(rotationRoutes);
 
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {

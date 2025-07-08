@@ -166,6 +166,7 @@ export default function Dashboard() {
               </a>
               <nav className="hidden md:flex space-x-6">
                 <a href="/dashboard" className="text-[#5865F2] font-medium">Dashboard</a>
+                <a href="/tests" className="text-gray-600 hover:text-gray-900">Rotation Manager</a>
                 <a href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
                 <a href="/help" className="text-gray-600 hover:text-gray-900">Help</a>
               </nav>

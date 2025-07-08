@@ -1,6 +1,7 @@
+// server/scheduler-fixed.ts
 import cron from 'node-cron';
 import { db } from './db';
-import { tests, titles, analyticsPolls } from '@shared/schema';
+import { tests, titles, analyticsPolls, testRotationLogs } from '@shared/schema';
 import { eq, and, isNull, gte, lte, sql } from 'drizzle-orm';
 import { youtubeService } from './youtubeService';
 
@@ -132,79 +133,93 @@ async function rotateTitle(testId: string) {
       .where(eq(titles.id, nextTitle.id));
     
     log(`✅ Activated title ${nextOrder + 1}/${test.titles.length}: "${nextTitle.text}"`);
-    
-    // Log rotation summary
-    log(`Rotation complete:`, {
-      testId,
-      previousTitle: currentTitle?.text || 'None',
-      previousOrder: currentOrder,
-      newTitle: nextTitle.text,
-      newOrder: nextOrder,
-      totalTitles: test.titles.length,
-      remainingTitles: test.titles.length - nextOrder - 1
-    });
-    
-  } catch (err) {
-    error(`Failed to rotate title for test ${testId}`, err);
-  }
-}
 
-// Analytics polling logic
-async function pollAnalytics(testId: string) {
-  log(`Polling analytics for test ${testId}`);
-  
-  try {
-    const test = await db.query.tests.findFirst({
-      where: eq(tests.id, testId),
-      with: {
-        titles: true,
-        user: true,
-      },
-    });
-
-    if (!test || test.status !== 'active') {
-      log(`Test ${testId} not active, skipping analytics poll`);
-      return;
-    }
-
-    // Get current active title
-    const activeTitle = test.titles.find(t => t.isActive);
-    if (!activeTitle) {
-      log(`No active title for test ${testId}`);
-      return;
-    }
-
-    // Fetch YouTube analytics with token refresh
+    // Fetch initial analytics for the new title
+    let analytics = null;
     try {
-      const analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
+      analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
         return await youtubeService.getVideoAnalytics(
           test.videoId,
           tokens.accessToken!
         );
       });
-      
-      // Store analytics poll
-      await db.insert(analyticsPolls).values({
-        titleId: activeTitle.id,
-        views: analytics.views || 0,
-        impressions: analytics.impressions || 0,
-        clicks: analytics.clicks || 0,
-        averageViewDuration: analytics.averageViewDuration || 0,
-        polledAt: new Date(),
+    } catch (err) {
+      error('Failed to fetch analytics for rotation log', err);
+    }
+
+    // Log rotation event in testRotationLogs
+    try {
+      await db.insert(testRotationLogs).values({
+        id: `rot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        testId: test.id,
+        titleId: nextTitle.id,
+        titleText: nextTitle.text,
+        rotatedAt: new Date(),
+        rotationOrder: nextOrder,
+        durationMinutes: currentTitle && currentTitle.activatedAt 
+          ? Math.floor((new Date().getTime() - new Date(currentTitle.activatedAt).getTime()) / 60000)
+          : test.rotationIntervalMinutes,
+        impressions: analytics?.impressions || 0,
+        clicks: analytics?.clicks || 0,
+        averageViewDuration: analytics?.averageViewDuration || 0
       });
       
-      log(`✅ Analytics polled for "${activeTitle.text}":`, {
-        views: analytics.views,
-        impressions: analytics.impressions,
-        ctr: analytics.impressions > 0 ? ((analytics.clicks / analytics.impressions) * 100).toFixed(2) + '%' : '0%'
-      });
-      
-    } catch (err: any) {
-      error(`Failed to poll analytics for test ${testId}`, err);
+      log('✅ Rotation logged successfully');
+    } catch (err) {
+      error('Failed to log rotation', err);
     }
     
   } catch (err) {
-    error(`Error in analytics polling for test ${testId}`, err);
+    error(`Error in title rotation for test ${testId}`, err);
+  }
+}
+
+// Poll analytics for active test
+async function pollAnalytics(testId: string) {
+  try {
+    const test = await db.query.tests.findFirst({
+      where: eq(tests.id, testId),
+      with: {
+        titles: true,
+      },
+    });
+
+    if (!test || test.status !== 'active') {
+      return;
+    }
+
+    const activeTitle = test.titles.find(t => t.isActive);
+    if (!activeTitle) {
+      return;
+    }
+
+    log(`Polling analytics for test ${testId}, title: "${activeTitle.text}"`);
+
+    const analytics = await youtubeService.withTokenRefresh(test.userId, async (tokens) => {
+      return await youtubeService.getVideoAnalytics(
+        test.videoId,
+        tokens.accessToken!
+      );
+    });
+    
+    // Store analytics poll
+    await db.insert(analyticsPolls).values({
+      titleId: activeTitle.id,
+      views: analytics.views || 0,
+      impressions: analytics.impressions || 0,
+      clicks: analytics.clicks || 0,
+      averageViewDuration: analytics.averageViewDuration || 0,
+      polledAt: new Date(),
+    });
+    
+    log(`✅ Analytics polled for "${activeTitle.text}":`, {
+      views: analytics.views,
+      impressions: analytics.impressions,
+      ctr: analytics.impressions > 0 ? ((analytics.clicks / analytics.impressions) * 100).toFixed(2) + '%' : '0%'
+    });
+    
+  } catch (err: any) {
+    error(`Failed to poll analytics for test ${testId}`, err);
   }
 }
 
@@ -228,8 +243,8 @@ export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
     await rotateTitle(testId);
   });
   
-  // Schedule analytics polling (every 5 minutes)
-  const analyticsJob = cron.schedule('*/5 * * * *', async () => {
+  // Schedule analytics polling (every 15 minutes)
+  const analyticsJob = cron.schedule('*/15 * * * *', async () => {
     await pollAnalytics(testId);
   });
   
@@ -367,3 +382,15 @@ export function getSchedulerStatus() {
   log('Scheduler status:', status);
   return status;
 }
+
+// Export for compatibility with existing code
+export const scheduler = {
+  scheduleTest,
+  startTest: scheduleTest,
+  cancelJob: stopScheduledTest,
+  rotateToNextTitle: triggerManualRotation,
+  cancelRotation: stopScheduledTest,
+  scheduleRotation: (testId: string, delayMinutes: number) => {
+    scheduleTest(testId, delayMinutes);
+  }
+};
