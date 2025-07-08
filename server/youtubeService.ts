@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { googleAuthService } from './googleAuth';
 import { supabase, getYouTubeTokens } from './auth/supabase';
 import { rateLimiter } from './services/rateLimiter';
+import { storage } from './storage';
 
 export class YouTubeService {
   private youtube;
@@ -47,27 +48,58 @@ export class YouTubeService {
     userId: string,
     operation: (tokens: { accessToken: string; refreshToken: string }) => Promise<T>
   ): Promise<T> {
-    // For Supabase, we need the session token from the request context
-    // This should be passed from the route handler
-    const sessionToken = (global as any).currentRequestToken;
-    
-    if (!sessionToken) {
-      throw new Error('No session token available');
-    }
-    
     try {
-      const tokens = await this.getTokensFromSession(sessionToken);
-      return await operation(tokens);
+      // Get user's OAuth tokens from the accounts table
+      const accounts = await storage.getAccountsByUserId(userId);
+      const googleAccount = accounts.find(acc => acc.provider === 'google');
+      
+      if (!googleAccount || !googleAccount.accessToken) {
+        throw new Error('No YouTube access token found. Please reconnect your YouTube account.');
+      }
+      
+      // Try the operation with the current token
+      try {
+        return await operation({
+          accessToken: googleAccount.accessToken,
+          refreshToken: googleAccount.refreshToken || ''
+        });
+      } catch (error: any) {
+        // If we get a 401, try to refresh the token
+        if (error.code === 401 || error.response?.status === 401 || error.message?.includes('401')) {
+          console.log('🔄 [YOUTUBE] Token expired, attempting refresh...');
+          
+          if (!googleAccount.refreshToken) {
+            throw new Error('Authentication expired - please sign in again');
+          }
+          
+          // Refresh the token using Google Auth Service
+          const refreshedTokens = await googleAuthService.refreshAccessToken(googleAccount.refreshToken);
+          
+          // Update the stored tokens
+          await storage.updateAccount(googleAccount.id, {
+            accessToken: refreshedTokens.access_token!,
+            expiresAt: refreshedTokens.expiry_date || null
+          });
+          
+          // Retry the operation with the new token
+          return await operation({
+            accessToken: refreshedTokens.access_token!,
+            refreshToken: googleAccount.refreshToken
+          });
+        }
+        
+        throw error;
+      }
     } catch (error: any) {
       console.error('[YOUTUBE] API Error:', error);
       
-      // Supabase automatically refreshes tokens
-      // If still failing, user needs to re-authenticate
-      if (error.code === 401 || error.message?.includes('401')) {
-        throw new Error('Authentication expired - please sign in again');
+      if (error.message?.includes('re-authentication required') || 
+          error.message?.includes('sign in again') ||
+          error.message?.includes('reconnect')) {
+        throw error;
       }
       
-      throw error;
+      throw new Error(`YouTube API error: ${error.message || 'Unknown error'}`);
     }
   }
 

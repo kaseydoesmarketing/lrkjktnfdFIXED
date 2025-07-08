@@ -9,7 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import EnhancedAdmin from "@/pages/enhanced-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import { HomePage } from "@/pages/HomePage";
+import { HomePage } from "./pages/HomePage";
 import Paywall from "@/pages/paywall";
 import AuthCallback from "@/pages/auth-callback";
 import OAuthTest from "@/pages/OAuthTest";
