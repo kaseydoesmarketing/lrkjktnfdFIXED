@@ -186,6 +186,87 @@ export class YouTubeService {
     });
   }
 
+  // Direct method that accepts tokens without looking up user
+  async getChannelVideosDirect(accessToken: string, maxResults: number = 200) {
+    const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+    const youtube = google.youtube({ version: 'v3', auth: authClient });
+
+    // First get the channel's uploads playlist
+    const channelResponse = await youtube.channels.list({
+      part: ['contentDetails'],
+      mine: true
+    });
+
+    if (!channelResponse.data.items?.length) {
+      throw new Error('No channel found');
+    }
+
+    const uploadsPlaylistId = channelResponse.data.items[0].contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) {
+      throw new Error('No uploads playlist found');
+    }
+
+    let allVideos: any[] = [];
+    let nextPageToken: string | undefined = undefined;
+    const pageSize = Math.min(maxResults, 50); // YouTube API max is 50 per request
+
+    do {
+      // Get videos from uploads playlist with pagination
+      const playlistResponse: any = await youtube.playlistItems.list({
+        part: ['snippet'],
+        playlistId: uploadsPlaylistId,
+        maxResults: pageSize,
+        pageToken: nextPageToken
+      });
+
+      if (playlistResponse.data.items?.length) {
+        allVideos.push(...playlistResponse.data.items);
+      }
+
+      nextPageToken = playlistResponse.data.nextPageToken;
+      
+      // Continue until we have enough videos or no more pages
+    } while (nextPageToken && allVideos.length < maxResults);
+
+    if (!allVideos.length) {
+      return [];
+    }
+
+    // Get detailed video information for all videos (in batches if needed)
+    const videoIds = allVideos
+      .map(item => item.snippet?.resourceId?.videoId)
+      .filter((id): id is string => Boolean(id))
+      .slice(0, maxResults); // Trim to requested limit
+    
+    // YouTube API allows up to 50 video IDs per request
+    const videoDetails: any[] = [];
+    for (let i = 0; i < videoIds.length; i += 50) {
+      const batchIds = videoIds.slice(i, i + 50);
+      
+      const videosResponse = await youtube.videos.list({
+        part: ['snippet', 'statistics', 'contentDetails'],
+        id: batchIds
+      });
+
+      if (videosResponse.data.items?.length) {
+        videoDetails.push(...videosResponse.data.items);
+      }
+    }
+
+    return videoDetails.map((video: any) => ({
+      id: video.id!,
+      title: video.snippet?.title,
+      description: video.snippet?.description,
+      thumbnail: video.snippet?.thumbnails?.medium?.url,
+      publishedAt: video.snippet?.publishedAt,
+      viewCount: parseInt(video.statistics?.viewCount || '0'),
+      likeCount: parseInt(video.statistics?.likeCount || '0'),
+      commentCount: parseInt(video.statistics?.commentCount || '0'),
+      duration: video.contentDetails?.duration,
+      status: video.snippet?.liveBroadcastContent === 'none' ? 'published' : video.snippet?.liveBroadcastContent
+    }));
+  }
+
   async updateVideoTitle(userId: string, videoId: string, newTitle: string) {
     
     return await this.withTokenRefresh(userId, async (accessToken: string) => {
