@@ -104,9 +104,9 @@ export class YouTubeService {
   }
 
   // Rest of YouTube methods remain the same...
-  async getChannelVideos(userId: string) {
-    return await this.withTokenRefresh(userId, async ({ accessToken }) => {
-      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+  async getChannelVideos(userId: string, maxResults: number = 50) {
+    return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
+      const authClient = googleAuthService.createAuthenticatedClient(accessToken, refreshToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
       const channelResponse = await youtube.channels.list({
@@ -123,7 +123,7 @@ export class YouTubeService {
       const videosResponse = await youtube.playlistItems.list({
         part: ['snippet', 'contentDetails', 'status'],
         playlistId: uploadsPlaylistId,
-        maxResults: 50
+        maxResults: maxResults
       });
 
       return videosResponse.data.items?.map(item => ({

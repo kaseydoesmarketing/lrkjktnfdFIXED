@@ -850,8 +850,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json(demoVideos);
         }
 
-        // Check if user has YouTube tokens
-        if (!user.accessToken) {
+        // Check if user has YouTube tokens in accounts table
+        const accounts = await storage.getAccountsByUserId(user.id);
+        const googleAccount = accounts.find(acc => acc.provider === 'google');
+        
+        if (!googleAccount || !googleAccount.accessToken) {
           return res.status(401).json({
             error: "YouTube account not connected",
             message: "Please reconnect your YouTube account via Google OAuth",
