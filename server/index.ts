@@ -84,11 +84,12 @@ app.use('/api/', limiter);
 // Stricter rate limiting for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit auth attempts
+  max: 50, // increased from 10 for testing
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: 15 * 60
   },
+  statusCode: 429, // Use standard rate limit status code instead of 900
 });
 
 app.use('/api/auth/', authLimiter);
