@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Play, Pause, CheckCircle, Plus, Eye, TrendingUp,
-  Clock, ChevronDown, ChevronUp, BarChart3, Target
+  Clock, ChevronDown, ChevronUp, BarChart3, Target, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestModal from '@/components/CreateTestModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DashboardStats {
   activeTests: number;
@@ -45,6 +55,8 @@ export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(0);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [testToDelete, setTestToDelete] = useState<string | null>(null);
 
   // Fetch user data
   const { data: user } = useQuery({
@@ -69,6 +81,52 @@ export default function Dashboard() {
     enabled: !!user,
     refetchInterval: 10000, // Refresh every 10 seconds
   });
+
+  // Delete test mutation
+  const deleteTestMutation = useMutation({
+    mutationFn: async (testId: string) => {
+      const response = await fetch(`/api/tests/${testId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete test');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tests/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      toast({
+        title: "Test deleted",
+        description: "The test has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete test",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle test actions
+  const handleTestAction = (testId: string, action: string) => {
+    if (action === 'delete') {
+      setTestToDelete(testId);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (testToDelete) {
+      deleteTestMutation.mutate(testToDelete);
+      setDeleteDialogOpen(false);
+      setTestToDelete(null);
+    }
+  };
 
   const toggleTest = (testId: string) => {
     setExpandedTests(prev => {
@@ -378,6 +436,18 @@ export default function Dashboard() {
                       <Button variant="outline" size="sm">Pause Test</Button>
                       <Button variant="outline" size="sm">Edit Variants</Button>
                       <Button variant="outline" size="sm">Complete Test</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTestAction(test.id, 'delete');
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Cancel Test
+                      </Button>
                       <Button size="sm" className="bg-[#5865F2] hover:bg-[#4752C4]">
                         View Full Report
                       </Button>
@@ -419,6 +489,28 @@ export default function Dashboard() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the test and all its data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Test</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Cancel Test
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
