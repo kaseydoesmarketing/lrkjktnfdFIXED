@@ -1,4 +1,5 @@
 import { queryClient } from './queryClient';
+import { useAuthStore } from '@/stores/authStore';
 
 export interface User {
   id: string;

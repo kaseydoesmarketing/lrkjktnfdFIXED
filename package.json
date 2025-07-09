@@ -50,9 +50,11 @@
     "@types/cors": "^2.8.19",
     "@types/memoizee": "^0.4.12",
     "@types/passport-google-oauth20": "^2.0.16",
+    "bullmq": "^5.56.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "concurrently": "^9.2.0",
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -69,6 +71,7 @@
     "googleapis": "^150.0.1",
     "helmet": "^8.1.0",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.6.1",
     "lucide-react": "^0.453.0",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
@@ -96,7 +99,8 @@
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.2.7",
