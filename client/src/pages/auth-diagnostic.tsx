@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
-import { useAuthStore } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 interface DiagnosticResult {
@@ -14,7 +13,6 @@ interface DiagnosticResult {
 }
 
 export default function AuthDiagnosticTool() {
-  const { user } = useAuthStore();
   const [results, setResults] = useState<DiagnosticResult[]>([
     { test: 'Supabase Session', status: 'pending' },
     { test: 'Backend Authentication', status: 'pending' },
@@ -219,16 +217,14 @@ export default function AuthDiagnosticTool() {
             ))}
           </div>
 
-          {!user && (
-            <Alert>
-              <AlertDescription>
-                You need to be logged in to run the full diagnostics. 
-                <a href="/login" className="text-blue-600 hover:underline ml-1">
-                  Login here
-                </a>
-              </AlertDescription>
-            </Alert>
-          )}
+          <Alert>
+            <AlertDescription>
+              Note: Some diagnostic tests may require authentication to provide complete results.
+              <a href="/login" className="text-blue-600 hover:underline ml-1">
+                Login here
+              </a>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
     </div>
