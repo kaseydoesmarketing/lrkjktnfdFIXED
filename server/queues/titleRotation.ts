@@ -1,32 +1,65 @@
-import { Queue, Worker, QueueScheduler } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 import Redis from 'ioredis';
-import { db } from '../storage.js';
-import { youtubeAuthService } from '../services/youtubeAuth.js';
+import { storage, DatabaseStorage } from '../storage';
+import { YouTubeAuthService } from '../services/youtubeAuth';
+import { redisConnection } from '../config/redis';
 
-const connection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-});
+// Create Redis connection with error handling
+let connection: Redis | null = null;
+let titleRotationQueue: Queue | null = null;
+let titleRotationWorker: Worker | null = null;
 
-// Create queue with proper configuration
-export const titleRotationQueue = new Queue('title-rotation', {
-  connection,
-  defaultJobOptions: {
-    removeOnComplete: 5,
-    removeOnFail: 10,
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-  },
-});
+// Only create connection if Redis is configured
+if (redisConnection) {
+  try {
+    connection = new Redis({
+      ...redisConnection,
+      lazyConnect: true,
+    });
+    
+    // Handle connection errors gracefully
+    connection.on('error', (err) => {
+      console.warn('🔸 Redis connection error (BullMQ will work in limited mode):', err.message);
+    });
+    
+    connection.on('end', () => {
+      console.warn('🔸 Redis disconnected');
+    });
+  } catch (error) {
+    console.warn('🔸 Redis not available, title rotation queue disabled');
+  }
+} else {
+  console.log('🔸 Running in development mode without Redis - BullMQ queues disabled');
+}
 
-// Queue scheduler for delayed/repeated jobs
-new QueueScheduler('title-rotation', { connection });
+const youtubeAuthService = new YouTubeAuthService();
+const db = new DatabaseStorage();
 
-// Worker that properly handles all titles
-const titleRotationWorker = new Worker(
+// Initialize queue only if Redis is available
+if (connection) {
+  try {
+    titleRotationQueue = new Queue('title-rotation', {
+      connection,
+      defaultJobOptions: {
+        removeOnComplete: 5,
+        removeOnFail: 10,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+      },
+    });
+  } catch (error) {
+    console.warn('🔸 Failed to create title rotation queue:', error);
+  }
+}
+
+// Note: QueueScheduler is deprecated in BullMQ v4+ and is now integrated into Queue and Worker
+
+// Initialize worker only if connection and queue exist
+if (connection && titleRotationQueue) {
+  titleRotationWorker = new Worker(
   'title-rotation',
   async (job) => {
     const { testId } = job.data;
@@ -138,17 +171,23 @@ const titleRotationWorker = new Worker(
   }
 );
 
-// Handle worker events
-titleRotationWorker.on('completed', (job) => {
-  console.log(`✅ Title rotation completed for test ${job.data.testId}`);
-});
+  // Handle worker events
+  titleRotationWorker.on('completed', (job) => {
+    console.log(`✅ Title rotation completed for test ${job.data.testId}`);
+  });
 
-titleRotationWorker.on('failed', (job, err) => {
-  console.error(`❌ Title rotation failed for test ${job?.data.testId}:`, err);
-});
+  titleRotationWorker.on('failed', (job, err) => {
+    console.error(`❌ Title rotation failed for test ${job?.data.testId}:`, err);
+  });
+}
 
 // Schedule recurring rotations
 export async function scheduleTestRotations(testId: string, intervalHours: number) {
+  if (!titleRotationQueue) {
+    console.warn('🔸 Title rotation queue not available, using fallback cron scheduler');
+    return;
+  }
+  
   const jobId = `rotation-${testId}`;
   
   // Remove existing schedule if any
@@ -175,6 +214,11 @@ export async function scheduleTestRotations(testId: string, intervalHours: numbe
 
 // Cancel test rotations
 export async function cancelTestRotations(testId: string) {
+  if (!titleRotationQueue) {
+    console.warn('🔸 Title rotation queue not available');
+    return;
+  }
+  
   const jobId = `rotation-${testId}`;
   
   const existingJobs = await titleRotationQueue.getRepeatableJobs();
@@ -188,12 +232,15 @@ export async function cancelTestRotations(testId: string) {
 // Memory leak prevention
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing worker...');
-  await titleRotationWorker.close();
-  await connection.quit();
+  if (titleRotationWorker) await titleRotationWorker.close();
+  if (connection) await connection.quit();
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, closing worker...');
-  await titleRotationWorker.close();
-  await connection.quit();
+  if (titleRotationWorker) await titleRotationWorker.close();
+  if (connection) await connection.quit();
 });
+
+// Export the queue for external use
+export { titleRotationQueue };

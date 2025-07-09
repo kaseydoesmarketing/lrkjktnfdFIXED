@@ -4,8 +4,10 @@ import { db } from './db';
 import { tests, titles, analyticsPolls, testRotationLogs } from '@shared/schema';
 import { eq, and, isNull, gte, lte, sql } from 'drizzle-orm';
 import { youtubeService } from './youtubeService';
+import { scheduleTestRotations, cancelTestRotations, titleRotationQueue } from './queues/titleRotation';
+import { youtubeAPIService } from './services/youtube';
 
-// Store active cron jobs
+// Store active cron jobs (for analytics polling)
 const activeJobs = new Map<string, cron.ScheduledTask>();
 
 // Logging utility
@@ -220,46 +222,37 @@ async function pollAnalytics(testId: string) {
 }
 
 // Schedule a test
-export function scheduleTest(testId: string, rotationIntervalMinutes: number) {
+export async function scheduleTest(testId: string, rotationIntervalMinutes: number) {
   log(`Scheduling test ${testId} with ${rotationIntervalMinutes} minute intervals`);
   
-  // Clear any existing job
-  const existingJob = activeJobs.get(testId);
-  if (existingJob) {
-    existingJob.stop();
-    activeJobs.delete(testId);
-    log(`Cleared existing job for test ${testId}`);
-  }
-  
-  // Create cron pattern (run every N minutes)
-  const cronPattern = `*/${rotationIntervalMinutes} * * * *`;
-  
-  // Schedule rotation job
-  const rotationJob = cron.schedule(cronPattern, async () => {
-    await rotateTitle(testId);
-  });
-  
-  // Schedule analytics polling (every 15 minutes)
-  const analyticsJob = cron.schedule('*/15 * * * *', async () => {
-    await pollAnalytics(testId);
-  });
-  
-  // Combine jobs
-  const combinedJob = {
-    start: () => {
-      rotationJob.start();
-      analyticsJob.start();
-    },
-    stop: () => {
-      rotationJob.stop();
-      analyticsJob.stop();
+  try {
+    // Clear any existing analytics job
+    const existingJob = activeJobs.get(testId);
+    if (existingJob) {
+      existingJob.stop();
+      activeJobs.delete(testId);
+      log(`Cleared existing analytics job for test ${testId}`);
     }
-  };
-  
-  activeJobs.set(testId, combinedJob as any);
-  combinedJob.start();
-  
-  log(`✅ Test ${testId} scheduled with pattern: ${cronPattern}`);
+    
+    // Cancel any existing BullMQ rotation jobs
+    await cancelTestRotations(testId);
+    
+    // Schedule title rotation using BullMQ
+    await scheduleTestRotations(testId, rotationIntervalMinutes);
+    
+    // Schedule analytics polling using cron (every 15 minutes)
+    const analyticsJob = cron.schedule('*/15 * * * *', async () => {
+      await pollAnalytics(testId);
+    });
+    
+    activeJobs.set(testId, analyticsJob);
+    analyticsJob.start();
+    
+    log(`✅ Test ${testId} scheduled with ${rotationIntervalMinutes} minute rotation intervals`);
+  } catch (error) {
+    log(`Failed to schedule test ${testId}`, error);
+    throw error;
+  }
 }
 
 // Initialize scheduler on startup
@@ -320,13 +313,18 @@ export async function initializeScheduler() {
 }
 
 // Stop a scheduled test
-export function stopScheduledTest(testId: string) {
+export async function stopScheduledTest(testId: string) {
+  // Stop analytics polling
   const job = activeJobs.get(testId);
   if (job) {
     job.stop();
     activeJobs.delete(testId);
-    log(`Stopped scheduled test ${testId}`);
+    log(`Stopped analytics polling for test ${testId}`);
   }
+  
+  // Cancel BullMQ rotation jobs
+  await cancelTestRotations(testId);
+  log(`Stopped all scheduled jobs for test ${testId}`);
 }
 
 // Pause a test
@@ -338,7 +336,7 @@ export async function pauseTest(testId: string) {
     })
     .where(eq(tests.id, testId));
   
-  stopScheduledTest(testId);
+  await stopScheduledTest(testId);
   log(`Paused test ${testId}`);
 }
 
@@ -356,7 +354,7 @@ export async function resumeTest(testId: string) {
       })
       .where(eq(tests.id, testId));
     
-    scheduleTest(testId, test.rotationIntervalMinutes);
+    await scheduleTest(testId, test.rotationIntervalMinutes);
     log(`Resumed test ${testId}`);
   }
 }
@@ -364,7 +362,10 @@ export async function resumeTest(testId: string) {
 // Manual rotation trigger (for debugging)
 export async function triggerManualRotation(testId: string) {
   log(`Manual rotation triggered for test ${testId}`);
-  await rotateTitle(testId);
+  // Add a rotation job immediately
+  await titleRotationQueue.add('rotate-title', { testId }, {
+    delay: 0,
+  });
 }
 
 // Get scheduler status
@@ -386,7 +387,7 @@ export const scheduler = {
   cancelJob: stopScheduledTest,
   rotateToNextTitle: triggerManualRotation,
   cancelRotation: stopScheduledTest,
-  scheduleRotation: (testId: string, delayMinutes: number) => {
-    scheduleTest(testId, delayMinutes);
+  scheduleRotation: async (testId: string, delayMinutes: number) => {
+    await scheduleTest(testId, delayMinutes);
   }
 };

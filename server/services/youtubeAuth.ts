@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import crypto from 'crypto';
-import { db } from '../storage.js';
+import { db } from '../db';
 
 export class YouTubeAuthService {
   private oauth2Client = new google.auth.OAuth2(
