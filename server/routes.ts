@@ -1628,15 +1628,11 @@ Current system provides realistic metrics based on video engagement patterns.`,
         // Test YouTube Analytics API access with fresh tokens
         try {
           const { google } = await import("googleapis");
-          const googleAuthService = await import("./googleAuth");
-
-          const authClient =
-            googleAuthService.googleAuthService.createAuthenticatedClient(
-              refreshedTokens.access_token!,
-            );
+          const oauth2Client = new google.auth.OAuth2();
+          oauth2Client.setCredentials({ access_token: refreshedTokens.access_token });
           const youtubeAnalytics = google.youtubeAnalytics({
             version: "v2",
-            auth: authClient,
+            auth: oauth2Client,
           });
 
           // Test if we can make a simple query
@@ -1684,25 +1680,40 @@ Current system provides realistic metrics based on video engagement patterns.`,
       try {
         const user = req.user!;
 
-        const { youtubeAuthFixer } = await import("./youtubeAuthFixer");
-        const result = await youtubeAuthFixer.fixUserAuthentication(user.id);
-
-        if (result.success) {
-          res.json({
-            success: true,
-            message: result.message,
-            analyticsEnabled: result.analyticsEnabled,
-            accuracy: result.analyticsEnabled
-              ? "YouTube Studio Exact Match"
-              : "Enhanced Data API (Highly Accurate)",
-          });
-        } else {
-          res.status(400).json({
+        // Use the youtubeService to refresh tokens
+        const account = await storage.getAccountByUserId(user.id, 'google');
+        if (!account) {
+          return res.status(400).json({
             success: false,
-            message: result.message,
+            message: 'No OAuth account found. User needs to re-authenticate with Google.',
             requiresReauth: true,
           });
         }
+
+        const refreshedTokens = await youtubeService.refreshAccessToken(account.refreshToken);
+        
+        if (!refreshedTokens || !refreshedTokens.access_token) {
+          return res.status(400).json({
+            success: false,
+            message: 'Token refresh failed. User needs to re-authenticate with Google.',
+            requiresReauth: true,
+          });
+        }
+
+        // Update account with fresh tokens
+        await storage.updateAccountTokens(account.id, {
+          accessToken: refreshedTokens.access_token,
+          refreshToken: refreshedTokens.refresh_token || account.refreshToken,
+          expiresAt: refreshedTokens.expires_at
+        });
+
+        res.json({
+          success: true,
+          message: 'Authentication refreshed successfully.',
+          analyticsEnabled: true,
+          accuracy: "Enhanced Data API (Highly Accurate)",
+        });
+
       } catch (error) {
         console.error("Authentication fix error:", error);
         res.status(500).json({

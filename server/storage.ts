@@ -1,5 +1,5 @@
 import { 
-  users, tests, titles, analyticsPolls, titleSummaries, accounts, sessions,
+  users, tests, titles, analyticsPolls, titleSummaries, accounts, sessions, testRotationLogs,
   type User, type InsertUser, type Test, type InsertTest, type Title, type InsertTitle,
   type AnalyticsPoll, type InsertAnalyticsPoll, type TitleSummary, type InsertTitleSummary,
   type Account, type Session
@@ -7,6 +7,7 @@ import {
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import crypto from "crypto";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   // Users
@@ -410,34 +411,12 @@ export class DatabaseStorage implements IStorage {
       titleId,
       titleText,
       rotatedAt,
-      titleOrder
+      rotationOrder: titleOrder
     });
-  }
-
-  async getSession(sessionToken: string): Promise<Session | undefined> {
-    const [session] = await db.select().from(sessions).where(eq(sessions.sessionToken, sessionToken));
-    return session || undefined;
   }
 
   isValidSession(expires: Date): boolean {
     return new Date() < expires;
-  }
-
-  async getAccountByUserId(userId: string, provider: string): Promise<any> {
-    const [account] = await db.select()
-      .from(accounts)
-      .where(and(eq(accounts.userId, userId), eq(accounts.provider, provider)));
-    return account || undefined;
-  }
-
-  async updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken: string; expiresAt?: number | null }): Promise<void> {
-    await db.update(accounts)
-      .set({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        expiresAt: tokens.expiresAt
-      })
-      .where(eq(accounts.id, accountId));
   }
 
   async determineTestWinner(testId: string): Promise<string | null> {
