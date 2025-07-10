@@ -18,68 +18,7 @@ function getRedirectUri(req: Request): string {
   return `${protocol}://${host}/api/auth/callback/google`;
 }
 
-// Initiate Google OAuth
-router.get('/api/auth/google', async (req: Request, res: Response) => {
-  console.log('🚀 [AUTH-GOOGLE] Starting Google OAuth flow');
-  console.log('🌍 [AUTH-GOOGLE] Current origin:', req.headers.origin || 'No origin header');
-  
-  try {
-    const origin = process.env.NODE_ENV === 'production' 
-      ? 'https://titletesterpro.com'
-      : (req.headers.origin || 'http://localhost:5173');
-    
-    const redirectUrl = `${origin}/api/auth/callback/google`;
-    console.log('🔗 [AUTH-GOOGLE] Redirect URL:', redirectUrl);
-    
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-          // Request YouTube scopes along with basic profile
-          scope: 'openid email profile https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly'
-        }
-      }
-    });
-    
-    if (error) {
-      console.error('❌ [AUTH-GOOGLE] OAuth error:', error);
-      throw error;
-    }
-    
-    if (data.url) {
-      console.log('✅ [AUTH-GOOGLE] Redirecting to Google OAuth');
-      res.redirect(data.url);
-    } else {
-      throw new Error('No redirect URL from Supabase');
-    }
-    
-  } catch (error) {
-    console.error('💥 [AUTH-GOOGLE] Error initiating OAuth:', error);
-    res.redirect('/login?error=oauth_init_failed');
-  }
-});
-
-// OAuth callback handler - Supabase handles all OAuth logic internally
-router.get('/api/auth/callback/google', async (req: Request, res: Response) => {
-  console.log('🔔 [CALLBACK] Google OAuth callback received');
-  console.log('📍 [CALLBACK] Full URL:', req.url);
-  
-  // Supabase handles the OAuth flow internally
-  // This endpoint is just for compatibility if needed
-  // The actual auth handling happens client-side in the browser
-  
-  // Redirect to the client auth callback page
-  const clientCallbackUrl = process.env.NODE_ENV === 'production'
-    ? 'https://titletesterpro.com/auth/callback'
-    : 'http://localhost:5173/auth/callback';
-  
-  // Forward the full URL with hash fragment to the client
-  const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-  res.redirect(`${clientCallbackUrl}?from=${encodeURIComponent(fullUrl)}`);
-});
+// Remove manual OAuth routes - OAuth is handled entirely by Supabase on the frontend
 
 // Get current user
 router.get('/api/auth/user', async (req: Request, res: Response) => {
@@ -241,19 +180,21 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
     
     res.cookie('sb-access-token', access_token, {
       httpOnly: true,
-      secure: isProduction, // Only secure in production
-      sameSite: 'lax', // Use 'lax' for both dev and prod
+      secure: true, // Always secure as per document
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/'
+      path: '/',
+      domain: isProduction ? 'titletesterpro.com' : undefined
     });
     
     if (refresh_token) {
       res.cookie('sb-refresh-token', refresh_token, {
         httpOnly: true,
-        secure: isProduction,
+        secure: true,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
+        path: '/',
+        domain: isProduction ? 'titletesterpro.com' : undefined
       });
     }
     

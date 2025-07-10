@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
+import { supabase } from '@/lib/supabase';
 import { Youtube, BarChart3, TrendingUp, TestTube, AlertCircle } from 'lucide-react';
 
 export default function Login() {
@@ -24,13 +24,42 @@ export default function Login() {
 
   }, []);
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     console.log('🚀 [LOGIN] User clicked Google login button');
     setIsLoading(true);
     setError(null);
-    // Redirect to Google OAuth
-    console.log('🔗 [LOGIN] Redirecting to /api/auth/google');
-    window.location.href = '/api/auth/google';
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+            include_granted_scopes: 'true',
+            scope: [
+              'openid',
+              'email',
+              'profile',
+              'https://www.googleapis.com/auth/youtube',
+              'https://www.googleapis.com/auth/youtube.force-ssl',
+              'https://www.googleapis.com/auth/yt-analytics.readonly'
+            ].join(' ')
+          }
+        }
+      });
+      
+      if (error) {
+        console.error('OAuth error:', error);
+        setError('Failed to initiate login. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setIsLoading(false);
+    }
   };
 
 
