@@ -91,7 +91,7 @@ export class AnalyticsCollector {
         views: analytics.views || 0,
         impressions: analytics.impressions || 0,
         ctr: analytics.ctr || 0,
-        averageViewDuration: analytics.averageViewDuration || 0,
+        averageViewDuration: analytics.avgViewDuration || 0,
       });
 
       console.log(`📊 Analytics poll created for title "${title.text}": ${analytics.views} views, ${analytics.ctr.toFixed(2)}% CTR`);

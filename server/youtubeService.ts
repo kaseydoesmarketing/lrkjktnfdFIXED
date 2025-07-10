@@ -244,12 +244,12 @@ export class YouTubeService {
 
       const channelId = channelResponse.data.items[0].id!;
 
-      // Get analytics data
+      // Get analytics data including CTR and impressions
       const analyticsResponse = await youtubeAnalytics.reports.query({
         ids: `channel==${channelId}`,
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
-        metrics: 'views,estimatedMinutesWatched,averageViewDuration,likes,comments',
+        metrics: 'views,estimatedMinutesWatched,averageViewDuration,likes,comments,impressions,clicks',
         dimensions: 'video',
         filters: `video==${videoId}`,
         maxResults: 1
@@ -262,16 +262,34 @@ export class YouTubeService {
           watchTime: 0,
           avgViewDuration: 0,
           likes: 0,
-          comments: 0
+          comments: 0,
+          impressions: 0,
+          clicks: 0,
+          ctr: 0
         };
       }
 
+      // Extract values from the response (skip the first item which is video ID)
+      const views = (data[1] as number) || 0;
+      const estimatedMinutesWatched = (data[2] as number) || 0;
+      const averageViewDuration = (data[3] as number) || 0;
+      const likes = (data[4] as number) || 0;
+      const comments = (data[5] as number) || 0;
+      const impressions = (data[6] as number) || 0;
+      const clicks = (data[7] as number) || 0;
+      
+      // Calculate CTR using the formula: CTR = (clicks / impressions) * 100
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+
       return {
-        views: data[1] as number,
-        watchTime: data[2] as number,
-        avgViewDuration: data[3] as number,
-        likes: data[4] as number,
-        comments: data[5] as number
+        views,
+        watchTime: estimatedMinutesWatched,
+        avgViewDuration: averageViewDuration,
+        likes,
+        comments,
+        impressions,
+        clicks,
+        ctr: Math.round(ctr * 100) / 100 // Round to 2 decimal places
       };
     });
   }

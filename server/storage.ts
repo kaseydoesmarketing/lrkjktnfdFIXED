@@ -59,6 +59,15 @@ export interface IStorage {
   // Admin methods
   getAllUsers(): Promise<User[]>;
   getAllTests(): Promise<Test[]>;
+  
+  // Scheduler methods
+  getActiveTests(): Promise<Test[]>;
+  updateTestCurrentTitle(testId: string, newIndex: number): Promise<void>;
+  logRotationEvent(testId: string, titleId: string, titleText: string, rotatedAt: Date, titleOrder: number): Promise<void>;
+  isValidSession(expires: Date): boolean;
+  
+  // Winner selection
+  determineTestWinner(testId: string): Promise<string | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -429,6 +438,50 @@ export class DatabaseStorage implements IStorage {
         expiresAt: tokens.expiresAt
       })
       .where(eq(accounts.id, accountId));
+  }
+
+  async determineTestWinner(testId: string): Promise<string | null> {
+    const test = await this.getTest(testId);
+    if (!test) return null;
+
+    const titleSummaries = await this.getTitleSummariesByTestId(testId);
+    if (!titleSummaries.length) return null;
+
+    let winningTitle: TitleSummary | null = null;
+
+    // Determine winner based on the metric
+    switch (test.winnerMetric) {
+      case 'ctr':
+        winningTitle = titleSummaries.reduce((prev, current) => 
+          current.finalCtr > prev.finalCtr ? current : prev
+        );
+        break;
+      
+      case 'views':
+        winningTitle = titleSummaries.reduce((prev, current) => 
+          current.totalViews > prev.totalViews ? current : prev
+        );
+        break;
+      
+      case 'combined':
+        // Combined metric: normalize CTR and views, then combine
+        const maxCtr = Math.max(...titleSummaries.map(t => t.finalCtr));
+        const maxViews = Math.max(...titleSummaries.map(t => t.totalViews));
+        
+        winningTitle = titleSummaries.reduce((prev, current) => {
+          const prevScore = (prev.finalCtr / maxCtr) * 0.5 + (prev.totalViews / maxViews) * 0.5;
+          const currentScore = (current.finalCtr / maxCtr) * 0.5 + (current.totalViews / maxViews) * 0.5;
+          return currentScore > prevScore ? current : prev;
+        });
+        break;
+    }
+
+    if (winningTitle) {
+      const title = await this.getTitle(winningTitle.titleId);
+      return title?.text || null;
+    }
+
+    return null;
   }
 }
 

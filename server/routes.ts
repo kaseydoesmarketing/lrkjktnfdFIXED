@@ -594,8 +594,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Start the test
       await storage.updateTestStatus(test.id, "active");
 
-      // Schedule first rotation
-      scheduler.scheduleRotation(test.id, 0, 1); // Start in 1 minute
+      // Schedule the test with the specified rotation interval
+      await scheduler.scheduleTest(test.id, rotationIntervalMinutes || 60);
 
       res.json({ ...test, titles });
     } catch (error) {
