@@ -52,6 +52,29 @@ export default function AuthCallback() {
               user: session.user.email,
               expiresAt: new Date(session.expires_at! * 1000).toISOString()
             });
+            
+            // Set httpOnly cookies on the backend
+            console.log('🍪 [AUTH-CALLBACK] Setting backend cookies');
+            const cookieResponse = await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              }),
+              credentials: 'include'
+            });
+            
+            if (!cookieResponse.ok) {
+              console.error('❌ [AUTH-CALLBACK] Failed to set backend cookies');
+              setLocation('/login?error=cookie_error');
+              return;
+            }
+            
+            console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
+            
             // Clear the hash from URL
             window.history.replaceState({}, '', window.location.pathname);
             // Redirect to dashboard

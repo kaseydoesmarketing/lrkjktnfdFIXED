@@ -235,11 +235,14 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
     
     console.log('✅ [SESSION] Token valid for user:', user.email);
     
-    // Set cookies
+    // Set cookies with development-friendly settings
+    const isProduction = process.env.NODE_ENV === 'production';
+    console.log('🍪 [SESSION] Setting cookies, production mode:', isProduction);
+    
     res.cookie('sb-access-token', access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction, // Only secure in production
+      sameSite: 'lax', // Use 'lax' for both dev and prod
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/'
     });
@@ -247,7 +250,7 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
     if (refresh_token) {
       res.cookie('sb-refresh-token', refresh_token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/'
