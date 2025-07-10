@@ -414,7 +414,7 @@ This comprehensive platform empowers YouTube creators to optimize their content 
 #### Database
 - **PostgreSQL 15**: Primary relational database
 - **Drizzle ORM**: Type-safe database toolkit
-- **Neon**: Serverless PostgreSQL hosting
+- **Supabase**: PostgreSQL hosting and authentication
 - **Connection Pooling**: Optimized database connections
 
 #### Infrastructure

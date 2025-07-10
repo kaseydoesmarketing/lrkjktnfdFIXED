@@ -64,72 +64,20 @@ function Router() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Handle Supabase auth on page load
-    const handleAuthSession = async () => {
+    // Handle Supabase auth state changes
+    const handleAuthStateChange = async () => {
       try {
-        // Check if we have hash fragments with tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        
-        if (accessToken) {
-          console.log('🔑 Found access token in URL, establishing session...');
-          
-          // Set the session in Supabase
-          const { data: { session }, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
-          });
-
-          if (error) {
-            console.error('❌ Error setting session:', error);
-            setLocation('/login?error=session_error');
-            return;
-          }
-
-          if (session) {
-            console.log('✅ Session established in Supabase');
-            
-            // Send tokens to backend to set cookies
-            console.log('🍪 Sending tokens to backend to set cookies');
-            const response = await fetch('/api/auth/session', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                access_token: accessToken,
-                refresh_token: refreshToken
-              })
-            });
-            
-            if (response.ok) {
-              console.log('✅ Cookies set successfully');
-              // Clear the hash from URL
-              window.history.replaceState({}, '', window.location.pathname);
-              // Redirect to dashboard
-              setLocation('/dashboard');
-              // Refresh the query client to update auth state
-              queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-            } else {
-              console.error('❌ Failed to set cookies');
-              setLocation('/login?error=cookie_error');
-            }
-          }
-        } else {
-          // Check if we already have a session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            console.log('✅ Existing session found');
-          }
+        // Check if we already have a session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('✅ Existing session found');
         }
       } catch (error) {
         console.error('Auth session error:', error);
       }
     };
 
-    handleAuthSession();
+    handleAuthStateChange();
 
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

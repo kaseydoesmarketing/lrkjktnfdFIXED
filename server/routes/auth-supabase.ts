@@ -62,126 +62,45 @@ router.get('/api/auth/google', async (req: Request, res: Response) => {
   }
 });
 
-// OAuth callback handler - Updated to properly handle YouTube tokens
+// OAuth callback handler - Supabase handles all OAuth logic internally
 router.get('/api/auth/callback/google', async (req: Request, res: Response) => {
   console.log('🔔 [CALLBACK] Google OAuth callback received');
   console.log('📍 [CALLBACK] Full URL:', req.url);
-  console.log('❓ [CALLBACK] Query params:', req.query);
   
-  const { code, error: oauthError } = req.query;
+  // Supabase handles the OAuth flow internally
+  // This endpoint is just for compatibility if needed
+  // The actual auth handling happens client-side in the browser
   
-  if (oauthError) {
-    console.error('❌ [CALLBACK] OAuth error:', oauthError);
-    return res.redirect('/login?error=' + oauthError);
-  }
+  // Redirect to the client auth callback page
+  const clientCallbackUrl = process.env.NODE_ENV === 'production'
+    ? 'https://titletesterpro.com/auth/callback'
+    : 'http://localhost:5173/auth/callback';
   
-  if (!code) {
-    console.error('❌ [CALLBACK] No authorization code received');
-    return res.redirect('/login?error=no_code');
-  }
-  
-  try {
-    console.log('🔐 [CALLBACK] Exchanging code for session');
-    
-    // Exchange the code for a session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code as string);
-    
-    if (error) {
-      console.error('❌ [CALLBACK] Error exchanging code:', error);
-      return res.redirect('/login?error=exchange_failed');
-    }
-    
-    if (!data.session) {
-      console.error('❌ [CALLBACK] No session returned');
-      return res.redirect('/login?error=no_session');
-    }
-    
-    console.log('✅ [CALLBACK] Session created for user:', data.user.email);
-    console.log('🎫 [CALLBACK] Provider token present:', !!data.session.provider_token);
-    console.log('🔄 [CALLBACK] Provider refresh token present:', !!data.session.provider_refresh_token);
-    
-    // Set cookies for the session
-    res.cookie('sb-access-token', data.session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/'
-    });
-    
-    if (data.session.refresh_token) {
-      res.cookie('sb-refresh-token', data.session.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        path: '/'
-      });
-    }
-    
-    console.log('🍪 [CALLBACK] Cookies set successfully');
-    
-    // Create or update user in our database
-    let dbUser = await storage.getUserByEmail(data.user.email!);
-    
-    if (!dbUser) {
-      console.log('👤 [CALLBACK] Creating new user:', data.user.email);
-      dbUser = await storage.createUser({
-        id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata.full_name || data.user.email!.split('@')[0],
-        image: data.user.user_metadata.avatar_url,
-        subscriptionTier: 'free',
-        subscriptionStatus: 'inactive'
-      });
-    } else {
-      console.log('👤 [CALLBACK] Updating existing user:', data.user.email);
-      // Update user's last login
-      await storage.updateUser(dbUser.id, {
-        lastLogin: new Date()
-      });
-    }
-    
-    console.log('✅ [CALLBACK] Authentication complete, redirecting to dashboard');
-    
-    // Redirect to dashboard
-    const redirectUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://titletesterpro.com/dashboard'
-      : 'http://localhost:5173/dashboard';
-      
-    res.redirect(redirectUrl);
-    
-  } catch (error) {
-    console.error('💥 [CALLBACK] Unexpected error:', error);
-    res.redirect('/login?error=callback_error');
-  }
+  // Forward the full URL with hash fragment to the client
+  const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+  res.redirect(`${clientCallbackUrl}?from=${encodeURIComponent(fullUrl)}`);
 });
 
 // Get current user
 router.get('/api/auth/user', async (req: Request, res: Response) => {
   const sbToken = req.cookies['sb-access-token'];
-  const sessionToken = req.cookies['session-token'];
   
-  if (!sbToken && !sessionToken) {
+  if (!sbToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   try {
-    let dbUser: any = undefined;
+    const { data: { user }, error } = await supabase.auth.getUser(sbToken);
     
-    if (sbToken) {
-      const { data: { user }, error } = await supabase.auth.getUser(sbToken);
-      if (user) dbUser = await storage.getUserByEmail(user.email!);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid session' });
     }
     
-    if (!dbUser && sessionToken) {
-      const session = await storage.getSession(sessionToken);
-      if (session && storage.isValidSession(session.expires)) {
-        dbUser = await storage.getUser(session.userId);
-      }
-    }
+    const dbUser = await storage.getUserByEmail(user.email!);
     
-    if (!dbUser) return res.status(401).json({ error: 'Invalid session' });
+    if (!dbUser) {
+      return res.status(401).json({ error: 'User not found' });
+    }
     
     return res.json({ user: dbUser });
   } catch (error) {

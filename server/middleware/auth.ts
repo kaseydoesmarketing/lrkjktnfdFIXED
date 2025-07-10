@@ -21,28 +21,23 @@ export function injectSessionToken(req: Request, res: Response, next: NextFuncti
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const sbToken = req.cookies['sb-access-token'];
-  const sessionToken = req.cookies['session-token'];
   
-  if (!sbToken && !sessionToken) {
+  if (!sbToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   try {
-    let dbUser: any = undefined;
+    const { data: { user }, error } = await supabase.auth.getUser(sbToken);
     
-    if (sbToken) {
-      const { data: { user }, error } = await supabase.auth.getUser(sbToken);
-      if (user) dbUser = await storage.getUserByEmail(user.email!);
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired session' });
     }
     
-    if (!dbUser && sessionToken) {
-      const session = await storage.getSession(sessionToken);
-      if (session && storage.isValidSession(session.expires)) {
-        dbUser = await storage.getUser(session.userId);
-      }
-    }
+    const dbUser = await storage.getUserByEmail(user.email!);
     
-    if (!dbUser) return res.status(404).json({ error: 'User not found' });
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     
     req.user = dbUser;
     return next();

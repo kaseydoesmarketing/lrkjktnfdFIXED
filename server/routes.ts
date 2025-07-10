@@ -147,77 +147,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Demo login route for immediate dashboard access
-  app.post("/api/auth/demo-login", async (req: Request, res: Response) => {
-    try {
-      const demoUser = {
-        id: "demo-user-123",
-        email: "demo@titletesterpro.com",
-        name: "Demo User",
-        image: null,
-      };
+  // Demo login route removed - using Supabase auth exclusively
 
-      // Create or get demo user
-      let user = await storage.getUserByEmail(demoUser.email);
-      if (!user) {
-        user = await storage.createUser(demoUser);
-      }
-
-      // Create session
-      const sessionToken = authService.generateSessionToken();
-      const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-      await storage.createSession({
-        sessionToken,
-        userId: user.id,
-        expires,
-      });
-
-      // Set session cookie
-      res.cookie("session-token", sessionToken, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: "lax",
-      });
-
-      res.json({ success: true, user, sessionToken });
-    } catch (error) {
-      res.status(500).json({ error: "Demo login failed" });
-    }
-  });
-
-  // OAuth diagnostic route for debugging production issues
+  // OAuth diagnostic route - updated for Supabase
   app.get("/api/auth/debug", (req: Request, res: Response) => {
     const diagnostics = {
       environment: process.env.NODE_ENV,
-      hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
-      hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-      clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 12) + "...",
-      replitDomains: process.env.REPLIT_DOMAINS,
-      oauthRedirectUri: process.env.OAUTH_REDIRECT_URI,
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseAnonKey: !!process.env.SUPABASE_ANON_KEY,
+      supabaseUrlPrefix: process.env.SUPABASE_URL?.substring(0, 20) + "...",
       detectedDomain: req.get("host"),
       timestamp: new Date().toISOString(),
     };
 
     res.json({
-      status: "OAuth Configuration Diagnostics for titletesterpro.com",
+      status: "Supabase OAuth Configuration Diagnostics",
       ...diagnostics,
-      expectedRedirectUri: diagnostics.detectedDomain?.includes(
-        "titletesterpro.com",
-      )
-        ? "https://titletesterpro.com/api/auth/callback/google"
-        : `https://${diagnostics.detectedDomain}/api/auth/callback/google`,
+      supabaseCallbackUrl: "https://xyehwoacgpsxakhjwglq.supabase.co/auth/v1/callback",
+      googleCloudConsoleUrl: "Configured in Supabase Dashboard > Auth > Providers > Google",
       troubleshooting: {
-        step1: "Check Google Cloud Console OAuth configuration",
-        step2: "Verify redirect URI matches exactly",
-        step3: "Ensure OAuth consent screen is published or in testing mode",
-        step4: "Confirm environment variables are set on production",
+        step1: "Verify Google OAuth is enabled in Supabase Dashboard",
+        step2: "Check that Google Client ID and Secret are configured in Supabase",
+        step3: "Ensure callback URL in Google Cloud Console matches Supabase callback",
+        step4: "Confirm environment variables SUPABASE_URL and SUPABASE_ANON_KEY are set",
       },
     });
   });
 
-  // OLD OAuth routes - commented out since we're using Passport.js now
+  // OLD OAuth routes - removed, using Supabase auth exclusively
   /*
   app.get("/api/auth/google", async (req: Request, res: Response) => {
     try {
