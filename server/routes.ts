@@ -3,10 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { scheduler } from "./scheduler";
 import { authService } from "./auth";
-import { googleAuthService } from "./googleAuth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
-import { registerAdminRoutes } from "./adminRoutes";
 import authSupabaseRoutes from "./routes/auth-supabase";
 import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
@@ -91,11 +89,10 @@ Generate titles that balance emotional appeal with content accuracy for maximum 
 // Import requireAuth from the Supabase auth middleware
 import { requireAuth } from "./middleware/auth";
 
-import { registerSimpleAdminRoutes } from "./simpleAdminRoutes";
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register admin routes
-  registerSimpleAdminRoutes(app);
+  // Register admin routes removed - using Supabase auth
   
   // Register OAuth routes with Passport.js
   // Inject session token middleware

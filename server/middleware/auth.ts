@@ -20,33 +20,34 @@ export function injectSessionToken(req: Request, res: Response, next: NextFuncti
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies['sb-access-token'];
+  const sbToken = req.cookies['sb-access-token'];
+  const sessionToken = req.cookies['session-token'];
   
-  if (!token) {
+  if (!sbToken && !sessionToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   try {
-    // Verify the token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    let dbUser: any = undefined;
     
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid session' });
+    if (sbToken) {
+      const { data: { user }, error } = await supabase.auth.getUser(sbToken);
+      if (user) dbUser = await storage.getUserByEmail(user.email!);
     }
     
-    // Get user from our database
-    const dbUser = await storage.getUserByEmail(user.email!);
-    
-    if (!dbUser) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!dbUser && sessionToken) {
+      const session = await storage.getSession(sessionToken);
+      if (session && storage.isValidSession(session.expires)) {
+        dbUser = await storage.getUser(session.userId);
+      }
     }
     
-    // Set user on request
+    if (!dbUser) return res.status(404).json({ error: 'User not found' });
+    
     req.user = dbUser;
-    next();
-    
+    return next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(401).json({ error: 'Authentication failed' });
+    return res.status(500).json({ error: 'Authentication check failed' });
   }
 }

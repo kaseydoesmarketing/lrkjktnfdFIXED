@@ -159,41 +159,34 @@ router.get('/api/auth/callback/google', async (req: Request, res: Response) => {
 
 // Get current user
 router.get('/api/auth/user', async (req: Request, res: Response) => {
-  console.log('👤 [AUTH-USER] Getting current user');
-  const token = req.cookies['sb-access-token'];
-  console.log('🍪 [AUTH-USER] Cookie token present:', !!token);
+  const sbToken = req.cookies['sb-access-token'];
+  const sessionToken = req.cookies['session-token'];
   
-  if (!token) {
-    console.log('❌ [AUTH-USER] No auth token found in cookies');
+  if (!sbToken && !sessionToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   try {
-    console.log('🔍 [AUTH-USER] Verifying token with Supabase');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    let dbUser: any = undefined;
     
-    if (error || !user) {
-      console.error('❌ [AUTH-USER] Token verification failed:', error);
-      return res.status(401).json({ error: 'Invalid session' });
+    if (sbToken) {
+      const { data: { user }, error } = await supabase.auth.getUser(sbToken);
+      if (user) dbUser = await storage.getUserByEmail(user.email!);
     }
     
-    console.log('✅ [AUTH-USER] Supabase user found:', user.email);
-    
-    // Get user from our database
-    const dbUser = await storage.getUserByEmail(user.email!);
-    console.log('📦 [AUTH-USER] Database user found:', !!dbUser);
-    
-    res.json({ 
-      user: dbUser,
-      session: {
-        access_token: token,
-        expires_at: user.exp
+    if (!dbUser && sessionToken) {
+      const session = await storage.getSession(sessionToken);
+      if (session && storage.isValidSession(session.expires)) {
+        dbUser = await storage.getUser(session.userId);
       }
-    });
+    }
     
+    if (!dbUser) return res.status(401).json({ error: 'Invalid session' });
+    
+    return res.json({ user: dbUser });
   } catch (error) {
-    console.error('💥 [AUTH-USER] Get user error:', error);
-    res.status(401).json({ error: 'Session invalid' });
+    console.error('[AUTH-USER] Error verifying user:', error);
+    return res.status(500).json({ error: 'Failed to get user' });
   }
 });
 

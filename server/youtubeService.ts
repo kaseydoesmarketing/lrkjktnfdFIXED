@@ -1,6 +1,6 @@
 // server/youtubeService.ts
 import { google } from 'googleapis';
-import { googleAuthService } from './googleAuth';
+
 import { supabase } from './auth/supabase';
 import { rateLimiter } from './services/rateLimiter';
 import { storage } from './storage';

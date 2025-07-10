@@ -380,6 +380,40 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tests).orderBy(desc(tests.createdAt));
   }
 
+  async getActiveTests(): Promise<Test[]> {
+    return await db.select().from(tests).where(eq(tests.status, 'active'));
+  }
+
+  async updateTestCurrentTitle(testId: string, newIndex: number): Promise<void> {
+    await db.update(tests)
+      .set({
+        currentTitleIndex: newIndex,
+        lastRotationAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(tests.id, testId));
+  }
+
+  async logRotationEvent(testId: string, titleId: string, titleText: string, rotatedAt: Date, titleOrder: number): Promise<void> {
+    await db.insert(testRotationLogs).values({
+      id: nanoid(),
+      testId,
+      titleId,
+      titleText,
+      rotatedAt,
+      titleOrder
+    });
+  }
+
+  async getSession(sessionToken: string): Promise<Session | undefined> {
+    const [session] = await db.select().from(sessions).where(eq(sessions.sessionToken, sessionToken));
+    return session || undefined;
+  }
+
+  isValidSession(expires: Date): boolean {
+    return new Date() < expires;
+  }
+
   async getAccountByUserId(userId: string, provider: string): Promise<any> {
     const [account] = await db.select()
       .from(accounts)
