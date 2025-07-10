@@ -75,6 +75,36 @@ export default function AuthCallback() {
             
             console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
             
+            // CRITICAL: Persist YouTube tokens from Supabase session
+            console.log('💾 [AUTH-CALLBACK] Persisting YouTube tokens');
+            
+            // Get the fresh session with provider tokens
+            const { data: { session: freshSession } } = await supabase.auth.getSession();
+            
+            if (freshSession?.provider_token && freshSession?.provider_refresh_token) {
+              console.log('🔑 [AUTH-CALLBACK] Found provider tokens, saving to backend');
+              
+              const tokenResponse = await fetch('/api/accounts/save-tokens', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  accessToken: freshSession.provider_token,
+                  refreshToken: freshSession.provider_refresh_token,
+                }),
+                credentials: 'include'
+              });
+              
+              if (!tokenResponse.ok) {
+                console.error('❌ [AUTH-CALLBACK] Failed to persist YouTube tokens');
+              } else {
+                console.log('✅ [AUTH-CALLBACK] YouTube tokens persisted successfully');
+              }
+            } else {
+              console.warn('⚠️ [AUTH-CALLBACK] No provider tokens found in session');
+            }
+            
             // Clear the hash from URL
             window.history.replaceState({}, '', window.location.pathname);
             // Redirect to dashboard

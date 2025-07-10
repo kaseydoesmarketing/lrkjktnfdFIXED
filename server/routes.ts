@@ -804,8 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if user has YouTube tokens in accounts table
-        const accounts = await storage.getAccountsByUserId(user.id);
-        const googleAccount = accounts.find(acc => acc.provider === 'google');
+        const googleAccount = await storage.getAccountByUserId(user.id, 'google');
         
         if (!googleAccount || !googleAccount.accessToken) {
           return res.status(401).json({
@@ -912,6 +911,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication endpoints
   app.get("/api/auth/me", requireAuth, async (req: Request, res: Response) => {
     res.json(req.user);
+  });
+
+  // Save YouTube OAuth tokens after login
+  app.post("/api/accounts/save-tokens", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { accessToken, refreshToken } = req.body;
+      const userId = req.user!.id;
+
+      console.log('💾 [SAVE-TOKENS] Saving YouTube tokens for user:', userId);
+
+      if (!accessToken || !refreshToken) {
+        return res.status(400).json({ error: "Missing tokens" });
+      }
+
+      // Check if account exists
+      const existingAccount = await storage.getAccountByUserId(userId, 'google');
+      
+      if (existingAccount) {
+        // Update existing account
+        console.log('🔄 [SAVE-TOKENS] Updating existing Google account');
+        await storage.updateAccountTokens(existingAccount.id, {
+          accessToken: authService.encryptToken(accessToken),
+          refreshToken: authService.encryptToken(refreshToken),
+          expiresAt: Date.now() + (3600 * 1000) // 1 hour expiry
+        });
+      } else {
+        // Create new account
+        console.log('✨ [SAVE-TOKENS] Creating new Google account');
+        await storage.createAccount({
+          userId,
+          type: 'oauth',
+          provider: 'google',
+          providerAccountId: userId, // Use userId as provider account ID for now
+          accessToken: authService.encryptToken(accessToken),
+          refreshToken: authService.encryptToken(refreshToken),
+          expiresAt: Date.now() + (3600 * 1000), // 1 hour expiry
+          tokenType: 'Bearer',
+          scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/yt-analytics.readonly',
+          idToken: null,
+          sessionState: null
+        });
+      }
+
+      console.log('✅ [SAVE-TOKENS] YouTube tokens saved successfully');
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('❌ [SAVE-TOKENS] Error saving tokens:', error);
+      return res.status(500).json({ error: "Failed to save tokens" });
+    }
   });
 
   app.post("/api/auth/logout", async (req: Request, res: Response) => {

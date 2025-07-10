@@ -509,6 +509,15 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Documentation Updates**: Updated replit.md and TITLETESTERPRO_COMPLETE_DOCUMENTATION.md to reflect Supabase-only architecture
   - **Authentication Flow**: Google OAuth → Supabase handles OAuth → Client receives tokens → Backend validates with Supabase
   - **Security Enhancement**: All OAuth tokens managed by Supabase with built-in encryption and refresh mechanisms
+- July 10, 2025: **YOUTUBE OAUTH TOKEN PERSISTENCE IMPLEMENTATION**
+  - **Token Persistence System**: Implemented comprehensive OAuth token persistence to fix "No active session" errors
+  - **Auth Callback Enhancement**: Updated auth-callback.tsx to extract and persist provider tokens after Supabase login
+  - **Save Tokens Endpoint**: Created /api/accounts/save-tokens to persist encrypted Google OAuth tokens in accounts table
+  - **YouTube Service Refactor**: Updated YouTube service to use tokens from accounts table instead of ephemeral Supabase session
+  - **Automatic Token Refresh**: Added token refresh attempt on 401 errors (though Supabase requires re-authentication)
+  - **OAuth Client Creation**: Added createAuthenticatedClient method to YouTube service for API authentication
+  - **Reconnect Component**: Created ReconnectGoogleButton component for users to re-authenticate when tokens expire
+  - **Architecture Alignment**: All YouTube API calls now use persisted tokens from database, enabling video selection functionality
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

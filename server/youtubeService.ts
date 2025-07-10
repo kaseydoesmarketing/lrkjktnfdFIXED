@@ -17,8 +17,31 @@ export class YouTubeService {
   }
 
   /**
+   * Create an authenticated OAuth2 client for YouTube API
+   */
+  createAuthenticatedClient(accessToken: string) {
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+      access_token: accessToken
+    });
+    return oauth2Client;
+  }
+
+  /**
+   * Refresh Google OAuth access token using refresh token
+   * Since Supabase manages OAuth, we can't directly refresh Google tokens
+   * Instead, we'll throw an error to prompt re-authentication
+   */
+  async refreshGoogleAccessToken(refreshToken: string): Promise<string> {
+    console.log('⚠️ [YOUTUBE] Google token expired - re-authentication required');
+    // With Supabase Auth, we cannot refresh Google tokens directly
+    // User must re-authenticate through Supabase OAuth flow
+    throw new Error('YouTube authentication expired. Please sign in again to reconnect your account.');
+  }
+
+  /**
    * Execute YouTube API operation with automatic token handling
-   * Now uses Supabase to get OAuth tokens instead of accounts table
+   * Uses tokens from accounts table with automatic refresh
    */
   async withTokenRefresh<T>(
     userId: string,
@@ -27,67 +50,65 @@ export class YouTubeService {
     try {
       console.log('🔄 [YOUTUBE] Getting tokens for user:', userId);
       
-      // First, get the user from our database
-      const user = await storage.getUser(userId);
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      // Get the current session token from the global context (set by middleware)
-      const sessionToken = (global as any).currentRequestToken;
-      if (!sessionToken) {
-        throw new Error('No session token found. Please re-authenticate.');
-      }
-
-      // Get the Supabase session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Get the Google account with OAuth tokens from accounts table
+      const account = await storage.getAccountByUserId(userId, 'google');
       
-      if (sessionError || !session) {
-        console.error('❌ [YOUTUBE] Failed to get Supabase session:', sessionError);
-        throw new Error('No active session. Please reconnect your YouTube account.');
+      if (!account || !account.accessToken || !account.refreshToken) {
+        console.error('❌ [YOUTUBE] No Google account found for user:', userId);
+        throw new Error('YouTube account not connected. Please reconnect your Google account.');
       }
 
-      // Get provider tokens from Supabase
-      // Supabase stores provider tokens when user authenticates with Google
-      const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser(sessionToken);
+      // Decrypt the tokens
+      let accessToken = '';
+      let refreshToken = '';
       
-      if (userError || !supabaseUser) {
-        console.error('❌ [YOUTUBE] Failed to get Supabase user:', userError);
-        throw new Error('Invalid session. Please reconnect your YouTube account.');
+      try {
+        const { decryptToken } = await import('./auth');
+        accessToken = decryptToken(account.accessToken);
+        refreshToken = decryptToken(account.refreshToken);
+      } catch (decryptError) {
+        console.error('❌ [YOUTUBE] Failed to decrypt tokens:', decryptError);
+        throw new Error('Failed to decrypt YouTube tokens. Please reconnect your Google account.');
       }
 
-      // Try to get fresh provider token from Supabase
-      // This will automatically refresh if needed
-      const { data: providerToken, error: tokenError } = await supabase.auth.refreshSession();
-      
-      if (tokenError || !providerToken.session) {
-        console.error('❌ [YOUTUBE] Failed to refresh session:', tokenError);
-        throw new Error('Failed to refresh authentication. Please reconnect your YouTube account.');
-      }
-
-      // Get the provider token (Google OAuth token)
-      const accessToken = providerToken.session.provider_token;
-      const refreshToken = providerToken.session.provider_refresh_token;
-
-      if (!accessToken) {
-        console.error('❌ [YOUTUBE] No provider token found in session');
-        throw new Error('YouTube access token not found. Please reconnect your YouTube account.');
-      }
-
-      console.log('✅ [YOUTUBE] Got provider tokens from Supabase');
+      console.log('✅ [YOUTUBE] Tokens retrieved from accounts table');
 
       // Execute the operation with the tokens
       try {
         return await operation({
           accessToken: accessToken,
-          refreshToken: refreshToken || ''
+          refreshToken: refreshToken
         });
       } catch (error: any) {
         console.error('❌ [YOUTUBE] Operation failed:', error);
         
-        // If we get a 401, the token might be expired
+        // If we get a 401, the token might be expired - try to refresh
         if (error.code === 401 || error.response?.status === 401 || error.message?.includes('401')) {
-          throw new Error('YouTube authentication expired. Please reconnect your YouTube account.');
+          console.log('🔄 [YOUTUBE] Token expired, attempting refresh...');
+          
+          try {
+            // Refresh the Google OAuth token
+            const newAccessToken = await this.refreshGoogleAccessToken(refreshToken);
+            
+            // Update the accounts table with new token
+            const { encryptToken } = await import('./auth');
+            await storage.updateAccountTokens(account.id, {
+              accessToken: encryptToken(newAccessToken),
+              refreshToken: encryptToken(refreshToken), // Keep the same refresh token
+              expiresAt: Date.now() + (3600 * 1000) // 1 hour expiry
+            });
+            
+            console.log('✅ [YOUTUBE] Token refreshed successfully');
+            
+            // Retry the operation with new token
+            return await operation({
+              accessToken: newAccessToken,
+              refreshToken: refreshToken
+            });
+          } catch (refreshError) {
+            console.error('❌ [YOUTUBE] Token refresh failed:', refreshError);
+            throw new Error('YouTube authentication expired. Please reconnect your Google account.');
+          }
         }
         
         throw error;
@@ -109,7 +130,7 @@ export class YouTubeService {
     console.log(`📺 [YOUTUBE API] Getting channel videos for user ${userId}`);
     
     return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
-      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const authClient = this.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
       // First get the channel's uploads playlist
@@ -193,7 +214,7 @@ export class YouTubeService {
 
   async updateVideoTitle(userId: string, videoId: string, newTitle: string) {
     return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
-      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const authClient = this.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
       // First get the current video details
@@ -228,7 +249,7 @@ export class YouTubeService {
 
   async getVideoAnalytics(userId: string, videoId: string, startDate: Date, endDate: Date) {
     return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
-      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const authClient = this.createAuthenticatedClient(accessToken);
       const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: authClient });
 
       // First get the channel ID
@@ -298,7 +319,7 @@ export class YouTubeService {
     console.log('📊 [YOUTUBE] Getting real-time metrics for video:', videoId);
     
     return await this.withTokenRefresh(userId, async ({ accessToken, refreshToken }) => {
-      const authClient = googleAuthService.createAuthenticatedClient(accessToken);
+      const authClient = this.createAuthenticatedClient(accessToken);
       const youtube = google.youtube({ version: 'v3', auth: authClient });
 
       const response = await youtube.videos.list({
