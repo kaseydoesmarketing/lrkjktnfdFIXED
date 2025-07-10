@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { storage } from './storage';
 import { youtubeService } from './youtubeService';
+import { analyticsCollector } from './analyticsCollector';
 
 const scheduledJobs = new Map<string, cron.ScheduledTask>();
 
