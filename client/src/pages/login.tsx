@@ -143,9 +143,12 @@ export default function Login() {
               )}
               
               <Button
+                id="google-signin"
+                name="google-signin"
                 onClick={handleGoogleAuth}
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 disabled={isLoading}
+                aria-label="Sign in with Google to connect your YouTube account"
               >
                 <Youtube className="w-4 h-4 mr-2" />
                 {isLoading ? 'Connecting...' : 'Connect with Google'}

@@ -179,12 +179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/google", async (req: Request, res: Response) => {
     try {
       // Always ensure OAuth works for production
-      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        return res.status(500).json({
-          error: "OAuth not configured",
-          message: "Contact administrator - missing Google OAuth credentials",
-        });
-      }
+      // Google OAuth is handled by Supabase - this route should not be accessed
+      return res.status(410).json({
+        error: "Legacy OAuth route removed",
+        message: "Please use Supabase OAuth for authentication"
+      });
 
       const authUrl = googleAuthService.getAuthUrl();
 
@@ -839,7 +838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message:
                 "Your YouTube access has expired. Please sign in again to reconnect your account.",
               reauth_required: true,
-              reauth_url: "/api/auth/google",
+              reauth_url: "/login",
             });
           }
 
