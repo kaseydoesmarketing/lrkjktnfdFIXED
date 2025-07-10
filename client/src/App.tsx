@@ -120,8 +120,8 @@ function Router() {
         <Route path="/oauth-test" component={OAuthTest} />
         <Route path="/auth-test" component={() => <AuthTest />} />
         <Route path="/auth-diagnostic" component={() => <AuthDiagnostic />} />
-        <Route path="/privacy" component={() => <Privacy />} />
-        <Route path="/terms" component={() => <Terms />} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
         <Route path="/" component={HomePage} />
         <Route component={NotFound} />
       </Switch>
