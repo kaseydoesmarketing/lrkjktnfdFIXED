@@ -18,6 +18,9 @@ export function HomePage() {
               <Link href="/pricing" className="text-gray-600 hover:text-gray-900">
                 Pricing
               </Link>
+              <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
+                Privacy
+              </Link>
               <Link href="/login">
                 <Button variant="default" className="bg-red-600 hover:bg-red-700">
                   Get Started
