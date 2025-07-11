@@ -73,6 +73,30 @@ export interface IStorage {
   
   // Admin methods
   getAllUsers(): Promise<User[]>;
+  
+  // Temporary OAuth storage
+  saveTempTokens(userId: string, data: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    channels: any[];
+  }): Promise<void>;
+  getTempTokens(userId: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    channels: any[];
+  } | null>;
+  deleteTempTokens(userId: string): Promise<void>;
+  
+  // Account OAuth updates
+  upsertAccount(userId: string, data: {
+    accessToken: string;
+    refreshToken: string;
+    youtubeChannelId: string;
+    youtubeChannelTitle: string;
+    expiresAt: number;
+  }): Promise<void>;
   getAllTests(): Promise<Test[]>;
   
   // Scheduler methods
@@ -523,6 +547,101 @@ export class DatabaseStorage implements IStorage {
     }
 
     return null;
+  }
+
+  // Temporary OAuth storage implementation
+  async saveTempTokens(userId: string, data: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    channels: any[];
+  }): Promise<void> {
+    await db.execute(sql`
+      INSERT INTO temp_oauth (user_id, access_token, refresh_token, expires_at, channels)
+      VALUES (${userId}, ${data.accessToken}, ${data.refreshToken}, ${data.expiresAt}, ${JSON.stringify(data.channels)})
+      ON CONFLICT (user_id) 
+      DO UPDATE SET
+        access_token = ${data.accessToken},
+        refresh_token = ${data.refreshToken},
+        expires_at = ${data.expiresAt},
+        channels = ${JSON.stringify(data.channels)},
+        created_at = NOW()
+    `);
+  }
+
+  async getTempTokens(userId: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    channels: any[];
+  } | null> {
+    const result = await db.execute(sql`
+      SELECT access_token, refresh_token, expires_at, channels
+      FROM temp_oauth
+      WHERE user_id = ${userId}
+    `);
+    
+    if (result.rows.length === 0) return null;
+    
+    const row = result.rows[0];
+    return {
+      accessToken: row.access_token as string,
+      refreshToken: row.refresh_token as string,
+      expiresAt: row.expires_at as number,
+      channels: row.channels as any[]
+    };
+  }
+
+  async deleteTempTokens(userId: string): Promise<void> {
+    await db.execute(sql`
+      DELETE FROM temp_oauth WHERE user_id = ${userId}
+    `);
+  }
+
+  async upsertAccount(userId: string, data: {
+    accessToken: string;
+    refreshToken: string;
+    youtubeChannelId: string;
+    youtubeChannelTitle: string;
+    expiresAt: number;
+  }): Promise<void> {
+    // Check if account exists
+    const existing = await this.getAccountByUserId(userId, 'google');
+    
+    if (existing) {
+      // Update existing account
+      await db.update(accounts)
+        .set({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          youtubeChannelId: data.youtubeChannelId,
+          youtubeChannelTitle: data.youtubeChannelTitle,
+          expiresAt: data.expiresAt,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(accounts.userId, userId),
+          eq(accounts.provider, 'google')
+        ));
+    } else {
+      // Create new account
+      await this.createAccount({
+        userId,
+        provider: 'google',
+        providerAccountId: userId, // Using userId as provider account ID for simplicity
+        type: 'oauth',
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        youtubeChannelId: data.youtubeChannelId,
+        youtubeChannelTitle: data.youtubeChannelTitle,
+        expiresAt: data.expiresAt,
+        tokenType: 'Bearer',
+        scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
+        idToken: null,
+        sessionState: null,
+        youtubeChannelThumbnail: null
+      });
+    }
   }
 }
 

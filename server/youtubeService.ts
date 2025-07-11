@@ -63,7 +63,7 @@ export class YouTubeService {
       let refreshToken = '';
       
       try {
-        const { decryptToken } = await import('./auth');
+        const { decryptToken } = await import('./utils/encryption');
         accessToken = decryptToken(account.accessToken);
         refreshToken = decryptToken(account.refreshToken);
       } catch (decryptError) {
@@ -91,7 +91,7 @@ export class YouTubeService {
             const newAccessToken = await this.refreshGoogleAccessToken(refreshToken);
             
             // Update the accounts table with new token
-            const { encryptToken } = await import('./auth');
+            const { encryptToken } = await import('./utils/encryption');
             await storage.updateAccountTokens(account.id, {
               accessToken: encryptToken(newAccessToken),
               refreshToken: encryptToken(refreshToken), // Keep the same refresh token
