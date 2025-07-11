@@ -9,10 +9,10 @@ const router = Router();
 
 router.get('/api/auth/callback', async (req: Request, res: Response) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
     if (!code) {
       console.error('❌ [OAuth] Missing OAuth code');
-      return res.status(400).json({ error: 'Missing OAuth code' });
+      return res.redirect('/oauth-error?error=missing_code');
     }
 
     console.log('🔐 [OAuth] Processing callback with code');
@@ -21,7 +21,7 @@ router.get('/api/auth/callback', async (req: Request, res: Response) => {
     const { data: session, error } = await supabase.auth.exchangeCodeForSession(code as string);
     if (error || !session) {
       console.error('❌ [OAuth] Supabase exchange failed:', error);
-      return res.status(500).json({ error: 'OAuth session exchange failed' });
+      return res.redirect('/oauth-error?error=exchange_failed');
     }
 
     const user = session.user;
@@ -52,12 +52,12 @@ router.get('/api/auth/callback', async (req: Request, res: Response) => {
         expiresIn = data.expires_in;
       } catch (tokenError) {
         console.error('❌ [OAuth] Direct token exchange failed:', tokenError);
-        return res.status(500).json({ error: 'OAuth token exchange failed' });
+        return res.redirect('/oauth-error?error=token_exchange_failed');
       }
 
       if (!accessToken || !refreshToken) {
         console.error('❌ [OAuth] Failed to obtain tokens');
-        return res.status(500).json({ error: 'OAuth token exchange failed' });
+        return res.redirect('/oauth-error?error=missing_tokens');
       }
     }
 
@@ -83,7 +83,7 @@ router.get('/api/auth/callback', async (req: Request, res: Response) => {
     const channels = channelsResponse?.data?.items;
     if (!channels || channels.length === 0) {
       console.error('❌ [OAuth] No YouTube channels found');
-      return res.status(500).json({ error: 'No YouTube channels found' });
+      return res.redirect('/oauth-error?error=no_channels');
     }
 
     console.log(`✅ [OAuth] Found ${channels.length} YouTube channel(s)`);
@@ -195,7 +195,7 @@ router.get('/api/auth/callback', async (req: Request, res: Response) => {
 
   } catch (err: any) {
     console.error('💥 [OAuth] Callback error:', err);
-    return res.status(500).json({ error: 'Internal server error during OAuth callback' });
+    return res.redirect('/oauth-error?error=internal_error');
   }
 });
 

@@ -76,8 +76,12 @@ router.get('/api/auth/me', async (req: Request, res: Response) => {
     // Get user from our database
     const dbUser = await storage.getUserByEmail(user.email!);
     
+    // Check if user has connected YouTube channel
+    const hasYouTubeChannel = dbUser ? await storage.hasYouTubeChannel(dbUser.id) : false;
+    
     res.json({ 
       user: dbUser,
+      hasYouTubeChannel,
       session: {
         access_token: token,
         expires_at: user.exp

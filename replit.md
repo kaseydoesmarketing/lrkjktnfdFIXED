@@ -528,6 +528,15 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Token Refresh Utility**: Created refreshAccessToken utility for automated token refresh with database updates
   - **YouTube Integration**: OAuth callback now fetches user's YouTube channels with retry logic for transient errors
   - **Database Migration**: Successfully created temp_oauth table with JSONB channel storage and automatic cleanup
+- July 11, 2025: **INCREMENTAL CONSENT OAUTH IMPLEMENTATION**
+  - **Phase 1 Basic Login**: Updated login page to use minimal scopes (openid, email, profile) for initial authentication
+  - **Phase 2 YouTube Connection**: Enhanced ConnectYouTubePrompt component to request YouTube scopes with incremental consent
+  - **Incremental Consent Flow**: Implemented include_granted_scopes=true to enable progressive permission requests
+  - **Dashboard Integration**: Updated dashboard to check hasYouTubeChannel status and show ConnectYouTubePrompt when needed
+  - **API Enhancement**: Modified /api/auth/me endpoint to return hasYouTubeChannel boolean for frontend checks
+  - **OAuth Error Handling**: Created comprehensive OAuth error page with user-friendly recovery instructions
+  - **Seamless User Experience**: Users first login with basic permissions, then connect YouTube only when needed
+  - **Enhanced Security**: Users only grant necessary permissions at each stage, improving trust and conversion
 
 ## Deployment Configuration
 - Application ready for Replit private deployment

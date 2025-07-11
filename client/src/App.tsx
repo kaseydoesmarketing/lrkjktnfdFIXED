@@ -20,6 +20,7 @@ import AuthTest from "@/pages/auth-test";
 import AuthDiagnostic from "@/pages/auth-diagnostic";
 import AuthDebug from "@/pages/auth-debug";
 import SelectChannel from "@/pages/select-channel";
+import OAuthError from "@/pages/oauth-error";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/auth-diagnostic" component={() => <AuthDiagnostic />} />
         <Route path="/auth-debug" component={() => <AuthDebug />} />
         <Route path="/select-channel" component={() => <SelectChannel />} />
+        <Route path="/oauth-error" component={() => <OAuthError />} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
         <Route path="/" component={HomePage} />

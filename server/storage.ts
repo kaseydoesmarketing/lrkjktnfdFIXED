@@ -22,6 +22,7 @@ export interface IStorage {
     youtubeChannelTitle: string | null;
   }): Promise<void>;
   updateUserLogin(userId: string): Promise<void>;
+  hasYouTubeChannel(userId: string): Promise<boolean>;
   
   // Accounts
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
@@ -172,6 +173,11 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+  }
+
+  async hasYouTubeChannel(userId: string): Promise<boolean> {
+    const account = await this.getAccountByUserId(userId, 'google');
+    return !!(account && account.youtubeChannelId);
   }
 
   // Accounts
