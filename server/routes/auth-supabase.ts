@@ -22,25 +22,35 @@ function getRedirectUri(req: Request): string {
 
 // Get current user
 router.get('/api/auth/user', async (req: Request, res: Response) => {
+  console.log('🔍 [AUTH-USER] Checking authentication...');
+  console.log('🍪 [AUTH-USER] Cookies:', Object.keys(req.cookies));
   const sbToken = req.cookies['sb-access-token'];
   
   if (!sbToken) {
+    console.log('❌ [AUTH-USER] No sb-access-token cookie found');
     return res.status(401).json({ error: 'Not authenticated' });
   }
+  
+  console.log('🔐 [AUTH-USER] Found sb-access-token, verifying with Supabase...');
   
   try {
     const { data: { user }, error } = await supabase.auth.getUser(sbToken);
     
     if (error || !user) {
+      console.log('❌ [AUTH-USER] Invalid session:', error);
       return res.status(401).json({ error: 'Invalid session' });
     }
+    
+    console.log('✅ [AUTH-USER] Session valid for user:', user.email);
     
     const dbUser = await storage.getUserByEmail(user.email!);
     
     if (!dbUser) {
+      console.log('❌ [AUTH-USER] User not found in database:', user.email);
       return res.status(401).json({ error: 'User not found' });
     }
     
+    console.log('✅ [AUTH-USER] User found, returning user data');
     return res.json({ user: dbUser });
   } catch (error) {
     console.error('[AUTH-USER] Error verifying user:', error);
@@ -312,23 +322,26 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
     const isProduction = process.env.NODE_ENV === 'production';
     console.log('🍪 [SESSION] Setting cookies, production mode:', isProduction);
     
+    // Use secure cookies only in production or when using HTTPS
+    const isSecure = isProduction || req.protocol === 'https' || !!process.env.REPLIT_DEPLOYMENT_ID;
+    
     res.cookie('sb-access-token', access_token, {
       httpOnly: true,
-      secure: true, // Always secure as per document
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
-      domain: isProduction ? 'titletesterpro.com' : undefined
+      domain: undefined // Let browser handle domain automatically
     });
     
     if (refresh_token) {
       res.cookie('sb-refresh-token', refresh_token, {
         httpOnly: true,
-        secure: true,
+        secure: isSecure,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30, // 30 days
         path: '/',
-        domain: isProduction ? 'titletesterpro.com' : undefined
+        domain: undefined // Let browser handle domain automatically
       });
     }
     

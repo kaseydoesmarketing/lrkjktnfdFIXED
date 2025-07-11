@@ -90,6 +90,10 @@ export default function AuthCallback() {
             console.log('🔄 [AUTH-CALLBACK] Session established, provider tokens will be handled server-side');
             console.log('📺 [AUTH-CALLBACK] Redirecting to dashboard where YouTube data will be fetched');
             
+            // IMPORTANT: Add delay to ensure session is fully established before redirecting
+            console.log('⏱️ [AUTH-CALLBACK] Waiting for session to be fully established...');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
             // Proceed to dashboard - the backend will handle retrieving provider tokens
             setLocation('/dashboard');
           }

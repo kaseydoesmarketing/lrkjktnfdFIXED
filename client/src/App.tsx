@@ -18,6 +18,7 @@ import Terms from "@/pages/terms";
 import Tests from "@/pages/Tests";
 import AuthTest from "@/pages/auth-test";
 import AuthDiagnostic from "@/pages/auth-diagnostic";
+import AuthDebug from "@/pages/auth-debug";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +35,10 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     isLoading,
     hasError: !!error,
     hasUser: !!data,
-    userEmail: data?.email
+    userEmail: data?.email,
+    errorDetails: error,
+    currentPath: window.location.pathname,
+    cookies: document.cookie
   });
 
   // Show loading state
@@ -120,6 +124,7 @@ function Router() {
         <Route path="/oauth-test" component={OAuthTest} />
         <Route path="/auth-test" component={() => <AuthTest />} />
         <Route path="/auth-diagnostic" component={() => <AuthDiagnostic />} />
+        <Route path="/auth-debug" component={() => <AuthDebug />} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
         <Route path="/" component={HomePage} />
