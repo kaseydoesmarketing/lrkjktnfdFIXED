@@ -129,15 +129,16 @@ router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid session' });
     }
     
-    // Check if we have stored OAuth tokens in the accounts table
+    // ALWAYS check accounts table first - this is the source of truth for YouTube tokens
     const account = await storage.getAccountByUserId(user.id, 'google');
     
     if (account && account.accessToken) {
-      // Return existing tokens from database
-      const { decryptToken } = await import('../auth');
+      // We have tokens stored - user is connected
+      console.log('✅ [PROVIDER-TOKENS] YouTube tokens found in accounts table');
       return res.json({
         hasTokens: true,
-        needsReconnect: false
+        needsReconnect: false,
+        hasYouTubeAccess: true
       });
     }
     
@@ -224,9 +225,11 @@ router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
     }
     
     // No tokens available anywhere - user needs to reconnect
+    console.log('⚠️ [PROVIDER-TOKENS] No YouTube tokens found in accounts table');
     return res.json({
       hasTokens: false,
       needsReconnect: true,
+      hasYouTubeAccess: false,
       message: 'YouTube connection required. Please reconnect your Google account with YouTube permissions.'
     });
     

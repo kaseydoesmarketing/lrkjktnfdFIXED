@@ -62,7 +62,10 @@ export default function AuthCallback() {
               },
               body: JSON.stringify({
                 access_token: accessToken,
-                refresh_token: refreshToken
+                refresh_token: refreshToken,
+                // Pass provider tokens if available from hash
+                provider_token: hashParams.get('provider_token'),
+                provider_refresh_token: hashParams.get('provider_refresh_token')
               }),
               credentials: 'include'
             });

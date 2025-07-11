@@ -50,10 +50,10 @@ export class YouTubeService {
     try {
       console.log('🔄 [YOUTUBE] Getting tokens for user:', userId);
       
-      // Get the Google account with OAuth tokens from accounts table
+      // ALWAYS get tokens from accounts table - this is the single source of truth
       const account = await storage.getAccountByUserId(userId, 'google');
       
-      if (!account || !account.accessToken || !account.refreshToken) {
+      if (!account || !account.accessToken) {
         console.error('❌ [YOUTUBE] No Google account found for user:', userId);
         throw new Error('YouTube account not connected. Please reconnect your Google account.');
       }

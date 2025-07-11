@@ -6,6 +6,7 @@ import { authService } from "./auth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import authSupabaseRoutes from "./routes/auth-supabase";
+import authCallbackRoutes from "./routes/auth-callback";
 import { supabase } from "./auth/supabase";
 import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
@@ -101,6 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Use Supabase auth routes
   app.use(authSupabaseRoutes);
+  app.use(authCallbackRoutes);
   
   // Register rotation routes
   app.use(rotationRoutes);
@@ -867,6 +869,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🎥 [/api/videos/channel] Starting request for user:', req.user!.email);
       const userId = req.user!.id;
+      
+      // First check if we have YouTube tokens in accounts table - this is the source of truth
+      const account = await storage.getAccountByUserId(userId, 'google');
+      if (!account || !account.accessToken) {
+        console.log('❌ [/api/videos/channel] No YouTube tokens found in accounts table');
+        return res.status(401).json({ 
+          error: 'YouTube account not connected. Please reconnect your Google account.',
+          requiresAuth: true,
+          needsReconnect: true
+        });
+      }
       
       // Use the getChannelVideos method which has built-in token refresh
       console.log('🔄 [/api/videos/channel] Calling getChannelVideos with token refresh...');

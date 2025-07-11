@@ -1,0 +1,73 @@
+Fix Supabase Google OAuth – YouTube Integration for TitleTesterPro
+Goal:
+Fix the “YouTube Connection Required” error in TitleTesterPro. After signing in with Google, the app must reliably fetch/save YouTube OAuth tokens and channel info so that the video selection tool works.
+
+Instructions:
+
+In your OAuth callback handler (/app/auth/callback/route.ts, API route, or edge function):
+
+After Supabase exchangeCodeForSession, check if provider_token and provider_refresh_token are present in the session.
+
+If missing, manually extract them from the URL (query params or hash fragment) as Google sometimes puts them there.
+
+If still missing, use the Google OAuth code and fetch the tokens server-side using the client secret.
+
+Immediately after obtaining tokens:
+
+Use the provider_token (access token) to call the YouTube API and get the user’s channel ID and title (see YouTube Channels API).
+
+Upsert a row in your accounts table:
+
+user_id
+
+provider_token
+
+provider_refresh_token
+
+youtube_channel_id
+
+youtube_channel_title
+
+(If you have a Postgres DB, use ON CONFLICT (user_id) DO UPDATE ... or Supabase’s equivalent)
+
+Update frontend/backend code wherever you fetch YouTube data:
+
+Always fetch the latest YouTube access/refresh tokens from the accounts table, not from Supabase session/user_metadata.
+
+If youtube_channel_id or tokens are missing, prompt user to “Reconnect Google Account” and repeat the OAuth flow.
+
+Ensure your sign-in button always requests all necessary scopes and params:
+
+Required scopes:
+
+arduino
+Copy
+Edit
+https://www.googleapis.com/auth/youtube.readonly
+https://www.googleapis.com/auth/youtube.force-ssl
+https://www.googleapis.com/auth/yt-analytics.readonly
+https://www.googleapis.com/auth/userinfo.profile
+https://www.googleapis.com/auth/userinfo.email
+Required params:
+
+js
+Copy
+Edit
+queryParams: {
+    access_type: 'offline',
+    prompt: 'consent'
+}
+Fix for Supabase limitation:
+If Supabase does not pass provider tokens back to the client (known issue):
+
+Use a server-side handler to perform the final token exchange with Google, then save tokens directly to your database.
+
+Acceptance Criteria:
+
+User logs in and YouTube tokens/channel are reliably saved in the accounts table.
+
+The video selector tool loads YouTube videos and thumbnails.
+
+“Reconnect Google Account” works if tokens expire or are missing.
+
+No critical auth/token logic is left relying on the Supabase session; all YouTube API calls use tokens from accounts.
