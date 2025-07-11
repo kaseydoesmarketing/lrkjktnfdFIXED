@@ -31,9 +31,17 @@ export default function OAuthError() {
       title: 'Missing Authentication Tokens',
       description: 'We couldn\'t retrieve the necessary permissions from Google.',
     },
+    tokens_missing: {
+      title: 'Missing Authentication Tokens',
+      description: 'We couldn\'t retrieve the necessary permissions from Google.',
+    },
     no_channels: {
       title: 'No YouTube Channel Found',
       description: 'No YouTube channel is associated with this Google account. Please use an account with a YouTube channel.',
+    },
+    server_error: {
+      title: 'Server Error',
+      description: 'An unexpected error occurred on our server. Please try again.',
     },
     internal_error: {
       title: 'Something Went Wrong',

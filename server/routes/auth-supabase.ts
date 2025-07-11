@@ -473,4 +473,88 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
   }
 });
 
+// Get temporary channels for multi-channel selection
+router.get('/api/auth/channels', async (req: Request, res: Response) => {
+  const token = req.cookies['sb-access-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    
+    // Get temporary tokens from storage
+    const tempData = await storage.getTempTokens(user.id);
+    
+    if (!tempData || !tempData.channels) {
+      return res.status(404).json({ error: 'No channels found' });
+    }
+    
+    res.json({ channels: tempData.channels });
+  } catch (error) {
+    console.error('Get channels error:', error);
+    res.status(500).json({ error: 'Failed to fetch channels' });
+  }
+});
+
+// Save selected channel
+router.post('/api/auth/save-channel', async (req: Request, res: Response) => {
+  const token = req.cookies['sb-access-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    
+    const { channelId, channelTitle } = req.body;
+    
+    if (!channelId || !channelTitle) {
+      return res.status(400).json({ error: 'Missing channel information' });
+    }
+    
+    // Get temporary tokens
+    const tempData = await storage.getTempTokens(user.id);
+    
+    if (!tempData) {
+      return res.status(404).json({ error: 'No temporary tokens found' });
+    }
+    
+    // Save the selected channel to the account
+    await storage.upsertAccount(user.id, {
+      accessToken: tempData.accessToken,
+      refreshToken: tempData.refreshToken,
+      youtubeChannelId: channelId,
+      youtubeChannelTitle: channelTitle,
+      expiresAt: tempData.expiresAt
+    });
+    
+    // Update user with channel info
+    await storage.updateUserYouTubeTokens(user.id, {
+      accessToken: tempData.accessToken,
+      refreshToken: tempData.refreshToken,
+      youtubeChannelId: channelId,
+      youtubeChannelTitle: channelTitle
+    });
+    
+    // Delete temporary tokens
+    await storage.deleteTempTokens(user.id);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Save channel error:', error);
+    res.status(500).json({ error: 'Failed to save channel' });
+  }
+});
+
 export default router;
