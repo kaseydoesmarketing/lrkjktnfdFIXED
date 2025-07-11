@@ -113,6 +113,101 @@ router.post('/api/auth/refresh', async (req: Request, res: Response) => {
   }
 });
 
+// Get provider tokens and fetch YouTube data
+router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
+  const token = req.cookies['sb-access-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  try {
+    // Get the user to ensure we're authenticated
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    
+    // Check if we have stored OAuth tokens in the accounts table
+    const account = await storage.getAccountByUserId(user.id, 'google');
+    
+    if (account && account.accessToken) {
+      // Return existing tokens from database
+      const { decryptToken } = await import('../auth');
+      return res.json({
+        hasTokens: true,
+        needsReconnect: false
+      });
+    }
+    
+    // No tokens stored - check if we can get them from Supabase session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (session?.provider_token) {
+      console.log('🔑 [PROVIDER-TOKENS] Found provider token in session, saving to database');
+      
+      // Fetch YouTube channel data
+      try {
+        const youtubeResponse = await fetch(
+          'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+          {
+            headers: { 'Authorization': `Bearer ${session.provider_token}` }
+          }
+        );
+        
+        if (youtubeResponse.ok) {
+          const data = await youtubeResponse.json();
+          const channel = data.items?.[0];
+          
+          if (channel) {
+            // Update user with YouTube channel data
+            await storage.updateUser(user.id, {
+              youtubeChannelId: channel.id,
+              youtubeChannelTitle: channel.snippet.title
+            });
+            
+            // Save tokens
+            const { encryptToken } = await import('../auth');
+            await storage.createAccount({
+              userId: user.id,
+              type: 'oauth',
+              provider: 'google',
+              providerAccountId: user.id,
+              accessToken: encryptToken(session.provider_token),
+              refreshToken: session.provider_refresh_token ? encryptToken(session.provider_refresh_token) : null,
+              expiresAt: Date.now() + (3600 * 1000),
+              tokenType: 'Bearer',
+              scope: null,
+              idToken: null,
+              sessionState: null
+            });
+            
+            return res.json({
+              hasTokens: true,
+              needsReconnect: false,
+              channelSaved: true
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch YouTube data:', error);
+      }
+    }
+    
+    // No tokens available anywhere - user needs to reconnect
+    return res.json({
+      hasTokens: false,
+      needsReconnect: true,
+      message: 'YouTube connection required. Please reconnect your Google account with YouTube permissions.'
+    });
+    
+  } catch (error) {
+    console.error('Get provider tokens error:', error);
+    res.status(500).json({ error: 'Failed to check provider tokens' });
+  }
+});
+
 // Sign out
 router.post('/api/auth/signout', async (req: Request, res: Response) => {
   console.log('🚪 [SIGNOUT] Sign out request received');

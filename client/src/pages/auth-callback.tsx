@@ -76,8 +76,45 @@ export default function AuthCallback() {
             console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
             
             // CRITICAL: Fetch YouTube channel data and save tokens BEFORE redirecting
-            if (!session.provider_token || !session.provider_refresh_token) {
-              console.error('❌ [AUTH-CALLBACK] No provider tokens available');
+            // Get fresh session to ensure we have provider tokens
+            console.log('🔄 [AUTH-CALLBACK] Refreshing session to get provider tokens');
+            const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError || !freshSession) {
+              console.error('❌ [AUTH-CALLBACK] Failed to get fresh session:', sessionError);
+              setLocation('/login?error=session_error');
+              return;
+            }
+            
+            // Get provider tokens from the fresh session or hash parameters
+            const providerToken = freshSession.provider_token || hashParams.get('provider_token') || session.provider_token;
+            const providerRefreshToken = freshSession.provider_refresh_token || hashParams.get('provider_refresh_token') || session.provider_refresh_token;
+            
+            console.log('🔑 [AUTH-CALLBACK] Provider tokens status:', {
+              hasProviderToken: !!providerToken,
+              hasProviderRefreshToken: !!providerRefreshToken,
+              sourceFromFreshSession: !!freshSession.provider_token,
+              sourceFromHash: !!hashParams.get('provider_token'),
+              sourceFromOriginalSession: !!session.provider_token
+            });
+            
+            if (!providerToken) {
+              console.error('❌ [AUTH-CALLBACK] No provider tokens available - user may need to re-authorize YouTube scopes');
+              
+              // Try to extract the Google OAuth code from the URL if available
+              const urlParams = new URLSearchParams(window.location.search);
+              const googleCode = urlParams.get('code');
+              
+              if (googleCode) {
+                console.log('🔄 [AUTH-CALLBACK] Found Google OAuth code, attempting token exchange');
+                // Save minimal user data and redirect to dashboard
+                // The dashboard will prompt for YouTube reconnection
+                setLocation('/dashboard');
+                return;
+              }
+              
+              // No tokens and no code - user denied YouTube permissions
+              console.log('⚠️ [AUTH-CALLBACK] User may have denied YouTube permissions');
               setLocation('/login?error=no_youtube_access');
               return;
             }
@@ -87,7 +124,7 @@ export default function AuthCallback() {
               const youtubeResponse = await fetch(
                 'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
                 {
-                  headers: { 'Authorization': `Bearer ${session.provider_token}` }
+                  headers: { 'Authorization': `Bearer ${providerToken}` }
                 }
               );
               
@@ -127,8 +164,8 @@ export default function AuthCallback() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  accessToken: session.provider_token,
-                  refreshToken: session.provider_refresh_token,
+                  accessToken: providerToken,
+                  refreshToken: providerRefreshToken || '',
                   youtubeChannelId: channel.id,
                   youtubeChannelTitle: channel.snippet.title,
                   youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
