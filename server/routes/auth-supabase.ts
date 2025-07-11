@@ -435,43 +435,6 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
           });
           
           console.log('✅ [SESSION] YouTube tokens and channel info saved successfully');
-          await storage.updateUserYouTubeTokens(user.id, {
-            accessToken: encryptedAccessToken,
-            refreshToken: encryptedRefreshToken,
-            youtubeChannelId: channel.id!,
-            youtubeChannelTitle: channel.snippet?.title || null
-          });
-          
-          // Also save/update in accounts table for consistency
-          const existingAccount = await storage.getAccountByUserId(user.id, 'google');
-          if (existingAccount) {
-            await storage.updateAccountTokens(existingAccount.id, {
-              accessToken: encryptedAccessToken,
-              refreshToken: encryptedRefreshToken,
-              youtubeChannelId: channel.id!,
-              youtubeChannelTitle: channel.snippet?.title || null,
-              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
-            });
-          } else {
-            await storage.createAccount({
-              userId: user.id,
-              type: 'oauth',
-              provider: 'google',
-              providerAccountId: user.id,
-              accessToken: encryptedAccessToken,
-              refreshToken: encryptedRefreshToken,
-              expiresAt: Date.now() + (3600 * 1000), // 1 hour
-              tokenType: 'Bearer',
-              scope: null,
-              idToken: null,
-              sessionState: null,
-              youtubeChannelId: channel.id!,
-              youtubeChannelTitle: channel.snippet?.title || null,
-              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
-            });
-          }
-          
-          console.log('✅ [SESSION] YouTube tokens and channel info saved to database');
           
           // Update dbUser with fresh data
           dbUser = await storage.getUserByEmail(user.email!);
