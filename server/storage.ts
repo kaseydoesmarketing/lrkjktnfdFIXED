@@ -15,12 +15,26 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<User>): Promise<User>;
+  updateUserYouTubeTokens(userId: string, tokens: {
+    accessToken: string | null;
+    refreshToken: string | null;
+    youtubeChannelId: string;
+    youtubeChannelTitle: string | null;
+  }): Promise<void>;
+  updateUserLogin(userId: string): Promise<void>;
   
   // Accounts
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
   getAccountByProvider(provider: string, providerAccountId: string): Promise<Account | undefined>;
   getAccountByUserId(userId: string, provider: string): Promise<Account | undefined>;
-  updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken: string; expiresAt: number | null; }): Promise<Account>;
+  updateAccountTokens(accountId: string, tokens: { 
+    accessToken: string; 
+    refreshToken: string | null; 
+    expiresAt?: number | null;
+    youtubeChannelId?: string;
+    youtubeChannelTitle?: string | null;
+    youtubeChannelThumbnail?: string | null;
+  }): Promise<Account>;
   
   // Sessions
   createSession(session: Omit<Session, 'id'>): Promise<Session>;
@@ -107,6 +121,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
+  
+  async updateUserYouTubeTokens(userId: string, tokens: {
+    accessToken: string | null;
+    refreshToken: string | null;
+    youtubeChannelId: string;
+    youtubeChannelTitle: string | null;
+  }): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        youtubeChannelId: tokens.youtubeChannelId,
+        youtubeChannelTitle: tokens.youtubeChannelTitle,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
+  
+  async updateUserLogin(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        lastLogin: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
 
   // Accounts
   async createAccount(account: Omit<Account, 'id'>): Promise<Account> {
@@ -137,16 +179,36 @@ export class DatabaseStorage implements IStorage {
 
   async updateAccountTokens(accountId: string, tokens: { 
     accessToken: string; 
-    refreshToken: string; 
-    expiresAt: number | null; 
+    refreshToken: string | null; 
+    expiresAt?: number | null;
+    youtubeChannelId?: string;
+    youtubeChannelTitle?: string | null;
+    youtubeChannelThumbnail?: string | null;
   }): Promise<Account> {
+    const updateData: any = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
+    };
+    
+    if (tokens.expiresAt !== undefined) {
+      updateData.expiresAt = tokens.expiresAt;
+    }
+    
+    if (tokens.youtubeChannelId !== undefined) {
+      updateData.youtubeChannelId = tokens.youtubeChannelId;
+    }
+    
+    if (tokens.youtubeChannelTitle !== undefined) {
+      updateData.youtubeChannelTitle = tokens.youtubeChannelTitle;
+    }
+    
+    if (tokens.youtubeChannelThumbnail !== undefined) {
+      updateData.youtubeChannelThumbnail = tokens.youtubeChannelThumbnail;
+    }
+    
     const [account] = await db
       .update(accounts)
-      .set({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        expiresAt: tokens.expiresAt
-      })
+      .set(updateData)
       .where(eq(accounts.id, accountId))
       .returning();
     return account;

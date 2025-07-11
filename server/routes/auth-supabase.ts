@@ -282,7 +282,15 @@ router.get('/api/auth/logout', async (req: Request, res: Response) => {
 // Set session cookies when frontend receives tokens
 router.post('/api/auth/session', async (req: Request, res: Response) => {
   console.log('🔐 [SESSION] Setting session from frontend tokens');
-  const { access_token, refresh_token } = req.body;
+  const { access_token, refresh_token, provider_token, provider_refresh_token, user_id } = req.body;
+  
+  console.log('📊 [SESSION] Received tokens:', {
+    hasAccessToken: !!access_token,
+    hasRefreshToken: !!refresh_token,
+    hasProviderToken: !!provider_token,
+    hasProviderRefreshToken: !!provider_refresh_token,
+    userId: user_id
+  });
   
   if (!access_token) {
     console.error('❌ [SESSION] No access token provided');
@@ -337,6 +345,102 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
         subscriptionTier: 'free',
         subscriptionStatus: 'inactive'
       });
+    }
+    
+    // Try to get YouTube tokens and save them
+    let youtubeAccessToken = provider_token;
+    let youtubeRefreshToken = provider_refresh_token;
+    
+    // If no provider tokens in request, try Supabase Admin API
+    if (!youtubeAccessToken) {
+      console.log('🔍 [SESSION] No provider token in request, checking Supabase Admin API...');
+      try {
+        const adminClient = await import('./admin-client');
+        const { data: adminUser } = await adminClient.supabaseAdmin.auth.admin.getUserById(user.id);
+        
+        if (adminUser?.user?.app_metadata) {
+          youtubeAccessToken = adminUser.user.app_metadata.provider_token;
+          youtubeRefreshToken = adminUser.user.app_metadata.provider_refresh_token;
+          console.log('✅ [SESSION] Found provider tokens in app_metadata');
+        }
+      } catch (adminError) {
+        console.error('⚠️ [SESSION] Failed to get tokens from admin API:', adminError);
+      }
+    }
+    
+    // If we have YouTube tokens, fetch channel info and save everything
+    if (youtubeAccessToken) {
+      console.log('📺 [SESSION] Fetching YouTube channel info with provider token...');
+      
+      try {
+        const { google } = await import('googleapis');
+        const youtube = google.youtube('v3');
+        const auth = new google.auth.OAuth2();
+        auth.setCredentials({ access_token: youtubeAccessToken });
+        
+        const channelResponse = await youtube.channels.list({
+          auth,
+          part: ['snippet'],
+          mine: true
+        });
+        
+        const channel = channelResponse.data.items?.[0];
+        if (channel) {
+          console.log('✅ [SESSION] YouTube channel found:', channel.snippet?.title);
+          
+          // Encrypt tokens before saving
+          const { encryptToken } = await import('../auth');
+          const encryptedAccessToken = encryptToken(youtubeAccessToken);
+          const encryptedRefreshToken = youtubeRefreshToken ? encryptToken(youtubeRefreshToken) : null;
+          
+          // Update users table with YouTube info
+          await storage.updateUserYouTubeTokens(user.id, {
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken,
+            youtubeChannelId: channel.id!,
+            youtubeChannelTitle: channel.snippet?.title || null
+          });
+          
+          // Also save/update in accounts table for consistency
+          const existingAccount = await storage.getAccountByUserId(user.id, 'google');
+          if (existingAccount) {
+            await storage.updateAccountTokens(existingAccount.id, {
+              accessToken: encryptedAccessToken,
+              refreshToken: encryptedRefreshToken,
+              youtubeChannelId: channel.id!,
+              youtubeChannelTitle: channel.snippet?.title || null,
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+            });
+          } else {
+            await storage.createAccount({
+              userId: user.id,
+              type: 'oauth',
+              provider: 'google',
+              providerAccountId: user.id,
+              accessToken: encryptedAccessToken,
+              refreshToken: encryptedRefreshToken,
+              expiresAt: Date.now() + (3600 * 1000), // 1 hour
+              tokenType: 'Bearer',
+              scope: null,
+              idToken: null,
+              sessionState: null,
+              youtubeChannelId: channel.id!,
+              youtubeChannelTitle: channel.snippet?.title || null,
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+            });
+          }
+          
+          console.log('✅ [SESSION] YouTube tokens and channel info saved to database');
+          
+          // Update dbUser with fresh data
+          dbUser = await storage.getUserByEmail(user.email!);
+        }
+      } catch (youtubeError) {
+        console.error('❌ [SESSION] Failed to fetch YouTube channel:', youtubeError);
+        // Don't fail the login if YouTube fetch fails
+      }
+    } else {
+      console.log('⚠️ [SESSION] No YouTube tokens available to save');
     }
     
     console.log('✅ [SESSION] Session established');

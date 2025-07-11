@@ -27,9 +27,14 @@ export default function AuthCallback() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
+        const providerToken = hashParams.get('provider_token');
+        const providerRefreshToken = hashParams.get('provider_refresh_token');
+        
         console.log('🔑 [AUTH-CALLBACK] Hash params found:', {
           hasAccessToken: !!accessToken,
           hasRefreshToken: !!refreshToken,
+          hasProviderToken: !!providerToken,
+          hasProviderRefreshToken: !!providerRefreshToken,
           allHashParams: Object.fromEntries(hashParams.entries())
         });
         
@@ -63,9 +68,11 @@ export default function AuthCallback() {
               body: JSON.stringify({
                 access_token: accessToken,
                 refresh_token: refreshToken,
-                // Pass provider tokens if available from hash
-                provider_token: hashParams.get('provider_token'),
-                provider_refresh_token: hashParams.get('provider_refresh_token')
+                // Pass provider tokens if available from hash (usually not included by Supabase)
+                provider_token: providerToken,
+                provider_refresh_token: providerRefreshToken,
+                // Pass user ID so backend can fetch provider tokens from Supabase Admin API
+                user_id: session.user.id
               }),
               credentials: 'include'
             });
