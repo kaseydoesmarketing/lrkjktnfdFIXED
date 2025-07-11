@@ -76,123 +76,12 @@ export default function AuthCallback() {
             console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
             
             // CRITICAL: Fetch YouTube channel data and save tokens BEFORE redirecting
-            // Get fresh session to ensure we have provider tokens
-            console.log('🔄 [AUTH-CALLBACK] Refreshing session to get provider tokens');
-            const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+            // Provider tokens will be retrieved on the backend via Supabase Admin API
+            console.log('🔄 [AUTH-CALLBACK] Session established, provider tokens will be handled server-side');
+            console.log('📺 [AUTH-CALLBACK] Redirecting to dashboard where YouTube data will be fetched');
             
-            if (sessionError || !freshSession) {
-              console.error('❌ [AUTH-CALLBACK] Failed to get fresh session:', sessionError);
-              setLocation('/login?error=session_error');
-              return;
-            }
-            
-            // Get provider tokens from the fresh session or hash parameters
-            const providerToken = freshSession.provider_token || hashParams.get('provider_token') || session.provider_token;
-            const providerRefreshToken = freshSession.provider_refresh_token || hashParams.get('provider_refresh_token') || session.provider_refresh_token;
-            
-            console.log('🔑 [AUTH-CALLBACK] Provider tokens status:', {
-              hasProviderToken: !!providerToken,
-              hasProviderRefreshToken: !!providerRefreshToken,
-              sourceFromFreshSession: !!freshSession.provider_token,
-              sourceFromHash: !!hashParams.get('provider_token'),
-              sourceFromOriginalSession: !!session.provider_token
-            });
-            
-            if (!providerToken) {
-              console.error('❌ [AUTH-CALLBACK] No provider tokens available - user may need to re-authorize YouTube scopes');
-              
-              // Try to extract the Google OAuth code from the URL if available
-              const urlParams = new URLSearchParams(window.location.search);
-              const googleCode = urlParams.get('code');
-              
-              if (googleCode) {
-                console.log('🔄 [AUTH-CALLBACK] Found Google OAuth code, attempting token exchange');
-                // Save minimal user data and redirect to dashboard
-                // The dashboard will prompt for YouTube reconnection
-                setLocation('/dashboard');
-                return;
-              }
-              
-              // No tokens and no code - user denied YouTube permissions
-              console.log('⚠️ [AUTH-CALLBACK] User may have denied YouTube permissions');
-              setLocation('/login?error=no_youtube_access');
-              return;
-            }
-            
-            console.log('📺 [AUTH-CALLBACK] Fetching YouTube channel data');
-            try {
-              const youtubeResponse = await fetch(
-                'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
-                {
-                  headers: { 'Authorization': `Bearer ${providerToken}` }
-                }
-              );
-              
-              if (!youtubeResponse.ok) {
-                console.error('❌ [AUTH-CALLBACK] Failed to fetch YouTube channel:', youtubeResponse.status);
-                setLocation('/login?error=youtube_fetch_failed');
-                return;
-              }
-              
-              const data = await youtubeResponse.json();
-              const channel = data.items?.[0];
-              
-              if (!channel) {
-                console.error('❌ [AUTH-CALLBACK] No YouTube channel found');
-                setLocation('/login?error=no_youtube_channel');
-                return;
-              }
-              
-              console.log('✅ [AUTH-CALLBACK] YouTube channel found:', channel.snippet.title);
-              
-              // Update user metadata with YouTube channel info
-              const { error: updateError } = await supabase.auth.updateUser({
-                data: {
-                  youtube_channel_id: channel.id,
-                  youtube_channel_title: channel.snippet.title,
-                  youtube_channel_thumbnail: channel.snippet.thumbnails.default?.url || channel.snippet.thumbnails.medium?.url
-                }
-              });
-              
-              if (updateError) {
-                console.error('❌ [AUTH-CALLBACK] Failed to update user metadata:', updateError);
-              }
-              
-              // Save tokens to backend - REQUIRED before redirect
-              console.log('💾 [AUTH-CALLBACK] Saving YouTube tokens to backend');
-              const saveTokensResponse = await fetch('/api/accounts/save-tokens', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  accessToken: providerToken,
-                  refreshToken: providerRefreshToken || '',
-                  youtubeChannelId: channel.id,
-                  youtubeChannelTitle: channel.snippet.title,
-                  youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
-                }),
-                credentials: 'include'
-              });
-              
-              if (!saveTokensResponse.ok) {
-                console.error('❌ [AUTH-CALLBACK] Failed to save YouTube tokens');
-                setLocation('/login?error=token_save_failed');
-                return;
-              }
-              
-              console.log('✅ [AUTH-CALLBACK] YouTube tokens saved successfully');
-              
-              // Wait a moment to ensure everything is persisted
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
-              // All data saved successfully - now redirect to dashboard
-              console.log('🚀 [AUTH-CALLBACK] All data saved, redirecting to dashboard');
-              setLocation('/dashboard');
-              
-            } catch (error) {
-              console.error('❌ [AUTH-CALLBACK] Critical error:', error);
-              setLocation('/login?error=auth_failed');
-              return;
-            }
+            // Proceed to dashboard - the backend will handle retrieving provider tokens
+            setLocation('/dashboard');
           }
         } else {
           console.log('🔍 [AUTH-CALLBACK] No access token in hash, checking existing session');

@@ -141,58 +141,86 @@ router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
       });
     }
     
-    // No tokens stored - check if we can get them from Supabase session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // No tokens stored - try to get them from Supabase using admin API
+    console.log('🔑 [PROVIDER-TOKENS] Attempting to retrieve provider tokens from Supabase');
     
-    if (session?.provider_token) {
-      console.log('🔑 [PROVIDER-TOKENS] Found provider token in session, saving to database');
+    try {
+      // Use admin client to get user with app_metadata
+      const { data: adminUser, error: adminError } = await supabase.auth.admin.getUserById(user.id);
       
-      // Fetch YouTube channel data
-      try {
-        const youtubeResponse = await fetch(
-          'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
-          {
-            headers: { 'Authorization': `Bearer ${session.provider_token}` }
-          }
-        );
+      if (!adminError && adminUser?.user?.app_metadata) {
+        const providerToken = adminUser.user.app_metadata.provider_token;
+        const providerRefreshToken = adminUser.user.app_metadata.provider_refresh_token;
         
-        if (youtubeResponse.ok) {
-          const data = await youtubeResponse.json();
-          const channel = data.items?.[0];
+        if (providerToken) {
+          console.log('✅ [PROVIDER-TOKENS] Found provider tokens in app_metadata');
           
-          if (channel) {
-            // Update user with YouTube channel data
-            await storage.updateUser(user.id, {
-              youtubeChannelId: channel.id,
-              youtubeChannelTitle: channel.snippet.title
-            });
+          // Fetch YouTube channel data
+          try {
+            const youtubeResponse = await fetch(
+              'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+              {
+                headers: { 'Authorization': `Bearer ${providerToken}` }
+              }
+            );
             
-            // Save tokens
-            const { encryptToken } = await import('../auth');
-            await storage.createAccount({
-              userId: user.id,
-              type: 'oauth',
-              provider: 'google',
-              providerAccountId: user.id,
-              accessToken: encryptToken(session.provider_token),
-              refreshToken: session.provider_refresh_token ? encryptToken(session.provider_refresh_token) : null,
-              expiresAt: Date.now() + (3600 * 1000),
-              tokenType: 'Bearer',
-              scope: null,
-              idToken: null,
-              sessionState: null
-            });
-            
-            return res.json({
-              hasTokens: true,
-              needsReconnect: false,
-              channelSaved: true
-            });
+            if (youtubeResponse.ok) {
+              const data = await youtubeResponse.json();
+              const channel = data.items?.[0];
+              
+              if (channel) {
+                console.log('📺 [PROVIDER-TOKENS] YouTube channel found:', channel.snippet.title);
+                
+                // Update user with YouTube channel data
+                await storage.updateUser(user.id, {
+                  youtubeChannelId: channel.id,
+                  youtubeChannelTitle: channel.snippet.title
+                });
+                
+                // Save tokens to accounts table
+                const { encryptToken } = await import('../auth');
+                
+                // Check if account already exists
+                const existingAccount = await storage.getAccountByUserId(user.id, 'google');
+                
+                if (existingAccount) {
+                  // Update existing account
+                  await storage.updateAccountTokens(existingAccount.id, {
+                    accessToken: encryptToken(providerToken),
+                    refreshToken: providerRefreshToken ? encryptToken(providerRefreshToken) : existingAccount.refreshToken,
+                    expiresAt: Date.now() + (3600 * 1000)
+                  });
+                } else {
+                  // Create new account
+                  await storage.createAccount({
+                    userId: user.id,
+                    type: 'oauth',
+                    provider: 'google',
+                    providerAccountId: user.id,
+                    accessToken: encryptToken(providerToken),
+                    refreshToken: providerRefreshToken ? encryptToken(providerRefreshToken) : null,
+                    expiresAt: Date.now() + (3600 * 1000),
+                    tokenType: 'Bearer',
+                    scope: null,
+                    idToken: null,
+                    sessionState: null
+                  });
+                }
+                
+                return res.json({
+                  hasTokens: true,
+                  needsReconnect: false,
+                  channelSaved: true
+                });
+              }
+            }
+          } catch (error) {
+            console.error('❌ [PROVIDER-TOKENS] Failed to fetch YouTube data:', error);
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch YouTube data:', error);
       }
+    } catch (adminError) {
+      console.error('❌ [PROVIDER-TOKENS] Failed to get user from admin API:', adminError);
     }
     
     // No tokens available anywhere - user needs to reconnect
