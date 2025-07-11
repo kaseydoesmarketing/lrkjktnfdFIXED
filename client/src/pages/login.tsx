@@ -26,12 +26,15 @@ export default function Login() {
 
   const handleGoogleAuth = async () => {
     console.log('🚀 [LOGIN] Phase 1 - Basic Google login');
+    console.log('Current origin:', window.location.origin);
+    console.log('Redirect URL:', `${window.location.origin}/auth/callback`);
+    
     setIsLoading(true);
     setError(null);
     
     try {
       // Phase 1: Basic login with minimal scopes
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -39,14 +42,19 @@ export default function Login() {
         }
       });
       
+      console.log('OAuth response:', { data, error });
+      
       if (error) {
         console.error('OAuth error:', error);
-        setError('Failed to initiate login. Please try again.');
+        setError(`OAuth error: ${error.message || 'Failed to initiate login'}`);
         setIsLoading(false);
+      } else if (data?.url) {
+        console.log('OAuth URL generated:', data.url);
+        // The redirect should happen automatically
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError(`Error: ${err.message || 'An unexpected error occurred'}`);
       setIsLoading(false);
     }
   };
