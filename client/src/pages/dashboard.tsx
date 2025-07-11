@@ -178,11 +178,25 @@ export default function Dashboard() {
                 onClick={() => setShowAccountDropdown(!showAccountDropdown)}
                 className="flex items-center space-x-3 p-2 rounded-lg border hover:bg-gray-50 transition"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                  {user?.name?.charAt(0) || 'M'}
-                </div>
+                {user?.user_metadata?.youtube_channel_thumbnail ? (
+                  <img 
+                    src={user.user_metadata.youtube_channel_thumbnail} 
+                    alt={user?.user_metadata?.youtube_channel_title || user?.name || 'User'}
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/default-avatar.svg';
+                      e.currentTarget.onerror = null;
+                    }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    {user?.user_metadata?.youtube_channel_title?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </div>
+                )}
                 <div className="text-left">
-                  <div className="text-sm font-semibold">{user?.youtube_channel_name || 'Maschine Kulture TV'}</div>
+                  <div className="text-sm font-semibold">
+                    {user?.user_metadata?.youtube_channel_title || user?.youtubeChannelTitle || user?.name || user?.email?.split('@')[0] || 'User'}
+                  </div>
                   <div className="text-xs text-gray-500">Pro Plan • 1 Account</div>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -197,11 +211,25 @@ export default function Dashboard() {
                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            M
-                          </div>
+                          {user?.user_metadata?.youtube_channel_thumbnail ? (
+                            <img 
+                              src={user.user_metadata.youtube_channel_thumbnail} 
+                              alt={user?.user_metadata?.youtube_channel_title || user?.name || 'User'}
+                              className="w-8 h-8 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = '/default-avatar.svg';
+                                e.currentTarget.onerror = null;
+                              }}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-[#5865F2] to-[#7C3AED] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                              {user?.user_metadata?.youtube_channel_title?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                            </div>
+                          )}
                           <div>
-                            <div className="text-sm font-semibold">Maschine Kulture TV</div>
+                            <div className="text-sm font-semibold">
+                              {user?.user_metadata?.youtube_channel_title || user?.youtubeChannelTitle || user?.name || user?.email?.split('@')[0] || 'User'}
+                            </div>
                             <div className="text-xs text-gray-600">Primary Account</div>
                           </div>
                         </div>

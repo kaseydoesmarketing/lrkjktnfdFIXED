@@ -6,6 +6,7 @@ import { authService } from "./auth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import authSupabaseRoutes from "./routes/auth-supabase";
+import { supabase } from "./auth/supabase";
 import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
 import stripeWebhookRoutes from "./routes/stripe-webhook";
@@ -910,19 +911,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication endpoints
   app.get("/api/auth/me", requireAuth, async (req: Request, res: Response) => {
-    res.json(req.user);
+    // Get fresh user data from Supabase to include metadata
+    const { data: { user } } = await supabase.auth.getUser(req.cookies['sb-access-token']);
+    
+    if (user) {
+      // Merge database user with Supabase metadata
+      const enrichedUser = {
+        ...req.user,
+        user_metadata: user.user_metadata,
+        youtubeChannelId: user.user_metadata?.youtube_channel_id || req.user.youtubeChannelId,
+        youtubeChannelTitle: user.user_metadata?.youtube_channel_title || req.user.youtubeChannelTitle
+      };
+      res.json(enrichedUser);
+    } else {
+      res.json(req.user);
+    }
   });
 
   // Save YouTube OAuth tokens after login
   app.post("/api/accounts/save-tokens", requireAuth, async (req: Request, res: Response) => {
     try {
-      const { accessToken, refreshToken } = req.body;
+      const { accessToken, refreshToken, youtubeChannelId, youtubeChannelTitle, youtubeChannelThumbnail } = req.body;
       const userId = req.user!.id;
 
       console.log('💾 [SAVE-TOKENS] Saving YouTube tokens for user:', userId);
 
       if (!accessToken || !refreshToken) {
         return res.status(400).json({ error: "Missing tokens" });
+      }
+
+      // Update user with YouTube channel data if provided
+      if (youtubeChannelId || youtubeChannelTitle) {
+        console.log('📺 [SAVE-TOKENS] Updating YouTube channel data');
+        const updateData: any = {};
+        if (youtubeChannelId) updateData.youtubeChannelId = youtubeChannelId;
+        if (youtubeChannelTitle) updateData.youtubeChannelTitle = youtubeChannelTitle;
+        
+        await storage.updateUser(userId, updateData);
       }
 
       // Check if account exists
