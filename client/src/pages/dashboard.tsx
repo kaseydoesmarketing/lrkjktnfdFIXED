@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Play, Pause, CheckCircle, Plus, Eye, TrendingUp,
-  Clock, ChevronDown, ChevronUp, BarChart3, Target, Trash2
+  Clock, ChevronDown, ChevronUp, BarChart3, Target, Trash2, LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestModal from '@/components/CreateTestModal';
 import { ReconnectGoogleButton } from '@/components/ReconnectGoogleButton';
+import { supabase } from '@/lib/supabase';
+import { useLocation } from 'wouter';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +54,7 @@ interface Test {
 export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(0);
@@ -252,6 +255,27 @@ export default function Dashboard() {
                     <p className="text-xs text-amber-800">
                       💡 Pro plan includes 1 YouTube channel. Upgrade to Authority for up to 3 channels.
                     </p>
+                  </div>
+                  <div className="border-t">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await supabase.auth.signOut();
+                          setLocation('/login');
+                        } catch (error) {
+                          console.error('Sign out error:', error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to sign out. Please try again.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="w-full p-3 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 text-gray-700"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
                   </div>
                 </div>
               )}
