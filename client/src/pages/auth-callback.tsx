@@ -73,6 +73,58 @@ export default function AuthCallback() {
               return;
             }
             
+            // Fetch YouTube channel data if we have provider token
+            if (session.provider_token) {
+              console.log('📺 [AUTH-CALLBACK] Fetching YouTube channel data');
+              try {
+                const youtubeResponse = await fetch(
+                  'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+                  {
+                    headers: { 'Authorization': `Bearer ${session.provider_token}` }
+                  }
+                );
+                
+                if (youtubeResponse.ok) {
+                  const data = await youtubeResponse.json();
+                  const channel = data.items?.[0];
+                  
+                  if (channel) {
+                    console.log('✅ [AUTH-CALLBACK] YouTube channel found:', channel.snippet.title);
+                    
+                    // Update user metadata with YouTube channel info
+                    await supabase.auth.updateUser({
+                      data: {
+                        youtube_channel_id: channel.id,
+                        youtube_channel_title: channel.snippet.title,
+                        youtube_channel_thumbnail: channel.snippet.thumbnails.default?.url || channel.snippet.thumbnails.medium?.url
+                      }
+                    });
+                    
+                    // Save tokens to backend
+                    const saveTokensResponse = await fetch('/api/accounts/save-tokens', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        accessToken: session.provider_token,
+                        refreshToken: session.provider_refresh_token,
+                        youtubeChannelId: channel.id,
+                        youtubeChannelTitle: channel.snippet.title,
+                        youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
+                      }),
+                      credentials: 'include'
+                    });
+                    
+                    if (!saveTokensResponse.ok) {
+                      console.error('❌ [AUTH-CALLBACK] Failed to save YouTube tokens');
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error('❌ [AUTH-CALLBACK] YouTube fetch error:', error);
+                // Continue anyway - YouTube data is nice to have but not critical
+              }
+            }
+            
             console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
             
             // CRITICAL: Persist YouTube tokens from Supabase session

@@ -37,6 +37,9 @@ export const accounts = pgTable("accounts", {
   scope: text("scope"),
   idToken: text("id_token"),
   sessionState: text("session_state"),
+  youtubeChannelId: text("youtube_channel_id"),
+  youtubeChannelTitle: text("youtube_channel_title"),
+  youtubeChannelThumbnail: text("youtube_channel_thumbnail"),
 });
 
 export const sessions = pgTable("sessions", {
