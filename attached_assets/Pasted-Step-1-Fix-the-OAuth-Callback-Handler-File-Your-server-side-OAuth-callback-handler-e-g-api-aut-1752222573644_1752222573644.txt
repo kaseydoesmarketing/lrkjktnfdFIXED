@@ -1,0 +1,139 @@
+Step 1: Fix the OAuth Callback Handler
+File: Your server-side OAuth callback handler (e.g., /api/auth/callback, fixed-auth-callback.ts, or similar).
+
+Logic:
+
+After the OAuth code exchange, extract:
+
+provider_token (Google access token)
+
+provider_refresh_token (Google refresh token)
+
+If tokens are missing from session, extract from URL hash or use the authorization code to fetch them server-side.
+
+With the access token, call the YouTube API:
+
+GET https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true
+
+Extract youtube_channel_id and youtube_channel_title.
+
+Upsert (insert or update) the accounts table:
+
+Columns: user_id, provider, access_token, refresh_token, youtube_channel_id, youtube_channel_title, expires_at (timestamp)
+
+If any error occurs (e.g., token missing or channel not fetched), prompt the user to “Reconnect Google Account.”
+
+Step 2: Database Requirements
+accounts table must have:
+
+user_id (linked to Supabase user)
+
+provider (text)
+
+provider_account_id (Google user ID)
+
+access_token (text)
+
+refresh_token (text)
+
+expires_at (timestamp/bigint)
+
+youtube_channel_id (text)
+
+youtube_channel_title (text)
+
+If any column is missing, run this SQL:
+
+sql
+Copy
+Edit
+ALTER TABLE accounts
+  ADD COLUMN IF NOT EXISTS provider text,
+  ADD COLUMN IF NOT EXISTS provider_account_id text,
+  ADD COLUMN IF NOT EXISTS access_token text,
+  ADD COLUMN IF NOT EXISTS refresh_token text,
+  ADD COLUMN IF NOT EXISTS expires_at bigint,
+  ADD COLUMN IF NOT EXISTS youtube_channel_id text,
+  ADD COLUMN IF NOT EXISTS youtube_channel_title text;
+Step 3: OAuth Button (Frontend)
+When user clicks “Connect/Reconnect Google Account”:
+
+Call supabase.auth.signInWithOAuth with:
+
+All required scopes:
+
+arduino
+Copy
+Edit
+https://www.googleapis.com/auth/youtube.readonly
+https://www.googleapis.com/auth/youtube.force-ssl
+https://www.googleapis.com/auth/yt-analytics.readonly
+https://www.googleapis.com/auth/userinfo.profile
+https://www.googleapis.com/auth/userinfo.email
+Query params:
+
+js
+Copy
+Edit
+queryParams: {
+    access_type: 'offline',
+    prompt: 'consent'
+}
+If user denies permissions, show an error and repeat.
+
+Step 4: Fetching YouTube Data in the App
+All API/server routes and frontend code that fetch YouTube data MUST:
+
+Query the accounts table for the logged-in user’s tokens and channel info.
+
+If tokens/channel ID are missing or expired, show “Reconnect Google Account.”
+
+Never rely only on Supabase session for YouTube data.
+
+Step 5: Testing & Logging
+Add console logs and/or DB logging inside the callback handler to confirm tokens and channel info are captured and saved for every login.
+
+Test with a new Google account:
+
+Log in, consent to YouTube scopes
+
+Confirm tokens/channel show up in DB (accounts table)
+
+Dashboard/video selector must display user’s channel, videos, and analytics
+
+Acceptance Criteria
+After Google login, accounts table contains valid, non-expired access/refresh tokens and YouTube channel info for the user.
+
+Dashboard and video selector tool load channel data and videos with NO “Reconnect” errors after first login.
+
+“Reconnect” only shows if token/channel missing/expired or user denied scopes.
+
+AI AGENT: Apply all above steps, update all related files and DB.
+If any token is not captured, log the error, alert the user, and force a new OAuth flow.
+
+Sample Code for Callback (Node/TypeScript)
+ts
+Copy
+Edit
+// In /api/auth/callback or similar
+const { provider_token, provider_refresh_token } = session; // or extract from URL/hash
+
+// Fetch YouTube channel info
+const ytResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+  headers: { Authorization: `Bearer ${provider_token}` }
+});
+const ytData = await ytResponse.json();
+const youtube_channel_id = ytData.items[0]?.id || null;
+const youtube_channel_title = ytData.items[0]?.snippet?.title || null;
+
+// Upsert into accounts table
+await db.accounts.upsert({
+  user_id: session.user.id,
+  provider: 'google',
+  provider_account_id: session.user.id,
+  access_token: provider_token,
+  refresh_token: provider_refresh_token,
+  youtube_channel_id,
+  youtube_channel_title,
+  expires_at: session.expires_at
+});

@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Clock, Play } from 'lucide-react';
+import { Eye, Clock, Play, AlertCircle } from 'lucide-react';
+import { ReconnectGoogleButton } from '@/components/ReconnectGoogleButton';
 
 interface Video {
   id: string;
@@ -21,8 +22,9 @@ interface VideoSelectorProps {
 }
 
 export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoSelectorProps) {
-  const { data: videos, isLoading } = useQuery({
+  const { data: videos, isLoading, error } = useQuery({
     queryKey: ['/api/videos/recent'],
+    retry: false,
   });
 
   const formatViewCount = (count: number) => {
@@ -82,6 +84,34 @@ export default function VideoSelector({ onSelectVideo, selectedVideoId }: VideoS
         </CardContent>
       </Card>
     );
+  }
+
+  // Handle authentication errors
+  if (error) {
+    const errorMessage = (error as any)?.message || '';
+    const isAuthError = errorMessage.includes('YouTube account not connected') || 
+                       errorMessage.includes('YouTube authorization expired') ||
+                       errorMessage.includes('authentication') || 
+                       errorMessage.includes('YouTube access');
+    
+    if (isAuthError) {
+      return (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">YouTube Connection Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+              <p className="text-gray-300 mb-6">
+                We need to connect to your YouTube account to fetch your videos and manage title tests.
+              </p>
+              <ReconnectGoogleButton />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
   }
 
   if (!videos || (videos as Video[]).length === 0) {

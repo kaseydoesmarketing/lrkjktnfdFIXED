@@ -393,7 +393,48 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
           const encryptedAccessToken = encryptToken(youtubeAccessToken);
           const encryptedRefreshToken = youtubeRefreshToken ? encryptToken(youtubeRefreshToken) : null;
           
-          // Update users table with YouTube info
+          // Save YouTube tokens and channel info to accounts table
+          const existingAccount = await storage.getAccountByUserId(user.id, 'google');
+          
+          if (existingAccount) {
+            console.log('🔄 [SESSION] Updating existing account with YouTube info...');
+            await storage.updateAccountTokens(existingAccount.id, {
+              accessToken: encryptedAccessToken,
+              refreshToken: encryptedRefreshToken || existingAccount.refreshToken,
+              expiresAt: Date.now() + (3600 * 1000), // 1 hour expiry
+              youtubeChannelId: channel.id,
+              youtubeChannelTitle: channel.snippet?.title || null,
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+            });
+          } else {
+            console.log('➕ [SESSION] Creating new account with YouTube info...');
+            await storage.createAccount({
+              userId: user.id,
+              type: 'oauth',
+              provider: 'google',
+              providerAccountId: user.id,
+              accessToken: encryptedAccessToken,
+              refreshToken: encryptedRefreshToken,
+              expiresAt: Date.now() + (3600 * 1000),
+              tokenType: 'Bearer',
+              scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+              idToken: null,
+              sessionState: null,
+              youtubeChannelId: channel.id,
+              youtubeChannelTitle: channel.snippet?.title || null,
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+            });
+          }
+          
+          // Also update users table for backward compatibility
+          await storage.updateUserYouTubeTokens(user.id, {
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken,
+            youtubeChannelId: channel.id,
+            youtubeChannelTitle: channel.snippet?.title || null
+          });
+          
+          console.log('✅ [SESSION] YouTube tokens and channel info saved successfully');
           await storage.updateUserYouTubeTokens(user.id, {
             accessToken: encryptedAccessToken,
             refreshToken: encryptedRefreshToken,
