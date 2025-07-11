@@ -73,168 +73,89 @@ export default function AuthCallback() {
               return;
             }
             
-            // Fetch YouTube channel data if we have provider token
-            if (session.provider_token) {
-              console.log('📺 [AUTH-CALLBACK] Fetching YouTube channel data');
-              try {
-                const youtubeResponse = await fetch(
-                  'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
-                  {
-                    headers: { 'Authorization': `Bearer ${session.provider_token}` }
-                  }
-                );
-                
-                if (youtubeResponse.ok) {
-                  const data = await youtubeResponse.json();
-                  const channel = data.items?.[0];
-                  
-                  if (channel) {
-                    console.log('✅ [AUTH-CALLBACK] YouTube channel found:', channel.snippet.title);
-                    
-                    // Update user metadata with YouTube channel info
-                    await supabase.auth.updateUser({
-                      data: {
-                        youtube_channel_id: channel.id,
-                        youtube_channel_title: channel.snippet.title,
-                        youtube_channel_thumbnail: channel.snippet.thumbnails.default?.url || channel.snippet.thumbnails.medium?.url
-                      }
-                    });
-                    
-                    // Save tokens to backend
-                    const saveTokensResponse = await fetch('/api/accounts/save-tokens', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        accessToken: session.provider_token,
-                        refreshToken: session.provider_refresh_token,
-                        youtubeChannelId: channel.id,
-                        youtubeChannelTitle: channel.snippet.title,
-                        youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
-                      }),
-                      credentials: 'include'
-                    });
-                    
-                    if (!saveTokensResponse.ok) {
-                      console.error('❌ [AUTH-CALLBACK] Failed to save YouTube tokens');
-                    }
-                  }
-                }
-              } catch (error) {
-                console.error('❌ [AUTH-CALLBACK] YouTube fetch error:', error);
-                // Continue anyway - YouTube data is nice to have but not critical
-              }
-            }
-            
             console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
             
-            // CRITICAL: Persist YouTube tokens from Supabase session
-            console.log('💾 [AUTH-CALLBACK] Persisting YouTube tokens');
-            
-            // Get the fresh session with provider tokens
-            const { data: { session: freshSession } } = await supabase.auth.getSession();
-            
-            if (freshSession?.provider_token && freshSession?.provider_refresh_token) {
-              console.log('🔑 [AUTH-CALLBACK] Found provider tokens, saving to backend');
-              
-              // Fetch YouTube channel data
-              try {
-                console.log('📺 [AUTH-CALLBACK] Fetching YouTube channel data');
-                const channelResponse = await fetch(
-                  'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
-                  {
-                    headers: { 'Authorization': `Bearer ${freshSession.provider_token}` }
-                  }
-                );
-                
-                const channelData = await channelResponse.json();
-                const channel = channelData.items?.[0];
-                
-                if (channel) {
-                  console.log('✅ [AUTH-CALLBACK] YouTube channel found:', channel.snippet.title);
-                  
-                  // Update user metadata with YouTube channel info
-                  await supabase.auth.updateUser({
-                    data: {
-                      youtube_channel_id: channel.id,
-                      youtube_channel_title: channel.snippet.title,
-                      youtube_channel_thumbnail: channel.snippet.thumbnails.default?.url
-                    }
-                  });
-                  
-                  // Save tokens with YouTube channel data to backend
-                  const tokenResponse = await fetch('/api/accounts/save-tokens', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      accessToken: freshSession.provider_token,
-                      refreshToken: freshSession.provider_refresh_token,
-                      youtubeChannelId: channel.id,
-                      youtubeChannelTitle: channel.snippet.title,
-                      youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
-                    }),
-                    credentials: 'include'
-                  });
-                  
-                  if (!tokenResponse.ok) {
-                    console.error('❌ [AUTH-CALLBACK] Failed to persist YouTube tokens');
-                  } else {
-                    console.log('✅ [AUTH-CALLBACK] YouTube tokens and channel data persisted successfully');
-                  }
-                } else {
-                  console.warn('⚠️ [AUTH-CALLBACK] No YouTube channel found');
-                  
-                  // Still save tokens even without channel data
-                  const tokenResponse = await fetch('/api/accounts/save-tokens', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      accessToken: freshSession.provider_token,
-                      refreshToken: freshSession.provider_refresh_token,
-                    }),
-                    credentials: 'include'
-                  });
-                  
-                  if (!tokenResponse.ok) {
-                    console.error('❌ [AUTH-CALLBACK] Failed to persist YouTube tokens');
-                  } else {
-                    console.log('✅ [AUTH-CALLBACK] YouTube tokens persisted successfully');
-                  }
-                }
-              } catch (error) {
-                console.error('❌ [AUTH-CALLBACK] YouTube fetch error:', error);
-                
-                // Still save tokens even if YouTube fetch fails
-                const tokenResponse = await fetch('/api/accounts/save-tokens', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    accessToken: freshSession.provider_token,
-                    refreshToken: freshSession.provider_refresh_token,
-                  }),
-                  credentials: 'include'
-                });
-                
-                if (!tokenResponse.ok) {
-                  console.error('❌ [AUTH-CALLBACK] Failed to persist YouTube tokens');
-                } else {
-                  console.log('✅ [AUTH-CALLBACK] YouTube tokens persisted successfully');
-                }
-              }
-            } else {
-              console.warn('⚠️ [AUTH-CALLBACK] No provider tokens found in session');
+            // CRITICAL: Fetch YouTube channel data and save tokens BEFORE redirecting
+            if (!session.provider_token || !session.provider_refresh_token) {
+              console.error('❌ [AUTH-CALLBACK] No provider tokens available');
+              setLocation('/login?error=no_youtube_access');
+              return;
             }
             
-            // Clear the hash from URL
-            window.history.replaceState({}, '', window.location.pathname);
-            // Redirect to dashboard
-            console.log('🚀 [AUTH-CALLBACK] Redirecting to dashboard');
-            setLocation('/dashboard');
+            console.log('📺 [AUTH-CALLBACK] Fetching YouTube channel data');
+            try {
+              const youtubeResponse = await fetch(
+                'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+                {
+                  headers: { 'Authorization': `Bearer ${session.provider_token}` }
+                }
+              );
+              
+              if (!youtubeResponse.ok) {
+                console.error('❌ [AUTH-CALLBACK] Failed to fetch YouTube channel:', youtubeResponse.status);
+                setLocation('/login?error=youtube_fetch_failed');
+                return;
+              }
+              
+              const data = await youtubeResponse.json();
+              const channel = data.items?.[0];
+              
+              if (!channel) {
+                console.error('❌ [AUTH-CALLBACK] No YouTube channel found');
+                setLocation('/login?error=no_youtube_channel');
+                return;
+              }
+              
+              console.log('✅ [AUTH-CALLBACK] YouTube channel found:', channel.snippet.title);
+              
+              // Update user metadata with YouTube channel info
+              const { error: updateError } = await supabase.auth.updateUser({
+                data: {
+                  youtube_channel_id: channel.id,
+                  youtube_channel_title: channel.snippet.title,
+                  youtube_channel_thumbnail: channel.snippet.thumbnails.default?.url || channel.snippet.thumbnails.medium?.url
+                }
+              });
+              
+              if (updateError) {
+                console.error('❌ [AUTH-CALLBACK] Failed to update user metadata:', updateError);
+              }
+              
+              // Save tokens to backend - REQUIRED before redirect
+              console.log('💾 [AUTH-CALLBACK] Saving YouTube tokens to backend');
+              const saveTokensResponse = await fetch('/api/accounts/save-tokens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  accessToken: session.provider_token,
+                  refreshToken: session.provider_refresh_token,
+                  youtubeChannelId: channel.id,
+                  youtubeChannelTitle: channel.snippet.title,
+                  youtubeChannelThumbnail: channel.snippet.thumbnails.default?.url
+                }),
+                credentials: 'include'
+              });
+              
+              if (!saveTokensResponse.ok) {
+                console.error('❌ [AUTH-CALLBACK] Failed to save YouTube tokens');
+                setLocation('/login?error=token_save_failed');
+                return;
+              }
+              
+              console.log('✅ [AUTH-CALLBACK] YouTube tokens saved successfully');
+              
+              // Wait a moment to ensure everything is persisted
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // All data saved successfully - now redirect to dashboard
+              console.log('🚀 [AUTH-CALLBACK] All data saved, redirecting to dashboard');
+              setLocation('/dashboard');
+              
+            } catch (error) {
+              console.error('❌ [AUTH-CALLBACK] Critical error:', error);
+              setLocation('/login?error=auth_failed');
+              return;
+            }
           }
         } else {
           console.log('🔍 [AUTH-CALLBACK] No access token in hash, checking existing session');

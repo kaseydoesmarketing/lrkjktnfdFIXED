@@ -63,7 +63,7 @@ export default function Dashboard() {
   const [testToDelete, setTestToDelete] = useState<string | null>(null);
 
   // Fetch user data
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['/api/auth/me'],
   });
 
@@ -154,6 +154,44 @@ export default function Dashboard() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  // Check if user has YouTube data
+  const hasYouTubeData = user?.user_metadata?.youtube_channel_id || user?.youtubeChannelId;
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userError || !user) {
+    setLocation('/login');
+    return null;
+  }
+
+  // If no YouTube data, show reconnect prompt
+  if (!hasYouTubeData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-xl">YouTube Connection Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              We need to connect to your YouTube account to fetch your videos and manage title tests.
+            </p>
+            <ReconnectGoogleButton />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

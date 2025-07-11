@@ -20,7 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowUpRight,
-  Lightbulb
+  Lightbulb,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ReconnectGoogleButton } from '@/components/ReconnectGoogleButton';
 
 interface Video {
   id: string;
@@ -172,6 +174,21 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
 
   // Error state
   if (error) {
+    const isAuthError = error.message?.includes('authentication') || error.message?.includes('YouTube access');
+    
+    if (isAuthError) {
+      return (
+        <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+          <p className="text-yellow-800 font-medium mb-2">YouTube Connection Required</p>
+          <p className="text-yellow-600 text-sm mb-4">
+            We need to reconnect to your YouTube account to fetch your videos.
+          </p>
+          <ReconnectGoogleButton />
+        </div>
+      );
+    }
+    
     return (
       <div className="bg-red-50 rounded-xl border border-red-200 p-6 text-center">
         <p className="text-red-800 mb-2">Failed to load videos</p>

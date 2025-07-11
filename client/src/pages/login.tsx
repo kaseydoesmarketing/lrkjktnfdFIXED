@@ -121,14 +121,28 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-xl font-semibold text-white">Connect Your YouTube Account</CardTitle>
             <p className="text-gray-400 text-sm">Start optimizing your video titles today</p>
-            {new URLSearchParams(window.location.search).get('error') === 'oauth_verification' && (
-              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-3 mt-2">
-                <p className="text-yellow-300 text-sm">
-                  <strong>OAuth Setup Required:</strong> Your Google Cloud Console OAuth app needs verification or test user setup. 
-                  Use demo mode below or contact support.
-                </p>
-              </div>
-            )}
+            {(() => {
+              const errorParam = new URLSearchParams(window.location.search).get('error');
+              const errorMessages: { [key: string]: string } = {
+                'oauth_verification': 'OAuth Setup Required: Your Google Cloud Console OAuth app needs verification or test user setup.',
+                'no_youtube_access': 'YouTube access not granted. Please allow YouTube permissions during sign-in.',
+                'youtube_fetch_failed': 'Failed to fetch YouTube channel data. Please try signing in again.',
+                'no_youtube_channel': 'No YouTube channel found for this account. Please ensure you have a YouTube channel.',
+                'token_save_failed': 'Failed to save authentication tokens. Please try signing in again.',
+                'auth_failed': 'Authentication failed. Please try signing in again.',
+                'cookie_error': 'Failed to set authentication cookies. Please enable cookies and try again.',
+                'session_error': 'Failed to establish session. Please try signing in again.'
+              };
+              
+              if (errorParam && errorMessages[errorParam]) {
+                return (
+                  <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-3 mt-2">
+                    <p className="text-yellow-300 text-sm">{errorMessages[errorParam]}</p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
