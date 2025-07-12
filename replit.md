@@ -561,6 +561,11 @@ TitleTesterPro is a full-stack web application designed to help YouTubers optimi
   - **Complete OAuth Flow**: Phase 1 login → Dashboard check → YouTube connection prompt → Channel selection → Active tests
   - **Robust Error Handling**: Comprehensive error messages and recovery instructions at every step of the OAuth flow
   - **Production Ready**: All OAuth components implemented based on final code bundle with proper encryption and security
+- July 12, 2025: **WWW TO NON-WWW REDIRECT IMPLEMENTATION**
+  - **Redirect Middleware**: Added Express middleware to redirect all www.titletesterpro.com requests to https://titletesterpro.com
+  - **301 Permanent Redirect**: Implemented proper HTTP 301 status code for SEO preservation
+  - **Protocol Detection**: Middleware correctly detects HTTPS protocol using secure header or x-forwarded-proto
+  - **Application-Level Solution**: Handles redirect at Express server level while domain-level SSL configuration pending
 
 ## Deployment Configuration
 - Application ready for Replit private deployment
