@@ -490,7 +490,6 @@ export class DatabaseStorage implements IStorage {
     await db.update(tests)
       .set({
         currentTitleIndex: newIndex,
-        lastRotationAt: new Date(),
         updatedAt: new Date()
       })
       .where(eq(tests.id, testId));
@@ -622,8 +621,7 @@ export class DatabaseStorage implements IStorage {
           refreshToken: data.refreshToken,
           youtubeChannelId: data.youtubeChannelId,
           youtubeChannelTitle: data.youtubeChannelTitle,
-          expiresAt: data.expiresAt,
-          updatedAt: new Date()
+          expiresAt: data.expiresAt
         })
         .where(and(
           eq(accounts.userId, userId),
