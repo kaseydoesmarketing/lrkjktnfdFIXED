@@ -29,7 +29,6 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ReconnectGoogleButton } from '@/components/ReconnectGoogleButton';
 
 interface Video {
   id: string;
@@ -184,7 +183,9 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
           <p className="text-yellow-600 text-sm mb-4">
             We need to reconnect to your YouTube account to fetch your videos.
           </p>
-          <ReconnectGoogleButton />
+          <Button onClick={() => window.location.href = '/login'} variant="default" size="sm">
+            Reconnect to YouTube
+          </Button>
         </div>
       );
     }

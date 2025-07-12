@@ -6,8 +6,6 @@ import { authService } from "./auth";
 import { youtubeService } from "./youtubeService";
 import { analyticsCollector } from "./analyticsCollector";
 import authSupabaseRoutes from "./routes/auth-supabase";
-import authCallbackRoutes from "./routes/auth-callback";
-import oauthCallbackRoutes from "./routes/oauth-callback";
 import channelsRoutes from "./routes/channels";
 import { supabase } from "./auth/supabase";
 import { injectSessionToken } from "./middleware/auth";
@@ -104,8 +102,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Use Supabase auth routes
   app.use(authSupabaseRoutes);
-  app.use(authCallbackRoutes);
-  app.use(oauthCallbackRoutes); // New OAuth callback handler
   app.use(channelsRoutes); // Channel selection routes
   
   // Register rotation routes

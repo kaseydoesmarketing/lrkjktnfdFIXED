@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import CreateTestModal from '@/components/CreateTestModal';
-import { ReconnectGoogleButton } from '@/components/ReconnectGoogleButton';
-import ConnectYouTubePrompt from '@/components/ConnectYouTubePrompt';
 import { supabase } from '@/lib/supabase';
 import { useLocation } from 'wouter';
 import {
@@ -156,9 +154,6 @@ export default function Dashboard() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Check if user has YouTube data from the API response
-  const hasYouTubeChannel = user?.hasYouTubeChannel;
-
   if (userLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -173,11 +168,6 @@ export default function Dashboard() {
   if (userError || !user) {
     setLocation('/login');
     return null;
-  }
-
-  // If no YouTube channel connected, show the Connect YouTube prompt
-  if (!hasYouTubeChannel) {
-    return <ConnectYouTubePrompt />;
   }
 
   return (

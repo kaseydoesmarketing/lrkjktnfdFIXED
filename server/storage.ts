@@ -1,8 +1,8 @@
 import { 
-  users, tests, titles, analyticsPolls, titleSummaries, accounts, sessions, testRotationLogs,
+  users, tests, titles, analyticsPolls, titleSummaries, accounts, testRotationLogs,
   type User, type InsertUser, type Test, type InsertTest, type Title, type InsertTitle,
   type AnalyticsPoll, type InsertAnalyticsPoll, type TitleSummary, type InsertTitleSummary,
-  type Account, type Session
+  type Account
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -15,32 +15,12 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<User>): Promise<User>;
-  updateUserYouTubeTokens(userId: string, tokens: {
-    accessToken: string | null;
-    refreshToken: string | null;
-    youtubeChannelId: string;
-    youtubeChannelTitle: string | null;
-  }): Promise<void>;
   updateUserLogin(userId: string): Promise<void>;
   hasYouTubeChannel(userId: string): Promise<boolean>;
   
   // Accounts
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
-  getAccountByProvider(provider: string, providerAccountId: string): Promise<Account | undefined>;
   getAccountByUserId(userId: string, provider: string): Promise<Account | undefined>;
-  updateAccountTokens(accountId: string, tokens: { 
-    accessToken: string; 
-    refreshToken: string | null; 
-    expiresAt?: number | null;
-    youtubeChannelId?: string;
-    youtubeChannelTitle?: string | null;
-    youtubeChannelThumbnail?: string | null;
-  }): Promise<Account>;
-  
-  // Sessions
-  createSession(session: Omit<Session, 'id'>): Promise<Session>;
-  getSession(sessionToken: string): Promise<Session | undefined>;
-  deleteSession(sessionToken: string): Promise<void>;
   
   // Tests
   getTestsByUserId(userId: string): Promise<Test[]>;
@@ -75,29 +55,7 @@ export interface IStorage {
   // Admin methods
   getAllUsers(): Promise<User[]>;
   
-  // Temporary OAuth storage
-  saveTempTokens(userId: string, data: {
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-    channels: any[];
-  }): Promise<void>;
-  getTempTokens(userId: string): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-    channels: any[];
-  } | null>;
-  deleteTempTokens(userId: string): Promise<void>;
-  
-  // Account OAuth updates
-  upsertAccount(userId: string, data: {
-    accessToken: string;
-    refreshToken: string;
-    youtubeChannelId: string;
-    youtubeChannelTitle: string;
-    expiresAt: number;
-  }): Promise<void>;
+
   getAllTests(): Promise<Test[]>;
   
   // Scheduler methods
@@ -147,23 +105,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  async updateUserYouTubeTokens(userId: string, tokens: {
-    accessToken: string | null;
-    refreshToken: string | null;
-    youtubeChannelId: string;
-    youtubeChannelTitle: string | null;
-  }): Promise<void> {
-    await db
-      .update(users)
-      .set({
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        youtubeChannelId: tokens.youtubeChannelId,
-        youtubeChannelTitle: tokens.youtubeChannelTitle,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId));
-  }
+
   
   async updateUserLogin(userId: string): Promise<void> {
     await db
@@ -190,13 +132,7 @@ export class DatabaseStorage implements IStorage {
     return newAccount;
   }
 
-  async getAccountByProvider(provider: string, providerAccountId: string): Promise<Account | undefined> {
-    const [account] = await db
-      .select()
-      .from(accounts)
-      .where(and(eq(accounts.provider, provider), eq(accounts.providerAccountId, providerAccountId)));
-    return account || undefined;
-  }
+
 
   async getAccountByUserId(userId: string, provider: string = 'google'): Promise<Account | undefined> {
     const [account] = await db
@@ -207,79 +143,7 @@ export class DatabaseStorage implements IStorage {
     return account || undefined;
   }
 
-  async updateAccountTokens(accountId: string, tokens: { 
-    accessToken: string; 
-    refreshToken: string | null; 
-    expiresAt?: number | null;
-    youtubeChannelId?: string;
-    youtubeChannelTitle?: string | null;
-    youtubeChannelThumbnail?: string | null;
-  }): Promise<Account> {
-    const updateData: any = {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken
-    };
-    
-    if (tokens.expiresAt !== undefined) {
-      updateData.expiresAt = tokens.expiresAt;
-    }
-    
-    if (tokens.youtubeChannelId !== undefined) {
-      updateData.youtubeChannelId = tokens.youtubeChannelId;
-    }
-    
-    if (tokens.youtubeChannelTitle !== undefined) {
-      updateData.youtubeChannelTitle = tokens.youtubeChannelTitle;
-    }
-    
-    if (tokens.youtubeChannelThumbnail !== undefined) {
-      updateData.youtubeChannelThumbnail = tokens.youtubeChannelThumbnail;
-    }
-    
-    const [account] = await db
-      .update(accounts)
-      .set(updateData)
-      .where(eq(accounts.id, accountId))
-      .returning();
-    return account;
-  }
 
-  async updateUserTokens(userId: string, tokens: {
-    oauthToken: string;
-    refreshToken: string;
-  }): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        oauthToken: tokens.oauthToken,
-        refreshToken: tokens.refreshToken
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
-
-  // Sessions
-  async createSession(session: Omit<Session, 'id'>): Promise<Session> {
-    const id = crypto.randomUUID();
-    const [newSession] = await db
-      .insert(sessions)
-      .values({ ...session, id })
-      .returning();
-    return newSession;
-  }
-
-  async getSession(sessionToken: string): Promise<Session | undefined> {
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.sessionToken, sessionToken));
-    return session || undefined;
-  }
-
-  async deleteSession(sessionToken: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.sessionToken, sessionToken));
-  }
 
   // Tests
   async getTestsByUserId(userId: string): Promise<Test[]> {
@@ -554,99 +418,7 @@ export class DatabaseStorage implements IStorage {
     return null;
   }
 
-  // Temporary OAuth storage implementation
-  async saveTempTokens(userId: string, data: {
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-    channels: any[];
-  }): Promise<void> {
-    await db.execute(sql`
-      INSERT INTO temp_oauth (user_id, access_token, refresh_token, expires_at, channels)
-      VALUES (${userId}, ${data.accessToken}, ${data.refreshToken}, ${data.expiresAt}, ${JSON.stringify(data.channels)})
-      ON CONFLICT (user_id) 
-      DO UPDATE SET
-        access_token = ${data.accessToken},
-        refresh_token = ${data.refreshToken},
-        expires_at = ${data.expiresAt},
-        channels = ${JSON.stringify(data.channels)},
-        created_at = NOW()
-    `);
-  }
 
-  async getTempTokens(userId: string): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-    channels: any[];
-  } | null> {
-    const result = await db.execute(sql`
-      SELECT access_token, refresh_token, expires_at, channels
-      FROM temp_oauth
-      WHERE user_id = ${userId}
-    `);
-    
-    if (result.rows.length === 0) return null;
-    
-    const row = result.rows[0];
-    return {
-      accessToken: row.access_token as string,
-      refreshToken: row.refresh_token as string,
-      expiresAt: row.expires_at as number,
-      channels: row.channels as any[]
-    };
-  }
-
-  async deleteTempTokens(userId: string): Promise<void> {
-    await db.execute(sql`
-      DELETE FROM temp_oauth WHERE user_id = ${userId}
-    `);
-  }
-
-  async upsertAccount(userId: string, data: {
-    accessToken: string;
-    refreshToken: string;
-    youtubeChannelId: string;
-    youtubeChannelTitle: string;
-    expiresAt: number;
-  }): Promise<void> {
-    // Check if account exists
-    const existing = await this.getAccountByUserId(userId, 'google');
-    
-    if (existing) {
-      // Update existing account
-      await db.update(accounts)
-        .set({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          youtubeChannelId: data.youtubeChannelId,
-          youtubeChannelTitle: data.youtubeChannelTitle,
-          expiresAt: data.expiresAt
-        })
-        .where(and(
-          eq(accounts.userId, userId),
-          eq(accounts.provider, 'google')
-        ));
-    } else {
-      // Create new account
-      await this.createAccount({
-        userId,
-        provider: 'google',
-        providerAccountId: userId, // Using userId as provider account ID for simplicity
-        type: 'oauth',
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        youtubeChannelId: data.youtubeChannelId,
-        youtubeChannelTitle: data.youtubeChannelTitle,
-        expiresAt: data.expiresAt,
-        tokenType: 'Bearer',
-        scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
-        idToken: null,
-        sessionState: null,
-        youtubeChannelThumbnail: null
-      });
-    }
-  }
 }
 
 export const storage = new DatabaseStorage();
