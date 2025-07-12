@@ -1,0 +1,73 @@
+🎯 Full Post-Rebuild Configuration & Functionality Audit Plan
+You don’t want just a “debug” or an “overhaul” — you want to verify & validate the entire flow from top to bottom, so you can trust the system.
+
+Below is a concrete checklist & plan to run — either by you or the AI agent — to figure out exactly what’s broken.
+
+🔍 Phase 1: Define & Test the Happy Path
+✅ Expected flow:
+1️⃣ Visit https://titletesterpro.com
+2️⃣ Click “Get Started” → goes to /login
+3️⃣ Login → OAuth popup → approve scopes
+4️⃣ Redirect back → /dashboard
+5️⃣ Dashboard loads with user info & videos from YouTube
+6️⃣ Can create tests & see results
+
+You need to test each of these steps & document where it breaks.
+
+🛠 Phase 2: Validate All Configurations
+2.1 🔑 Environment Variables
+Check .env (both frontend & backend) and make sure:
+
+env
+Copy
+Edit
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+DATABASE_URL=postgres://...
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+FRONTEND_URL=https://titletesterpro.com
+— No leftover www.titletesterpro.com unless you’ve fixed it.
+— No pointing to localhost.
+
+2.2 🔐 Supabase Settings
+Go to Supabase dashboard:
+✅ Auth → Settings → Redirect URLs → https://titletesterpro.com/auth/callback
+✅ Auth → Scopes include YouTube scopes.
+✅ Auth → Tokens are saved.
+✅ RLS policies on users and accounts tables are correct.
+✅ Project is online & healthy.
+
+2.3 🌐 DNS & SSL
+✅ titletesterpro.com points to Replit & SSL is valid.
+✅ www.titletesterpro.com either works or redirects cleanly to non-www.
+✅ No mixed content warnings.
+
+2.4 🔁 OAuth Flow
+✅ Supabase OAuth is issuing tokens.
+✅ Callback endpoint receives session & stores it properly.
+✅ Supabase session cookies are set (sb-access-token) and available in the browser.
+✅ No cookie_error.
+
+🖥 Phase 3: Check Code Logic
+Ensure /login triggers Supabase sign-in with all scopes upfront.
+
+/auth/callback is handled cleanly and saves session.
+
+storage.ts only relies on Supabase session.
+
+Frontend checks Supabase session before redirecting to /dashboard.
+
+🔗 Phase 4: Check the Dashboard
+✅ Does the /dashboard page load?
+✅ Is the session detected in the dashboard?
+✅ Are YouTube API calls working?
+✅ Any errors in browser console or server logs?
+
+🔬 Phase 5: Observe Logs
+In browser console: look for red errors during login.
+
+In Network tab: check if /auth/v1/token returns 200 or errors.
+
+In server logs: look for exceptions or failed DB calls.
+

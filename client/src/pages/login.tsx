@@ -33,12 +33,16 @@ export default function Login() {
     setError(null);
     
     try {
-      // Phase 1: Basic login with minimal scopes
+      // Request all required scopes upfront for YouTube API access
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'openid email profile' // Basic scopes only for initial login
+          scopes: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/yt-analytics.readonly',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
       

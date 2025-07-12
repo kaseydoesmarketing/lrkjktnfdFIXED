@@ -1,0 +1,101 @@
+Full System Functionality & Logic Validation (MVP Smoke Test)
+I want you to execute a complete, systematic smoke test & configuration validation of the TitleTesterPro application to confirm it is MVP-ready.
+
+Do not just look at code — actually reason about the system as a whole. Assume nothing. Find misconfigurations, missing keys, broken flows, and hidden assumptions. I want this tested & validated as if preparing to launch to real users tomorrow.
+
+✅ Deliverables:
+🔷 Identify & document any issues, misconfigurations, or missing elements at any layer.
+🔷 Recommend fixes for each issue found.
+🔷 Confirm that the current system logic makes sense & is appropriate for an MVP of this app.
+🔷 Output a single, clear report with priority levels (Critical / High / Medium / Low) for all findings.
+
+🎯 Areas To Test & Validate:
+1️⃣ Happy Path Validation
+Visit https://titletesterpro.com → click Get Started → login → dashboard → create & view tests.
+
+Identify exactly where the flow breaks, if at all, and why.
+
+2️⃣ Environment & Config Validation
+Check .env files (frontend & backend):
+
+All required secrets & keys are present & correct.
+
+No leftover localhost values or dummy tokens.
+
+FRONTEND_URL, NEXT_PUBLIC_SUPABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, etc. are aligned with deployed environment.
+
+3️⃣ Supabase Settings
+Auth redirect URLs include https://titletesterpro.com/auth/callback (not www or localhost).
+
+Scopes requested include all necessary YouTube scopes upfront.
+
+RLS (Row Level Security) rules are correct and allow expected queries.
+
+Provider tokens (YouTube) are saved & retrievable.
+
+4️⃣ DNS & SSL
+Both titletesterpro.com and www.titletesterpro.com resolve & have valid SSL certificates.
+
+If www is unsupported, confirm it properly redirects to the root domain.
+
+5️⃣ OAuth & Session Logic
+Triple-check the login & session flow:
+
+OAuth requests proper scopes upfront.
+
+Callback properly saves the session & tokens.
+
+Supabase session cookie (sb-access-token) is set & refreshed correctly.
+
+No stale cookies or SameSite/CORS issues.
+
+YouTube API tokens are fresh & valid.
+
+6️⃣ Database Validation
+Schema aligns with app requirements (users, accounts, tests, etc.).
+
+No obsolete tables, columns, or conflicting token storage.
+
+Data integrity: foreign keys & indexes are present.
+
+Supabase database is primary & Neon is no longer used.
+
+7️⃣ API & Endpoint Checks
+All backend endpoints respond with expected status & data.
+
+Proper error handling & fallback mechanisms.
+
+Rate limiting & quota usage (YouTube & Supabase) are under control.
+
+No unprotected sensitive endpoints.
+
+8️⃣ System Logic & UX
+Verify the business logic of the app actually makes sense for an MVP.
+
+Does the user understand what to do at each step?
+
+Is the flow intuitive: Login → Connect YouTube → Create Tests → View Results?
+
+Are there unnecessary steps or confusing UI elements?
+
+9️⃣ Hidden or Overlooked Risks
+Check for unhandled errors & crash risks.
+
+Look for hardcoded keys in code.
+
+Validate CSRF protection, input sanitization & security headers.
+
+Verify that you are not exceeding YouTube quota limits.
+
+📋 Final Report Format:
+🎯 Summary: Is the system MVP-ready? Yes/No.
+
+📝 Findings Table:
+
+Priority	Area	Issue	Suggested Fix
+
+✅ Confirmed Passes
+
+🚀 Recommended Next Steps
+
+Be thorough, skeptical, and explicit. Leave nothing unchecked. Treat this like a pre-launch QA audit & architecture review.

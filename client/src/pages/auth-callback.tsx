@@ -39,25 +39,8 @@ export default function AuthCallback() {
             expiresAt: new Date(data.session.expires_at! * 1000).toISOString()
           });
           
-          // Supabase will automatically set its own cookies
-          // We just need to ensure our backend recognizes the session
-          console.log('🍪 [AUTH-CALLBACK] Creating user in database');
-          const createUserResponse = await fetch('/api/auth/session/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${data.session.access_token}`
-            },
-            body: JSON.stringify({
-              user: data.session.user
-            }),
-            credentials: 'include'
-          });
-          
-          if (!createUserResponse.ok) {
-            console.error('❌ [AUTH-CALLBACK] Failed to create user in database');
-            // Continue anyway - user might already exist
-          }
+          // User creation happens automatically in the auth middleware
+          console.log('✅ [AUTH-CALLBACK] Session established, user will be created on first API call');
           
           console.log('📺 [AUTH-CALLBACK] Redirecting to dashboard');
           
