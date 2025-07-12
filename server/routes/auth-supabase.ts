@@ -127,6 +127,63 @@ router.post('/api/auth/refresh', async (req: Request, res: Response) => {
   }
 });
 
+// Set session cookies after OAuth callback
+router.post('/api/auth/session', async (req: Request, res: Response) => {
+  const { access_token, refresh_token } = req.body;
+  
+  if (!access_token) {
+    return res.status(400).json({ error: 'No access token provided' });
+  }
+  
+  try {
+    // Verify the token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    
+    if (error || !user) {
+      console.error('Invalid access token:', error);
+      return res.status(401).json({ error: 'Invalid access token' });
+    }
+    
+    // Set httpOnly cookies
+    res.cookie('sb-access-token', access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+    
+    if (refresh_token) {
+      res.cookie('sb-refresh-token', refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      });
+    }
+    
+    console.log('✅ [AUTH-SESSION] Cookies set for user:', user.email);
+    
+    // Create or update user in database
+    const dbUser = await storage.getUserByEmail(user.email!);
+    if (!dbUser) {
+      await storage.createUser({
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name || user.email!.split('@')[0],
+        image: user.user_metadata?.avatar_url || null,
+        isFounder: user.email === 'kaseydoesmarketing@gmail.com',
+        subscriptionStatus: user.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
+        subscriptionTier: user.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
+      });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Session creation error:', error);
+    res.status(500).json({ error: 'Failed to create session' });
+  }
+});
+
 // Get provider tokens and fetch YouTube data
 router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
   const token = req.cookies['sb-access-token'];
