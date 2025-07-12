@@ -1,0 +1,126 @@
+You are an elite-level app engineer with 15+ years of experience in building, debugging, and scaling web apps.
+This project is a web application that allows users to authenticate via Google OAuth (for YouTube), access their dashboard, and select/upload their YouTube videos for A/B testing.
+The stack involves:
+✅ Frontend: [Insert stack here, e.g., React/Vue/etc.]
+✅ Backend: [Node/Express/Django/etc.]
+✅ Database: [PostgreSQL via Supabase/Neon/etc.]
+✅ Auth: Google OAuth 2.0 + refresh token flow
+✅ Hosting: [Insert if known, e.g., Vercel/Heroku]
+
+🛠 Mission:
+Conduct a deep, top-to-bottom debug and audit of the entire system, covering:
+
+User login / authentication
+
+Dashboard data fetching & rendering
+
+YouTube API integration & video selection
+
+Database integrity & token storage
+
+Frontend → backend → third-party flow
+
+Error handling, edge cases, logs
+
+You must:
+
+Identify all misconfigurations, broken flows, and missing dependencies.
+
+Suggest and/or implement fixes with explanation.
+
+Document what went wrong, why it happens, and what needs to change.
+
+Optimize where possible (e.g., improve refresh logic, loading states, etc.)
+
+Include any security or UX concerns.
+
+🔎 Steps To Execute:
+1️⃣ OAuth & Login Flow
+✅ Verify Google Developer Console setup:
+
+Correct client_id and client_secret
+
+Proper redirect URIs
+
+Required scopes (e.g., https://www.googleapis.com/auth/youtube.readonly)
+✅ Check if your frontend properly initiates OAuth (correct URL, no typo).
+✅ Ensure backend correctly exchanges code for tokens.
+✅ Confirm refresh token flow is implemented and tested.
+✅ Look for token storage vulnerabilities or race conditions.
+✅ Test logout flow too — clean session and revoke tokens if necessary.
+✅ Test what happens if token expires mid-session — does it silently refresh?
+
+2️⃣ Database
+✅ Audit user/account table:
+
+Does it store Google/YT user id uniquely?
+
+Are access & refresh tokens stored and encrypted properly?
+✅ Check DB migrations: are columns up-to-date for new OAuth fields?
+✅ Validate relationships — e.g., user ↔ test ↔ video ↔ stats.
+
+3️⃣ Dashboard
+✅ Confirm that after login:
+
+User is redirected to the correct dashboard page.
+
+API calls use valid tokens & user IDs.
+✅ Check that dashboard pulls the right data for the logged-in account (not stale data, not another user’s data).
+✅ Verify all displayed metrics (CTR, views, tests) are correct.
+✅ Ensure proper loading states & error messages when API fails.
+
+4️⃣ Video Selection & YouTube API
+✅ Test /api/videos/channel endpoint:
+
+Confirm it uses a valid, fresh token.
+
+Catch & log 401, 403, quota errors.
+✅ Make sure YouTube API calls respect quota limits.
+✅ Validate pagination & retrieval of all videos, not just first page.
+✅ Test UI video selection — are selected videos properly recorded in the DB?
+✅ Edge cases:
+
+Empty channel (no videos)
+
+Channel with thousands of videos
+
+Private & unlisted videos — how are they handled?
+
+5️⃣ Frontend
+✅ Check login & dashboard pages render properly across browsers & devices.
+✅ Validate frontend state management for auth/session.
+✅ Inspect console & network logs for silent errors.
+✅ Audit for memory leaks, long-running requests, poor loading UX.
+
+6️⃣ Error Handling & Logs
+✅ Review all server logs for errors, stack traces.
+✅ Check if errors are being swallowed silently.
+✅ Validate graceful fallback UX for all API failures.
+✅ Confirm that unexpected states (e.g., revoked token) are handled and surfaced clearly.
+
+7️⃣ Security
+✅ Ensure no secrets are hardcoded in the frontend.
+✅ Verify HTTPS is enforced everywhere.
+✅ Sanitize all user input to prevent XSS/SQLi.
+✅ Test session fixation & CSRF.
+
+📄 Deliverables:
+When done, output the following:
+
+✅ A documented list of all issues found, prioritized (Critical → Minor).
+
+✅ Explanation of root cause for each.
+
+✅ Suggested fixes or code snippets for each.
+
+✅ Any recommended improvements (scaling, UX, security, performance).
+
+✅ Confirmation checklist: ✅ Login tested, ✅ Dashboard tested, ✅ Video selection tested, ✅ DB integrity, ✅ API quotas respected.
+
+🔗 Notes:
+If you encounter a blocker or an external dependency you can’t resolve (e.g., Google quota exhausted, missing API key), document it explicitly with steps needed to fix.
+
+Assume you are allowed to make schema changes and modify both backend & frontend.
+
+Be absolutely thorough. Assume nothing is correct until verified.
+
