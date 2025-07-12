@@ -15,100 +15,59 @@ export default function AuthCallback() {
         // Check for error in query params first
         const urlParams = new URLSearchParams(window.location.search);
         const queryError = urlParams.get('error');
-        console.log('❓ [AUTH-CALLBACK] Query params:', Object.fromEntries(urlParams.entries()));
+        const errorDescription = urlParams.get('error_description');
         
         if (queryError) {
-          console.error('❌ [AUTH-CALLBACK] OAuth error:', queryError);
-          setLocation('/login?error=' + queryError);
+          console.error('❌ [AUTH-CALLBACK] OAuth error:', queryError, errorDescription);
+          setLocation(`/login?error=${queryError}&description=${encodeURIComponent(errorDescription || '')}`);
           return;
         }
 
-        // Get the session from the URL hash (Supabase returns tokens as hash fragments)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const providerToken = hashParams.get('provider_token');
-        const providerRefreshToken = hashParams.get('provider_refresh_token');
+        // Let Supabase handle the OAuth callback
+        console.log('🔐 [AUTH-CALLBACK] Processing Supabase auth callback');
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
         
-        console.log('🔑 [AUTH-CALLBACK] Hash params found:', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          hasProviderToken: !!providerToken,
-          hasProviderRefreshToken: !!providerRefreshToken,
-          allHashParams: Object.fromEntries(hashParams.entries())
-        });
-        
-        if (accessToken) {
-          console.log('🔐 [AUTH-CALLBACK] Setting session with access token');
-          // Set the session in Supabase client
-          const { data: { session }, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
+        if (error) {
+          console.error('❌ [AUTH-CALLBACK] Error exchanging code for session:', error);
+          setLocation('/login?error=session_error');
+          return;
+        }
+
+        if (data?.session) {
+          console.log('✅ [AUTH-CALLBACK] Session established successfully:', {
+            user: data.session.user.email,
+            expiresAt: new Date(data.session.expires_at! * 1000).toISOString()
           });
-
-          if (error) {
-            console.error('❌ [AUTH-CALLBACK] Error setting session:', error);
-            setLocation('/login?error=session_error');
-            return;
-          }
-
-          if (session) {
-            console.log('✅ [AUTH-CALLBACK] Session established successfully:', {
-              user: session.user.email,
-              expiresAt: new Date(session.expires_at! * 1000).toISOString()
-            });
-            
-            // Set httpOnly cookies on the backend
-            console.log('🍪 [AUTH-CALLBACK] Setting backend cookies');
-            const cookieResponse = await fetch('/api/auth/session', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                // Pass provider tokens if available from hash (usually not included by Supabase)
-                provider_token: providerToken,
-                provider_refresh_token: providerRefreshToken,
-                // Pass user ID so backend can fetch provider tokens from Supabase Admin API
-                user_id: session.user.id
-              }),
-              credentials: 'include'
-            });
-            
-            if (!cookieResponse.ok) {
-              console.error('❌ [AUTH-CALLBACK] Failed to set backend cookies');
-              setLocation('/login?error=cookie_error');
-              return;
-            }
-            
-            console.log('✅ [AUTH-CALLBACK] Backend cookies set successfully');
-            
-            // CRITICAL: Fetch YouTube channel data and save tokens BEFORE redirecting
-            // Provider tokens will be retrieved on the backend via Supabase Admin API
-            console.log('🔄 [AUTH-CALLBACK] Session established, provider tokens will be handled server-side');
-            console.log('📺 [AUTH-CALLBACK] Redirecting to dashboard where YouTube data will be fetched');
-            
-            // IMPORTANT: Add delay to ensure session is fully established before redirecting
-            console.log('⏱️ [AUTH-CALLBACK] Waiting for session to be fully established...');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Proceed to dashboard - the backend will handle retrieving provider tokens
-            setLocation('/dashboard');
-          }
-        } else {
-          console.log('🔍 [AUTH-CALLBACK] No access token in hash, checking existing session');
-          // Check if we already have a session
-          const { data: { session }, error } = await supabase.auth.getSession();
           
-          if (session) {
-            console.log('✅ [AUTH-CALLBACK] Existing session found:', session.user.email);
-            setLocation('/dashboard');
-          } else {
-            console.log('❌ [AUTH-CALLBACK] No session found, redirecting to login');
-            setLocation('/login');
+          // Supabase will automatically set its own cookies
+          // We just need to ensure our backend recognizes the session
+          console.log('🍪 [AUTH-CALLBACK] Creating user in database');
+          const createUserResponse = await fetch('/api/auth/session/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.session.access_token}`
+            },
+            body: JSON.stringify({
+              user: data.session.user
+            }),
+            credentials: 'include'
+          });
+          
+          if (!createUserResponse.ok) {
+            console.error('❌ [AUTH-CALLBACK] Failed to create user in database');
+            // Continue anyway - user might already exist
           }
+          
+          console.log('📺 [AUTH-CALLBACK] Redirecting to dashboard');
+          
+          // Small delay to ensure everything is set up
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          setLocation('/dashboard');
+        } else {
+          console.log('❌ [AUTH-CALLBACK] No session returned from Supabase');
+          setLocation('/login?error=no_session');
         }
       } catch (error) {
         console.error('💥 [AUTH-CALLBACK] Auth callback error:', error);

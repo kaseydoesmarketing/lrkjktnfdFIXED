@@ -20,14 +20,22 @@ export function injectSessionToken(req: Request, res: Response, next: NextFuncti
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const sbToken = req.cookies['sb-access-token'];
+  // Try to get token from Authorization header first, then cookie
+  let token: string | undefined;
   
-  if (!sbToken) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    token = req.cookies['sb-access-token'];
+  }
+  
+  if (!token) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(sbToken);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
       return res.status(401).json({ error: 'Invalid or expired session' });

@@ -23,18 +23,28 @@ function getRedirectUri(req: Request): string {
 // Get current user
 router.get('/api/auth/user', async (req: Request, res: Response) => {
   console.log('🔍 [AUTH-USER] Checking authentication...');
-  console.log('🍪 [AUTH-USER] Cookies:', Object.keys(req.cookies));
-  const sbToken = req.cookies['sb-access-token'];
   
-  if (!sbToken) {
-    console.log('❌ [AUTH-USER] No sb-access-token cookie found');
+  // Try to get token from Authorization header first, then cookie
+  let token: string | undefined;
+  
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+    console.log('🔑 [AUTH-USER] Found Bearer token in Authorization header');
+  } else {
+    token = req.cookies['sb-access-token'];
+    console.log('🍪 [AUTH-USER] Checking cookies:', Object.keys(req.cookies));
+  }
+  
+  if (!token) {
+    console.log('❌ [AUTH-USER] No authentication token found');
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  console.log('🔐 [AUTH-USER] Found sb-access-token, verifying with Supabase...');
+  console.log('🔐 [AUTH-USER] Verifying token with Supabase...');
   
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(sbToken);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
       console.log('❌ [AUTH-USER] Invalid session:', error);
@@ -43,11 +53,21 @@ router.get('/api/auth/user', async (req: Request, res: Response) => {
     
     console.log('✅ [AUTH-USER] Session valid for user:', user.email);
     
-    const dbUser = await storage.getUserByEmail(user.email!);
+    // Create user if doesn't exist
+    let dbUser = await storage.getUserByEmail(user.email!);
     
     if (!dbUser) {
-      console.log('❌ [AUTH-USER] User not found in database:', user.email);
-      return res.status(401).json({ error: 'User not found' });
+      console.log('🆕 [AUTH-USER] User not found in database, creating...');
+      dbUser = await storage.createUser({
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name || user.email!.split('@')[0],
+        image: user.user_metadata?.avatar_url || null,
+        isFounder: user.email === 'kaseydoesmarketing@gmail.com',
+        subscriptionStatus: user.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
+        subscriptionTier: user.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
+      });
+      console.log('✅ [AUTH-USER] User created successfully');
     }
     
     console.log('✅ [AUTH-USER] User found, returning user data');
@@ -127,60 +147,53 @@ router.post('/api/auth/refresh', async (req: Request, res: Response) => {
   }
 });
 
-// Set session cookies after OAuth callback
-router.post('/api/auth/session', async (req: Request, res: Response) => {
-  const { access_token, refresh_token } = req.body;
+// Create user in database after OAuth
+router.post('/api/auth/session/create', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
   
-  if (!access_token) {
-    return res.status(400).json({ error: 'No access token provided' });
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No authorization header' });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  const { user } = req.body;
+  
+  if (!user) {
+    return res.status(400).json({ error: 'No user data provided' });
   }
   
   try {
     // Verify the token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    const { data: { user: verifiedUser }, error } = await supabase.auth.getUser(token);
     
-    if (error || !user) {
-      console.error('Invalid access token:', error);
-      return res.status(401).json({ error: 'Invalid access token' });
+    if (error || !verifiedUser || verifiedUser.id !== user.id) {
+      console.error('Invalid token or user mismatch:', error);
+      return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Set httpOnly cookies
-    res.cookie('sb-access-token', access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    });
-    
-    if (refresh_token) {
-      res.cookie('sb-refresh-token', refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30 // 30 days
-      });
-    }
-    
-    console.log('✅ [AUTH-SESSION] Cookies set for user:', user.email);
+    console.log('✅ [AUTH-CREATE] Creating/updating user:', verifiedUser.email);
     
     // Create or update user in database
-    const dbUser = await storage.getUserByEmail(user.email!);
+    const dbUser = await storage.getUserByEmail(verifiedUser.email!);
     if (!dbUser) {
       await storage.createUser({
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.full_name || user.email!.split('@')[0],
-        image: user.user_metadata?.avatar_url || null,
-        isFounder: user.email === 'kaseydoesmarketing@gmail.com',
-        subscriptionStatus: user.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
-        subscriptionTier: user.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
+        id: verifiedUser.id,
+        email: verifiedUser.email!,
+        name: verifiedUser.user_metadata?.full_name || verifiedUser.email!.split('@')[0],
+        image: verifiedUser.user_metadata?.avatar_url || null,
+        isFounder: verifiedUser.email === 'kaseydoesmarketing@gmail.com',
+        subscriptionStatus: verifiedUser.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
+        subscriptionTier: verifiedUser.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
       });
+      console.log('✅ [AUTH-CREATE] User created in database');
+    } else {
+      console.log('✅ [AUTH-CREATE] User already exists in database');
     }
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Session creation error:', error);
-    res.status(500).json({ error: 'Failed to create session' });
+    console.error('User creation error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
