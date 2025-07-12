@@ -159,13 +159,18 @@ export async function stopScheduledTest(testId: string) {
 
 export async function initializeScheduler() {
   console.log('Initializing scheduler...');
-  // Schedule all active tests on startup
-  const activeTests = await storage.getActiveTests();
-  console.log(`Found ${activeTests.length} active tests`);
-  
-  for (const test of activeTests) {
-    await scheduleTest(test.id, test.rotationIntervalMinutes || 60);
-    console.log(`Scheduled test ${test.id} with ${test.rotationIntervalMinutes} minute intervals`);
+  try {
+    // Schedule all active tests on startup
+    const activeTests = await storage.getActiveTests();
+    console.log(`Found ${activeTests.length} active tests`);
+    
+    for (const test of activeTests) {
+      await scheduleTest(test.id, test.rotationIntervalMinutes || 60);
+      console.log(`Scheduled test ${test.id} with ${test.rotationIntervalMinutes} minute intervals`);
+    }
+  } catch (error: any) {
+    console.log('Scheduler initialization skipped - database may not be ready:', error.message);
+    // This is expected on first run before database tables are created
   }
 }
 
