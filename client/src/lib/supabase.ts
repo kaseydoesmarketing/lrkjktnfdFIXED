@@ -19,34 +19,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export async function requestYouTubeScopes() {
-  console.log('🎯 [YOUTUBE-SCOPES] Requesting YouTube API access');
-  
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?youtube=true`,
-        scopes: 'openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/yt-analytics.readonly',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-          include_granted_scopes: 'true'
-        }
-      }
-    });
-    
-    if (error) {
-      console.error('❌ [YOUTUBE-SCOPES] Error requesting YouTube scopes:', error);
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('💥 [YOUTUBE-SCOPES] YouTube scope request failed:', error);
-    throw error;
-  }
-}
 
 // Helper function to get the current user
 export async function getCurrentUser() {

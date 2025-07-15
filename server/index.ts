@@ -1,6 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log('🔧 Environment Status:');
+console.log('- NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('- YouTube API:', process.env.YOUTUBE_API_KEY ? '✅ Configured' : '❌ Missing');
+console.log('- Supabase URL:', process.env.SUPABASE_URL ? '✅ Configured' : '❌ Missing');
+console.log('- Stripe:', process.env.STRIPE_SECRET_KEY ? '✅ Configured' : '❌ Missing');
+console.log('- Anthropic AI:', process.env.ANTHROPIC_API_KEY ? '✅ Configured' : '❌ Missing');
+
 // Database configuration from environment variables
 // Ensure these are set in .env file or Replit secrets
 

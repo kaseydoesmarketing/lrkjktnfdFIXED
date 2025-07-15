@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import CreateTestModal from '@/components/CreateTestModal';
 import { supabase } from '@/lib/supabase';
 import { useLocation } from 'wouter';
-import ConnectYouTubePrompt from '@/components/ConnectYouTubePrompt';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,16 +83,13 @@ export default function Dashboard() {
   }
 
   if (userError || !user) {
-    setLocation('/login');
+    setLocation('/auth/signin');
     return null;
   }
 
   if (!user.hasYouTubeChannel) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <ConnectYouTubePrompt />
-      </div>
-    );
+    window.location.href = '/auth/signin?reconnect=youtube';
+    return null;
   }
 
   // Fetch dashboard stats
@@ -196,7 +192,7 @@ export default function Dashboard() {
   }
 
   if (userError || !user) {
-    setLocation('/login');
+    setLocation('/auth/signin');
     return null;
   }
 
@@ -306,7 +302,7 @@ export default function Dashboard() {
                       onClick={async () => {
                         try {
                           await supabase.auth.signOut();
-                          setLocation('/login');
+                          setLocation('/auth/signin');
                         } catch (error) {
                           console.error('Sign out error:', error);
                           toast({

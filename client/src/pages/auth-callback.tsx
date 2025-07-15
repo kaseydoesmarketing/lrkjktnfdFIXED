@@ -19,7 +19,7 @@ export default function AuthCallback() {
         
         if (queryError) {
           console.error('❌ [AUTH-CALLBACK] OAuth error:', queryError, errorDescription);
-          setLocation(`/login?error=${queryError}&description=${encodeURIComponent(errorDescription || '')}`);
+          setLocation(`/auth/signin?error=${queryError}&description=${encodeURIComponent(errorDescription || '')}`);
           return;
         }
 
@@ -29,7 +29,16 @@ export default function AuthCallback() {
         
         if (error) {
           console.error('❌ [AUTH-CALLBACK] Error exchanging code for session:', error);
-          setLocation('/login?error=session_error');
+          
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            console.log('✅ [AUTH-CALLBACK] Found existing valid session, proceeding');
+            setLocation('/dashboard');
+            return;
+          }
+          
+          const errorMessage = error.message?.includes('expired') ? 'session_expired' : 'session_error';
+          setLocation(`/auth/signin?error=${errorMessage}&description=${encodeURIComponent(error.message || '')}`);
           return;
         }
 
@@ -67,11 +76,11 @@ export default function AuthCallback() {
           setLocation('/dashboard');
         } else {
           console.log('❌ [AUTH-CALLBACK] No session returned from Supabase');
-          setLocation('/login?error=no_session');
+          setLocation('/auth/signin?error=no_session');
         }
       } catch (error) {
         console.error('💥 [AUTH-CALLBACK] Auth callback error:', error);
-        setLocation('/login?error=callback_error');
+        setLocation('/auth/signin?error=callback_error');
       }
     };
 
