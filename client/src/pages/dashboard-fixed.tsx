@@ -47,7 +47,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-// import ErrorBoundary, { ChartErrorBoundary } from '@/components/ErrorBoundary';
+import ErrorBoundary, { ChartErrorBoundary } from '@/components/ErrorBoundary';
 
 interface User {
   id: string;
@@ -396,6 +396,15 @@ const ActiveTestCard: React.FC<{ test: Test; onTestAction: (testId: string, acti
                       />
                     </BarChart>
                   </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="text-center">
+                          <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>No rotation data available</p>
+                        </div>
+                      </div>
+                    )}
+                  </ChartErrorBoundary>
                 </div>
               </div>
 

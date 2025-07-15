@@ -65,7 +65,7 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch real YouTube videos
-  const { data: videos = [], isLoading, error, refetch } = useQuery({
+  const { data: videos = [], isLoading, error, refetch } = useQuery<Video[]>({
     queryKey: ['/api/videos/channel'],
     retry: 2,
     refetchOnWindowFocus: false
