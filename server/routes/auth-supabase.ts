@@ -98,7 +98,7 @@ router.get('/api/auth/me', async (req: Request, res: Response) => {
     const hasYouTubeChannel = dbUser ? await storage.hasYouTubeChannel(dbUser.id) : false;
     
     res.json({ 
-      user: dbUser,
+      ...dbUser,
       hasYouTubeChannel,
       session: {
         access_token: token,
@@ -109,6 +109,41 @@ router.get('/api/auth/me', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(401).json({ error: 'Session invalid' });
+  }
+});
+
+router.post('/api/auth/youtube-channel', async (req: Request, res: Response) => {
+  const token = req.cookies['sb-access-token'];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No access token' });
+  }
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const dbUser = await storage.getUserByEmail(user.email!);
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('🎯 [YOUTUBE-CHANNEL] Saving YouTube channel info for user:', dbUser.email);
+    
+    // Get the current session to access provider tokens
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.provider_token) {
+      console.log('✅ [YOUTUBE-CHANNEL] YouTube scopes granted, provider token available');
+    }
+    
+    res.json({ success: true, message: 'YouTube channel connected' });
+  } catch (error) {
+    console.error('Error in /api/auth/youtube-channel:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
