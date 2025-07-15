@@ -1,5 +1,8 @@
 // server/routes/stripe-webhook.ts
 import { Router, Request, Response } from 'express';
+import dotenv from "dotenv";
+dotenv.config();
+
 import Stripe from 'stripe';
 import { db } from '../db';
 import { users } from '@shared/schema';
@@ -7,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import express from 'express';
 
 const router = Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_demo_key", {
   apiVersion: '2025-06-30.basil'
 });
 
