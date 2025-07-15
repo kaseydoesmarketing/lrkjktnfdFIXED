@@ -922,7 +922,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           provider: 'google',
           accessToken: authService.encryptToken(accessToken),
           refreshToken: authService.encryptToken(refreshToken),
-          expiresAt: Date.now() + (3600 * 1000)
+          expiresAt: Date.now() + (3600 * 1000),
+          youtubeChannelId: null,
+          youtubeChannelTitle: null,
+          youtubeChannelThumbnail: null
         });
       }
 
@@ -1596,38 +1599,11 @@ Current system provides realistic metrics based on video engagement patterns.`,
           requiresReauth: true
         });
 
-        // Test YouTube Analytics API access with fresh tokens
-        try {
-          const { google } = await import("googleapis");
-          const oauth2Client = new google.auth.OAuth2();
-          oauth2Client.setCredentials({ access_token: refreshedTokens.access_token });
-          const youtubeAnalytics = google.youtubeAnalytics({
-            version: "v2",
-            auth: oauth2Client,
-          });
-
-          // Test if we can make a simple query
-          await youtubeAnalytics.reports.query({
-            ids: "channel==MINE",
-            startDate: "2025-07-01",
-            endDate: "2025-07-02",
-            metrics: "views",
-          });
-
-          res.json({
-            success: true,
-            message:
-              "Tokens refreshed successfully - YouTube Analytics API is now enabled!",
-            analyticsEnabled: true,
-            accuracy: "YouTube Studio Exact Match",
-          });
-        } catch (analyticsError) {
-          res.json({
-            success: true,
-            message:
-              "Tokens refreshed but YouTube Analytics API still requires setup",
-            analyticsEnabled: false,
-            accuracy: "Enhanced Data API (Highly Accurate)",
+        res.json({
+          success: false,
+          message: "Token refresh functionality needs to be implemented",
+          analyticsEnabled: false,
+          accuracy: "Enhanced Data API (Highly Accurate)",
             instructions:
               "YouTube Analytics API may need a few more minutes to activate after enabling in Google Cloud Console",
           });
