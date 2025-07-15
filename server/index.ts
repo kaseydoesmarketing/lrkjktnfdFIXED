@@ -26,7 +26,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
 import pg from "pg";
-import session from "express-session";
+// Session removed - using Supabase auth only
 // Passport removed - using Supabase auth
 import { initializeScheduler } from "./scheduler";
 import rotationRoutes from "./routes/rotation";
@@ -67,19 +67,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Session configuration - CRITICAL FOR OAUTH
-app.use(session({
-  secret: process.env.SESSION_SECRET || '85DvMXCnQEUNuGR+rRZ6JxPebaC0deT2ftCQ09gK/f/TFQyDyCdolY9z7F46LK2zICIZW5MFrSLvUzztfDE1KA==',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT_ID,
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
-    domain: undefined // Let browser handle domain automatically
-  }
-}));
+// Session configuration removed - using Supabase auth only
 
 // Passport removed - using Supabase auth instead
 

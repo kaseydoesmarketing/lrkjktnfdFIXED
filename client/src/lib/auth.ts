@@ -17,16 +17,6 @@ class AuthService {
     // Remove localStorage dependency - use cookies only
   }
 
-  private getSessionTokenFromCookie(): string | null {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'session-token') {
-        return value;
-      }
-    }
-    return null;
-  }
 
   async loginWithGoogle(credentials: {
     email: string;
@@ -52,23 +42,24 @@ class AuthService {
     return data.user;
   }
 
-  async logout() {
-    console.log('🚪 [LOGOUT] Starting logout process');
+  async logout(): Promise<void> {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'GET',
-        credentials: 'include', // Always include cookies
-      });
-      console.log('📡 [LOGOUT] Logout response status:', response.status);
-    } catch (error) {
-      console.error('❌ [LOGOUT] Logout error:', error);
-    } finally {
-      console.log('🧹 [LOGOUT] Clearing client state');
+      console.log('🚪 [AuthService] Logging out...');
+      
+      const { supabase } = await import('./supabase');
+      await supabase.auth.signOut();
+      
+      console.log('✅ [AuthService] Logout successful');
+      
       // Clear any cached data
       queryClient.clear();
       
       // Clear any localStorage data (cleanup)
       localStorage.removeItem('sessionToken');
+    } catch (error) {
+      console.error('❌ [AuthService] Logout failed:', error);
+      const { supabase } = await import('./supabase');
+      await supabase.auth.signOut();
     }
   }
 
@@ -126,12 +117,31 @@ class AuthService {
     return data.user;
   }
 
-  getSessionToken(): string | null {
-    return this.getSessionTokenFromCookie();
-  }
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      console.log('🔍 [AuthService] Checking Supabase auth status...');
+      
+      const { supabase } = await import('./supabase');
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        console.log('🔍 [AuthService] No Supabase user found');
+        return false;
+      }
 
-  isAuthenticated(): boolean {
-    return !!this.getSessionTokenFromCookie();
+      console.log('🔍 [AuthService] Supabase user found, checking with server...');
+      
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include',
+      });
+
+      const isAuth = response.ok;
+      console.log('🔍 [AuthService] Server auth check result:', isAuth);
+      return isAuth;
+    } catch (error) {
+      console.error('🔍 [AuthService] Auth check failed:', error);
+      return false;
+    }
   }
 }
 
