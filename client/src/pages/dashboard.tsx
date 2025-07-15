@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import CreateTestModal from '@/components/CreateTestModal';
 import { supabase } from '@/lib/supabase';
 import { useLocation } from 'wouter';
+import ConnectYouTubePrompt from '@/components/ConnectYouTubePrompt';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +65,36 @@ export default function Dashboard() {
   // Fetch user data
   const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['/api/auth/me'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch user');
+      return response.json();
+    }
   });
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-white">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userError || !user) {
+    setLocation('/login');
+    return null;
+  }
+
+  if (!user.hasYouTubeChannel) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <ConnectYouTubePrompt />
+      </div>
+    );
+  }
 
   // Fetch dashboard stats
   const { data: stats = {

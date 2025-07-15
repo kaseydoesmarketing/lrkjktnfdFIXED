@@ -53,7 +53,8 @@ import Anthropic from "@anthropic-ai/sdk";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
+  console.warn("⚠️ STRIPE_SECRET_KEY not configured, using demo key for development");
+  process.env.STRIPE_SECRET_KEY = "sk_test_demo_key";
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-05-28.basil",
