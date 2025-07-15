@@ -922,7 +922,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           provider: 'google',
           accessToken: authService.encryptToken(accessToken),
           refreshToken: authService.encryptToken(refreshToken),
-          expiresAt: Date.now() + (3600 * 1000)
+          expiresAt: Date.now() + (3600 * 1000),
+          youtubeChannelId: null,
+          youtubeChannelTitle: null,
+          youtubeChannelThumbnail: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       }
 
