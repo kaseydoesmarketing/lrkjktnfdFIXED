@@ -164,7 +164,7 @@ function AuthenticatedDashboard() {
             {auth.error}
           </p>
           <button 
-            onClick={() => window.location.href = '/login'}
+            onClick={() => window.location.href = '/auth/signin'}
             style={{
               backgroundColor: '#3b82f6',
               color: 'white',
@@ -185,7 +185,7 @@ function AuthenticatedDashboard() {
 
   // Redirect to login if not authenticated
   if (!auth.isAuthenticated) {
-    window.location.href = '/login';
+    window.location.href = '/auth/signin';
     return null;
   }
 
@@ -210,7 +210,7 @@ function DashboardContent({ user }: { user: any }) {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('sessionToken');
-      window.location.href = '/login';
+      window.location.href = '/auth/signin';
     }
   };
 

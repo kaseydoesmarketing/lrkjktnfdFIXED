@@ -183,7 +183,7 @@ export default function FuturisticVideoSelector({ onSelectVideo, selectedVideoId
           <p className="text-yellow-600 text-sm mb-4">
             We need to reconnect to your YouTube account to fetch your videos.
           </p>
-          <Button onClick={() => window.location.href = '/login'} variant="default" size="sm">
+          <Button onClick={() => window.location.href = '/auth/signin'} variant="default" size="sm">
             Reconnect to YouTube
           </Button>
         </div>

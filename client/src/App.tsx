@@ -8,7 +8,6 @@ import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import EnhancedAdmin from "@/pages/enhanced-admin";
 import SignIn from "@/pages/signin";
-import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Home from "./pages/home";
 import Paywall from "@/pages/paywall";
@@ -122,7 +121,6 @@ function Router() {
         </Route>
         <Route path="/paywall" component={Paywall} />
         <Route path="/auth/signin" component={SignIn} />
-        <Route path="/login" component={Login} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/oauth-test" component={OAuthTest} />
         <Route path="/auth-test" component={() => <AuthTest />} />

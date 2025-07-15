@@ -174,7 +174,7 @@ export default function DashboardFuturistic() {
         
         // Add delay to prevent redirect loops
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.href = '/auth/signin';
         }, 2000);
       }
     };
@@ -286,7 +286,7 @@ export default function DashboardFuturistic() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      window.location.href = '/login';
+      window.location.href = '/auth/signin';
     }
   };
 
@@ -470,7 +470,7 @@ export default function DashboardFuturistic() {
             <button
               onClick={() => {
                 localStorage.removeItem('sessionToken');
-                window.location.href = '/login';
+                window.location.href = '/auth/signin';
               }}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors"
             >

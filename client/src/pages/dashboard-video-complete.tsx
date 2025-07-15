@@ -85,7 +85,7 @@ export default function DashboardVideoComplete() {
       try {
         const token = localStorage.getItem('sessionToken');
         if (!token) {
-          window.location.href = '/login';
+          window.location.href = '/auth/signin';
           return;
         }
 
@@ -113,7 +113,7 @@ export default function DashboardVideoComplete() {
           error: 'Authentication failed'
         });
         localStorage.removeItem('sessionToken');
-        window.location.href = '/login';
+        window.location.href = '/auth/signin';
       }
     };
 
@@ -199,7 +199,7 @@ export default function DashboardVideoComplete() {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('sessionToken');
-      window.location.href = '/login';
+      window.location.href = '/auth/signin';
     }
   };
 

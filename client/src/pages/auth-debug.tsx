@@ -76,7 +76,7 @@ export default function AuthDebug() {
   }, []);
 
   const handleLogin = () => {
-    window.location.href = '/login';
+    window.location.href = '/auth/signin';
   };
 
   const handleDirectLogin = async () => {
