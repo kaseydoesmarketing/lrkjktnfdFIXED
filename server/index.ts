@@ -55,10 +55,11 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS configuration - always allow titletesterpro.com
+// CORS configuration - always allow titletesterpro.com and www variant
 app.use(cors({
   origin: [
     'https://titletesterpro.com',
+    'https://www.titletesterpro.com',
     'http://localhost:3000',
     'http://localhost:5000',
     /\.replit\.app$/,

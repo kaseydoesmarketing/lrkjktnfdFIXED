@@ -76,11 +76,17 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
     try {
       const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
       return user || undefined;
@@ -93,6 +99,9 @@ export class DatabaseStorage implements IStorage {
 
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
     const id = crypto.randomUUID();
     const [user] = await db
       .insert(users)
