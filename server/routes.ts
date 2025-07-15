@@ -8,7 +8,6 @@ import { analyticsCollector } from "./analyticsCollector";
 import authSupabaseRoutes from "./routes/auth-supabase";
 import channelsRoutes from "./routes/channels";
 import { supabase } from "./auth/supabase";
-import { injectSessionToken } from "./middleware/auth";
 import rotationRoutes from "./routes/rotation";
 import stripeWebhookRoutes from "./routes/stripe-webhook";
 import {
@@ -97,9 +96,6 @@ import { requireAuth } from "./middleware/auth";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes removed - using Supabase auth
   
-  // Register OAuth routes with Passport.js
-  // Inject session token middleware
-  app.use(injectSessionToken);
   
   // Use Supabase auth routes
   app.use(authSupabaseRoutes);
@@ -375,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   */
   
-  // These routes are now handled by Passport.js in oauthRoutes.ts
+  // Legacy OAuth routes removed - using Supabase auth exclusively
 
   // Debug endpoint to check all tests (remove in production)
   app.get("/api/debug/all-tests", async (req: Request, res: Response) => {

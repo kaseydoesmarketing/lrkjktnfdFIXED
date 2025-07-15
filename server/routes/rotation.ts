@@ -12,6 +12,7 @@ import {
   resumeTest 
 } from '../scheduler';
 import { storage } from '../storage';
+import { supabase } from '../auth/supabase';
 
 // Add Express type declarations
 declare global {
@@ -22,26 +23,27 @@ declare global {
   }
 }
 
-// Authentication middleware
+// Authentication middleware using Supabase Auth only
 async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const sessionToken = req.cookies["session-token"];
+  const token = req.cookies["sb-access-token"];
 
-  if (!sessionToken) {
+  if (!token) {
     res.status(401).json({
       error: "Authentication required",
-      code: "NO_SESSION_TOKEN",
+      code: "NO_ACCESS_TOKEN",
       timestamp: new Date().toISOString(),
     });
     return;
   }
 
   try {
-    const session = await storage.getSession(sessionToken);
-    if (!session) {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
       res.status(401).json({
         error: "Invalid session",
         code: "INVALID_SESSION",
@@ -50,18 +52,8 @@ async function requireAuth(
       return;
     }
 
-    if (session.expires < new Date()) {
-      res.clearCookie("session-token");
-      res.status(401).json({
-        error: "Session expired",
-        code: "SESSION_EXPIRED",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    const user = await storage.getUser(session.userId);
-    if (!user) {
+    const dbUser = await storage.getUserByEmail(user.email!);
+    if (!dbUser) {
       res.status(401).json({
         error: "User not found",
         code: "USER_NOT_FOUND",
@@ -70,7 +62,7 @@ async function requireAuth(
       return;
     }
 
-    req.user = user;
+    req.user = dbUser;
     next();
   } catch (error) {
     console.error("Authentication error:", error);

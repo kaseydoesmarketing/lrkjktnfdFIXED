@@ -24,20 +24,10 @@ function getRedirectUri(req: Request): string {
 router.get('/api/auth/user', async (req: Request, res: Response) => {
   console.log('🔍 [AUTH-USER] Checking authentication...');
   
-  // Try to get token from Authorization header first, then cookie
-  let token: string | undefined;
-  
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-    console.log('🔑 [AUTH-USER] Found Bearer token in Authorization header');
-  } else {
-    token = req.cookies['sb-access-token'];
-    console.log('🍪 [AUTH-USER] Checking cookies:', Object.keys(req.cookies));
-  }
+  const token = req.cookies['sb-access-token'];
   
   if (!token) {
-    console.log('❌ [AUTH-USER] No authentication token found');
+    console.log('❌ [AUTH-USER] No sb-access-token cookie found');
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
