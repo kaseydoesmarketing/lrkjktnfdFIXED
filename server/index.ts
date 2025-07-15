@@ -35,13 +35,16 @@ import rotationRoutes from "./routes/rotation";
 const app = express();
 app.set('trust proxy', 1);
 
-// Redirect www to non-www
+// Redirect www to non-www (backup solution - DNS-level redirect preferred)
 app.use((req, res, next) => {
   const host = req.get('host');
   if (host && host.startsWith('www.')) {
     const newHost = host.slice(4); // Remove 'www.'
     const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
-    return res.redirect(301, `${protocol}://${newHost}${req.originalUrl}`);
+    const redirectUrl = `${protocol}://${newHost}${req.originalUrl}`;
+    
+    log(`WWW redirect: ${host} -> ${newHost} (${protocol})`);
+    return res.redirect(301, redirectUrl);
   }
   next();
 });
