@@ -574,7 +574,7 @@ export default function DashboardImproved() {
 
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                {videos.map((video) => (
+                {videos.map((video: any) => (
                   <div
                     key={video.id}
                     className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
@@ -591,7 +591,10 @@ export default function DashboardImproved() {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                            const nextSibling = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (nextSibling) {
+                              nextSibling.style.display = 'flex';
+                            }
                           }}
                         />
                       ) : null}
@@ -610,9 +613,17 @@ export default function DashboardImproved() {
             </div>
           </div>
         </div>
-                </div>
-              </div>
 
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Tests List (2/3 width) */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="border-b border-gray-100 p-6">
+                <h3 className="text-lg font-bold text-gray-900">Recent Tests</h3>
+                <p className="text-gray-600 mt-1">Your latest A/B testing activity</p>
+              </div>
+              
               <div className="divide-y divide-gray-100">
                 {filteredTests.length > 0 ? (
                   filteredTests.slice(0, 5).map((test: Test) => (
@@ -778,8 +789,8 @@ export default function DashboardImproved() {
                       </div>
                     </div>
                     <div>
-                      <h4 className="font-medium text-blue-900">{selectedVideo.title}</h4>
-                      <p className="text-sm text-blue-700">{formatNumber(selectedVideo.viewCount)} views</p>
+                      <h4 className="font-medium text-blue-900">{selectedVideo?.title}</h4>
+                      <p className="text-sm text-blue-700">{formatNumber(selectedVideo?.viewCount || 0)} views</p>
                     </div>
                   </div>
                 </div>
