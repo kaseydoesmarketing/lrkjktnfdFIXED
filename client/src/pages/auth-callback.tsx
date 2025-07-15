@@ -36,8 +36,25 @@ export default function AuthCallback() {
         if (data?.session) {
           console.log('✅ [AUTH-CALLBACK] Session established successfully:', {
             user: data.session.user.email,
-            expiresAt: new Date(data.session.expires_at! * 1000).toISOString()
+            expiresAt: new Date(data.session.expires_at! * 1000).toISOString(),
+            hasProviderToken: !!data.session.provider_token
           });
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const isYouTubeCallback = urlParams.get('youtube') === 'true';
+          
+          if (isYouTubeCallback && data.session.provider_token) {
+            console.log('🎯 [AUTH-CALLBACK] YouTube scopes granted, saving channel info');
+            try {
+              await fetch('/api/auth/youtube-channel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+              });
+            } catch (error) {
+              console.error('Failed to save YouTube channel info:', error);
+            }
+          }
           
           // User creation happens automatically in the auth middleware
           console.log('✅ [AUTH-CALLBACK] Session established, user will be created on first API call');
