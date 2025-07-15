@@ -7,13 +7,28 @@ import { Download, X, Crown, TrendingUp, BarChart3, Clock, AlertTriangle, CheckC
 import ResultsTable from '@/components/ResultsTable';
 import CtrBarChart from '@/components/CtrBarChart';
 
+interface TestResults {
+  summaries: Array<{
+    id: string;
+    titleId: string;
+    totalViews: number;
+    totalImpressions: number;
+    finalCtr: number;
+    finalAvd: number;
+  }>;
+  titles: Array<{
+    id: string;
+    text: string;
+  }>;
+}
+
 interface ResultsDashboardProps {
   test: any;
   onClose: () => void;
 }
 
 export default function ResultsDashboard({ test, onClose }: ResultsDashboardProps) {
-  const { data: results, isLoading } = useQuery({
+  const { data: results, isLoading } = useQuery<TestResults>({
     queryKey: ['/api/tests', test.id, 'results'],
   });
 
