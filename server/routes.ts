@@ -922,10 +922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           provider: 'google',
           accessToken: authService.encryptToken(accessToken),
           refreshToken: authService.encryptToken(refreshToken),
-          expiresAt: Date.now() + (3600 * 1000),
-          youtubeChannelId: null,
-          youtubeChannelTitle: null,
-          youtubeChannelThumbnail: null
+          expiresAt: Date.now() + (3600 * 1000)
         });
       }
 
@@ -1598,21 +1595,10 @@ Current system provides realistic metrics based on video engagement patterns.`,
           success: false,
           requiresReauth: true
         });
-
-        res.json({
-          success: false,
-          message: "Token refresh functionality needs to be implemented",
-          analyticsEnabled: false,
-          accuracy: "Enhanced Data API (Highly Accurate)",
-            instructions:
-              "YouTube Analytics API may need a few more minutes to activate after enabling in Google Cloud Console",
-          });
-        }
       } catch (error) {
         console.error("Token refresh error:", error);
         res.status(500).json({
-          error:
-            "Failed to refresh tokens. Please re-authenticate with Google.",
+          error: "Failed to refresh tokens. Please re-authenticate with Google.",
           requiresReauth: true,
         });
       }
