@@ -6,6 +6,7 @@
 1. **Unresponsive homepage URL**: Development URL not accessible for verification
 2. **Privacy policy URL unresponsive**: Same issue as homepage
 3. **Domain ownership**: Need proper production domain
+4. **WWW subdomain SSL warnings**: SSL certificates don't cover www subdomain
 
 ### Solutions Implemented:
 
@@ -74,7 +75,23 @@ DATABASE_URL=[postgres-url]
 PRODUCTION_URL=[optional-custom-domain]
 ```
 
-#### 5. Production Checklist:
+#### 5. WWW Subdomain Configuration:
+
+**DNS-Level Redirect (Recommended):**
+1. Configure CNAME record: www.titletesterpro.com → titletesterpro.com
+2. Ensure SSL certificate covers both www and non-www domains
+3. Test redirect functionality: `curl -I https://www.titletesterpro.com`
+
+**SSL Certificate Options:**
+- Wildcard certificate (*.titletesterpro.com)
+- Multi-domain certificate (titletesterpro.com + www.titletesterpro.com)
+- Let's Encrypt with both domains
+
+**Backup Solution:**
+- Express middleware already implemented for www redirect
+- Handles cases where DNS-level redirect isn't configured
+
+#### 6. Production Checklist:
 - [ ] Application deployed and accessible
 - [ ] Privacy policy page responsive at /privacy
 - [ ] Terms of service page responsive at /terms
@@ -82,15 +99,42 @@ PRODUCTION_URL=[optional-custom-domain]
 - [ ] Google OAuth redirect URIs updated
 - [ ] OAuth consent screen URLs updated
 - [ ] Test OAuth flow works end-to-end
+- [ ] DNS CNAME record configured for www subdomain
+- [ ] SSL certificate covers both www and non-www domains
+- [ ] WWW redirect working without SSL warnings
+- [ ] Test both www.domain and domain access patterns
 
 ### Next Steps:
 1. Deploy the application to get production URL
-2. Update all Google Cloud Console settings with new URLs
-3. Test all URLs for responsiveness
-4. Re-submit for OAuth verification with corrected information
+2. Configure DNS CNAME record for www subdomain
+3. Ensure SSL certificate covers both domains
+4. Update all Google Cloud Console settings with new URLs
+5. Test all URLs for responsiveness (including www redirect)
+6. Re-submit for OAuth verification with corrected information
+
+### WWW Redirect Testing:
+```bash
+# Test DNS resolution
+nslookup www.titletesterpro.com
+
+# Test HTTP redirect
+curl -I http://www.titletesterpro.com
+
+# Test HTTPS redirect
+curl -I https://www.titletesterpro.com
+
+# Expected: 301 redirect to https://titletesterpro.com
+```
 
 ### Support:
 If you need a custom domain instead of repl.co, you can:
 1. Purchase a domain (e.g., titletesterpro.com)
 2. Configure it in Replit Deployments
-3. Update all OAuth settings with custom domain
+3. Set up DNS CNAME record for www subdomain
+4. Configure SSL certificate for both www and non-www
+5. Update all OAuth settings with custom domain
+
+### Additional Resources:
+- See `DNS_CONFIGURATION_GUIDE.md` for detailed DNS setup instructions
+- See `PRODUCTION_ARCHITECTURE.md` for comprehensive architecture details
+- Monitor SSL certificate expiration and DNS configuration regularly

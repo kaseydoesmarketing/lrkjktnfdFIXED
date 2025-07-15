@@ -240,20 +240,44 @@ CREATE POLICY "Users can see rotation logs for their tests"
    CNAME: www.titletesterpro.com → titletesterpro.com
    ```
 
-2. **SSL Certificate**:
-   - Primary domain: titletesterpro.com (handled by Replit)
-   - www redirect at DNS level (not application)
+2. **SSL Certificate Configuration**:
+   - **Option 1 (Recommended)**: Wildcard certificate (*.titletesterpro.com)
+     - Covers both titletesterpro.com and www.titletesterpro.com
+     - Prevents SSL warnings on www subdomain
+   - **Option 2**: Multi-domain certificate
+     - Explicitly covers both titletesterpro.com and www.titletesterpro.com
+   - **Option 3**: Separate certificates with proper DNS configuration
 
-3. **Application-Level Redirect** (backup):
+3. **DNS-Level Redirect** (primary solution):
+   ```
+   Type: CNAME
+   Name: www
+   Value: titletesterpro.com
+   TTL: 300
+   ```
+   - Prevents SSL certificate warnings entirely
+   - Handles redirect before HTTP request reaches application
+   - SEO-friendly with proper 301 redirects
+
+4. **Application-Level Redirect** (backup):
    ```typescript
    // Already implemented in server/index.ts
    app.use((req, res, next) => {
-     if (req.hostname.startsWith('www.')) {
-       return res.redirect(301, `https://titletesterpro.com${req.url}`);
+     const host = req.get('host');
+     if (host && host.startsWith('www.')) {
+       const newHost = host.slice(4); // Remove 'www.'
+       const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+       const redirectUrl = `${protocol}://${newHost}${req.originalUrl}`;
+       
+       log(`WWW redirect: ${host} -> ${newHost} (${protocol})`);
+       return res.redirect(301, redirectUrl);
      }
      next();
    });
    ```
+   - Handles cases where DNS-level redirect isn't configured
+   - Provides logging for debugging
+   - Preserves original URL and query parameters
 
 ## 5. UX/Business Logic Flow
 
@@ -507,9 +531,12 @@ CREATE POLICY "Users can see rotation logs for their tests"
 
 5. **Deployment**:
    - [ ] Update production CLIENT_URL
-   - [ ] Configure domain DNS
+   - [ ] Configure domain DNS with CNAME for www
+   - [ ] Ensure SSL certificate covers both domains
+   - [ ] Test www redirect functionality
    - [ ] Monitor error logs
    - [ ] Verify quota usage
+   - [ ] Validate no SSL warnings on www subdomain
 
 ## Conclusion
 
