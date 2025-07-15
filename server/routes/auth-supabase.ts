@@ -59,11 +59,9 @@ router.get('/api/auth/user', async (req: Request, res: Response) => {
     if (!dbUser) {
       console.log('🆕 [AUTH-USER] User not found in database, creating...');
       dbUser = await storage.createUser({
-        id: user.id,
         email: user.email!,
         name: user.user_metadata?.full_name || user.email!.split('@')[0],
         image: user.user_metadata?.avatar_url || null,
-        isFounder: user.email === 'kaseydoesmarketing@gmail.com',
         subscriptionStatus: user.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
         subscriptionTier: user.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
       });
@@ -104,7 +102,7 @@ router.get('/api/auth/me', async (req: Request, res: Response) => {
       hasYouTubeChannel,
       session: {
         access_token: token,
-        expires_at: user.exp
+        expires_at: Math.floor(Date.now() / 1000) + 3600
       }
     });
     
@@ -177,11 +175,9 @@ router.post('/api/auth/session/create', async (req: Request, res: Response) => {
     const dbUser = await storage.getUserByEmail(verifiedUser.email!);
     if (!dbUser) {
       await storage.createUser({
-        id: verifiedUser.id,
         email: verifiedUser.email!,
         name: verifiedUser.user_metadata?.full_name || verifiedUser.email!.split('@')[0],
         image: verifiedUser.user_metadata?.avatar_url || null,
-        isFounder: verifiedUser.email === 'kaseydoesmarketing@gmail.com',
         subscriptionStatus: verifiedUser.email === 'kaseydoesmarketing@gmail.com' ? 'active' : 'inactive',
         subscriptionTier: verifiedUser.email === 'kaseydoesmarketing@gmail.com' ? 'authority' : 'free'
       });
@@ -256,11 +252,7 @@ router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
               if (channel) {
                 console.log('📺 [PROVIDER-TOKENS] YouTube channel found:', channel.snippet.title);
                 
-                // Update user with YouTube channel data
-                await storage.updateUser(user.id, {
-                  youtubeChannelId: channel.id,
-                  youtubeChannelTitle: channel.snippet.title
-                });
+                // YouTube channel data will be stored in accounts table
                 
                 // Save tokens to accounts table
                 const { encryptToken } = await import('../auth');
@@ -272,23 +264,22 @@ router.get('/api/auth/provider-tokens', async (req: Request, res: Response) => {
                   // Update existing account
                   await storage.updateAccountTokens(existingAccount.id, {
                     accessToken: encryptToken(providerToken),
-                    refreshToken: providerRefreshToken ? encryptToken(providerRefreshToken) : existingAccount.refreshToken,
+                    refreshToken: providerRefreshToken ? encryptToken(providerRefreshToken) : undefined,
                     expiresAt: Date.now() + (3600 * 1000)
                   });
                 } else {
                   // Create new account
                   await storage.createAccount({
                     userId: user.id,
-                    type: 'oauth',
                     provider: 'google',
-                    providerAccountId: user.id,
                     accessToken: encryptToken(providerToken),
                     refreshToken: providerRefreshToken ? encryptToken(providerRefreshToken) : null,
                     expiresAt: Date.now() + (3600 * 1000),
-                    tokenType: 'Bearer',
-                    scope: null,
-                    idToken: null,
-                    sessionState: null
+                    youtubeChannelId: channel.id || null,
+                    youtubeChannelTitle: channel.snippet.title,
+                    youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                   });
                 }
                 
@@ -425,7 +416,6 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
     if (!dbUser) {
       console.log('👤 [SESSION] Creating new user:', user.email);
       dbUser = await storage.createUser({
-        id: user.id,
         email: user.email!,
         name: user.user_metadata.full_name || user.email!.split('@')[0],
         image: user.user_metadata.avatar_url,
@@ -487,38 +477,41 @@ router.post('/api/auth/session', async (req: Request, res: Response) => {
             console.log('🔄 [SESSION] Updating existing account with YouTube info...');
             await storage.updateAccountTokens(existingAccount.id, {
               accessToken: encryptedAccessToken,
-              refreshToken: encryptedRefreshToken || existingAccount.refreshToken,
-              expiresAt: Date.now() + (3600 * 1000), // 1 hour expiry
-              youtubeChannelId: channel.id,
-              youtubeChannelTitle: channel.snippet?.title || null,
-              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+              refreshToken: encryptedRefreshToken || undefined,
+              expiresAt: Date.now() + (3600 * 1000)
+            });
+            
+            // Update YouTube channel info separately
+            await storage.updateUserYouTubeTokens(user.id, {
+              accessToken: encryptedAccessToken,
+              refreshToken: encryptedRefreshToken || undefined,
+              youtubeChannelId: channel.id || '',
+              youtubeChannelTitle: channel.snippet?.title || undefined,
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || undefined
             });
           } else {
             console.log('➕ [SESSION] Creating new account with YouTube info...');
             await storage.createAccount({
               userId: user.id,
-              type: 'oauth',
               provider: 'google',
-              providerAccountId: user.id,
               accessToken: encryptedAccessToken,
               refreshToken: encryptedRefreshToken,
               expiresAt: Date.now() + (3600 * 1000),
-              tokenType: 'Bearer',
-              scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-              idToken: null,
-              sessionState: null,
-              youtubeChannelId: channel.id,
+              youtubeChannelId: channel.id || null,
               youtubeChannelTitle: channel.snippet?.title || null,
-              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null
+              youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || null,
+              createdAt: new Date(),
+              updatedAt: new Date()
             });
           }
           
           // Also update users table for backward compatibility
           await storage.updateUserYouTubeTokens(user.id, {
             accessToken: encryptedAccessToken,
-            refreshToken: encryptedRefreshToken,
-            youtubeChannelId: channel.id,
-            youtubeChannelTitle: channel.snippet?.title || null
+            refreshToken: encryptedRefreshToken || undefined,
+            youtubeChannelId: channel.id || '',
+            youtubeChannelTitle: channel.snippet?.title || undefined,
+            youtubeChannelThumbnail: channel.snippet?.thumbnails?.default?.url || undefined
           });
           
           console.log('✅ [SESSION] YouTube tokens and channel info saved successfully');
@@ -600,25 +593,13 @@ router.post('/api/auth/save-channel', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'No temporary tokens found' });
     }
     
-    // Save the selected channel to the account
-    await storage.upsertAccount(user.id, {
-      accessToken: tempData.accessToken,
-      refreshToken: tempData.refreshToken,
-      youtubeChannelId: channelId,
-      youtubeChannelTitle: channelTitle,
-      expiresAt: tempData.expiresAt
-    });
-    
-    // Update user with channel info
+    // Update existing account with selected channel info
     await storage.updateUserYouTubeTokens(user.id, {
       accessToken: tempData.accessToken,
-      refreshToken: tempData.refreshToken,
+      refreshToken: tempData.refreshToken || undefined,
       youtubeChannelId: channelId,
-      youtubeChannelTitle: channelTitle
+      youtubeChannelTitle: channelTitle || undefined
     });
-    
-    // Delete temporary tokens
-    await storage.deleteTempTokens(user.id);
     
     res.json({ success: true });
   } catch (error) {

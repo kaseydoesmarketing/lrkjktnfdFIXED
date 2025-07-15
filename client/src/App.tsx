@@ -9,7 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import EnhancedAdmin from "@/pages/enhanced-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
-import { HomePage } from "./pages/HomePage";
+import Home from "./pages/home";
 import Paywall from "@/pages/paywall";
 import AuthCallback from "@/pages/auth-callback";
 import OAuthTest from "@/pages/OAuthTest";
@@ -127,7 +127,7 @@ function Router() {
         <Route path="/auth-debug" component={() => <AuthDebug />} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
-        <Route path="/" component={HomePage} />
+        <Route path="/" component={Home} />
         <Route component={NotFound} />
       </Switch>
     </ErrorBoundary>

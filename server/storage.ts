@@ -6,7 +6,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -21,6 +21,9 @@ export interface IStorage {
   // Accounts
   createAccount(account: Omit<Account, 'id'>): Promise<Account>;
   getAccountByUserId(userId: string, provider: string): Promise<Account | undefined>;
+  updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken?: string; expiresAt: number }): Promise<void>;
+  updateUserYouTubeTokens(userId: string, tokens: { accessToken: string; refreshToken?: string; youtubeChannelId: string; youtubeChannelTitle?: string; youtubeChannelThumbnail?: string }): Promise<void>;
+  getTempTokens(userId: string): Promise<{ accessToken: string; refreshToken: string; channels?: any[] } | null>;
   
   // Tests
   getTestsByUserId(userId: string): Promise<Test[]>;
@@ -145,7 +148,64 @@ export class DatabaseStorage implements IStorage {
     return account || undefined;
   }
 
+  async updateAccountTokens(accountId: string, tokens: { accessToken: string; refreshToken?: string; expiresAt: number }): Promise<void> {
+    await db.update(accounts)
+      .set({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt,
+        updatedAt: new Date()
+      })
+      .where(eq(accounts.id, accountId));
+  }
 
+  async updateUserYouTubeTokens(userId: string, tokens: { accessToken: string; refreshToken?: string; youtubeChannelId: string; youtubeChannelTitle?: string; youtubeChannelThumbnail?: string }): Promise<void> {
+    const existingAccount = await this.getAccountByUserId(userId, 'google');
+    
+    if (existingAccount) {
+      await db.update(accounts)
+        .set({
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          youtubeChannelId: tokens.youtubeChannelId,
+          youtubeChannelTitle: tokens.youtubeChannelTitle,
+          youtubeChannelThumbnail: tokens.youtubeChannelThumbnail,
+          updatedAt: new Date()
+        })
+        .where(eq(accounts.id, existingAccount.id));
+    } else {
+      await this.createAccount({
+        userId,
+        provider: 'google',
+        accessToken: tokens.accessToken || null,
+        refreshToken: tokens.refreshToken || null,
+        youtubeChannelId: tokens.youtubeChannelId,
+        youtubeChannelTitle: tokens.youtubeChannelTitle || null,
+        youtubeChannelThumbnail: tokens.youtubeChannelThumbnail || null,
+        expiresAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+  }
+
+  async getTempTokens(userId: string): Promise<{ accessToken: string; refreshToken: string; channels?: any[] } | null> {
+    const account = await this.getAccountByUserId(userId, 'google');
+    
+    if (!account || !account.accessToken || !account.refreshToken) {
+      return null;
+    }
+    
+    return {
+      accessToken: account.accessToken,
+      refreshToken: account.refreshToken,
+      channels: account.youtubeChannelId ? [{
+        id: account.youtubeChannelId,
+        title: account.youtubeChannelTitle,
+        thumbnail: account.youtubeChannelThumbnail
+      }] : []
+    };
+  }
 
   // Tests
   async getTestsByUserId(userId: string): Promise<Test[]> {

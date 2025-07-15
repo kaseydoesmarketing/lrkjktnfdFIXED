@@ -24,6 +24,9 @@ export const accounts = pgTable("accounts", {
   youtubeChannelId: text("youtube_channel_id"),
   youtubeChannelTitle: text("youtube_channel_title"),
   youtubeChannelThumbnail: text("youtube_channel_thumbnail"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  expiresAt: bigint("expires_at", { mode: "number" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -146,7 +149,6 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Account = typeof accounts.$inferSelect;
-export type Session = typeof sessions.$inferSelect;
 
 export type Test = typeof tests.$inferSelect;
 export type InsertTest = z.infer<typeof insertTestSchema>;
