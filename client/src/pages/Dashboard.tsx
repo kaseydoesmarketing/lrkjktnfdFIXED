@@ -514,7 +514,7 @@ export default function DashboardFixed() {
   }
 
   if (!user) {
-    router.push('/login');
+    router.push('/auth/signin');
     return null;
   }
 

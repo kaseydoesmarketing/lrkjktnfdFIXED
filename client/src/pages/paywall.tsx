@@ -56,7 +56,7 @@ export default function Paywall() {
     try {
       const token = localStorage.getItem('sessionToken');
       if (!token) {
-        setLocation('/login');
+        setLocation('/auth/signin');
         return;
       }
 

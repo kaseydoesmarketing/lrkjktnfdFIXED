@@ -741,7 +741,7 @@ export default function DashboardFixed() {
     }
     
     // Always redirect to login regardless of API response
-    window.location.href = '/login';
+    window.location.href = '/auth/signin';
   };
 
   const handleTestAction = (testId: string, action: string) => {

@@ -63,7 +63,7 @@ function SimpleDashboardContent() {
           <button 
             onClick={() => {
               localStorage.removeItem('sessionToken');
-              window.location.href = '/login';
+              window.location.href = '/auth/signin';
             }}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
@@ -78,7 +78,7 @@ function SimpleDashboardContent() {
   if (!user) {
     console.log('No user found, should redirect to login');
     setTimeout(() => {
-      window.location.href = '/login';
+      window.location.href = '/auth/signin';
     }, 100);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

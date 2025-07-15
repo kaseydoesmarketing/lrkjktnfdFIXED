@@ -223,7 +223,7 @@ export default function AuthDiagnosticTool() {
             <Alert>
               <AlertDescription>
                 You need to be logged in to run the full diagnostics. 
-                <a href="/login" className="text-blue-600 hover:underline ml-1">
+                <a href="/auth/signin" className="text-blue-600 hover:underline ml-1">
                   Login here
                 </a>
               </AlertDescription>

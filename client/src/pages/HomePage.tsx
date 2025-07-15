@@ -21,7 +21,7 @@ export function HomePage() {
               <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
                 Privacy
               </Link>
-              <Link href="/login">
+              <Link href="/auth/signin">
                 <Button variant="default" className="bg-red-600 hover:bg-red-700">
                   Get Started
                 </Button>
@@ -44,7 +44,7 @@ export function HomePage() {
             increased their CTR by up to 312%.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
+            <Link href="/auth/signin">
               <Button size="lg" className="bg-red-600 hover:bg-red-700">
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -122,7 +122,7 @@ export function HomePage() {
           <p className="text-xl mb-8 opacity-90">
             Join thousands of creators who are already optimizing their titles with data.
           </p>
-          <Link href="/login">
+          <Link href="/auth/signin">
             <Button size="lg" variant="secondary" className="bg-white text-red-600 hover:bg-gray-100">
               Start Your Free Trial
             </Button>

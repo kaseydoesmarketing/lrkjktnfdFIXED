@@ -20,7 +20,7 @@ export default function Home() {
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
               <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors">Success Stories</a>
               <Link href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</Link>
-              <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
+              <Link href="/auth/signin" className="text-gray-600 hover:text-gray-900 transition-colors">Login</Link>
               <Link href="/paywall" className="btn-pulse bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                 Start Pro Plan
               </Link>
@@ -28,7 +28,7 @@ export default function Home() {
 
             {/* Mobile Navigation - Thumb-friendly */}
             <div className="flex items-center space-x-3 md:hidden">
-              <Link href="/login" className="text-gray-600 text-sm">Login</Link>
+              <Link href="/auth/signin" className="text-gray-600 text-sm">Login</Link>
               <Link href="/paywall" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium min-w-[88px] text-center">
                 Start Pro
               </Link>
@@ -238,7 +238,7 @@ export default function Home() {
           <p className="text-xl text-gray-300 mb-8">
             <strong>The Problem:</strong> 99% of creators use the same generic title formulas that stopped working years ago.
           </p>
-          <Link href="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium inline-block transition-colors">
+          <Link href="/auth/signin" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-medium inline-block transition-colors">
             Stop Wasting Time - Start Testing Smart
           </Link>
         </div>

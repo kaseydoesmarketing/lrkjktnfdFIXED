@@ -192,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect(authUrl);
     } catch (error) {
       // Fallback to demo mode if OAuth fails
-      res.redirect("/login?demo=true&error=oauth_failed");
+      res.redirect("/auth/signin?demo=true&error=oauth_failed");
     }
   });
 
@@ -250,13 +250,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         return res.redirect(
-          `/login?error=${errorStr}&description=${encodeURIComponent(errorDescStr)}`,
+          `/auth/signin?error=${errorStr}&description=${encodeURIComponent(errorDescStr)}`,
         );
       }
 
       if (!code || typeof code !== "string") {
         return res.redirect(
-          "/login?error=no_code&description=No authorization code received from Google",
+          "/auth/signin?error=no_code&description=No authorization code received from Google",
         );
       }
 
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.getUserByEmail(userInfo.email);
       } catch (error) {
         console.error('Failed to get user by email:', error);
-        return res.redirect('/login?error=database_error');
+        return res.redirect('/auth/signin?error=database_error');
       }
 
       if (!user) {
@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Stack trace:",
         error instanceof Error ? error.stack : "No stack trace",
       );
-      res.redirect("/login?error=oauth_failed");
+      res.redirect("/auth/signin?error=oauth_failed");
     }
   });
   */
@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message:
                 "Your YouTube access has expired. Please sign in again to reconnect your account.",
               reauth_required: true,
-              reauth_url: "/login",
+              reauth_url: "/auth/signin",
             });
           }
 
