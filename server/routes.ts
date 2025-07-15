@@ -438,63 +438,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeTests = tests.filter(test => test.status === 'active');
       console.log('✅ [/api/tests/active] Found active tests:', activeTests.length);
       
-      // Get titles and analytics for each active test
-      const testsWithData = await Promise.all(
-        activeTests.map(async (test) => {
-          const titles = await storage.getTitlesByTestId(test.id);
-          console.log(`📝 [/api/tests/active] Test ${test.id} has ${titles.length} titles`);
-          
-          // Get analytics for each title
-          const variants = await Promise.all(
-            titles.map(async (title) => {
-              const analyticsPolls = await storage.getAnalyticsPollsByTitleId(title.id);
-              // Get the latest analytics poll
-              const latestAnalytics = analyticsPolls.sort((a, b) => 
-                new Date(b.polledAt).getTime() - new Date(a.polledAt).getTime()
-              )[0];
-              
-              return {
-                id: title.id,
-                title: title.title,
-                metrics: {
-                  views: latestAnalytics?.views || 0,
-                  impressions: latestAnalytics?.impressions || 0,
-                  ctr: latestAnalytics?.ctr || 0,
-                  avgDuration: latestAnalytics?.averageViewDuration || 0,
-                },
-              };
-            })
-          );
-          
-          // Calculate next rotation time
-          let nextRotationTime = '';
-          if (test.lastRotatedAt) {
-            const lastRotation = new Date(test.lastRotatedAt);
-            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
-            const nextRotation = new Date(lastRotation.getTime() + intervalMs);
-            nextRotationTime = nextRotation.toISOString();
-          } else if (test.createdAt) {
-            // If no rotation yet, use creation time + interval
-            const created = new Date(test.createdAt);
-            const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
-            const nextRotation = new Date(created.getTime() + intervalMs);
-            nextRotationTime = nextRotation.toISOString();
-          }
-          
-          return {
-            id: test.id,
-            videoId: test.videoId,
-            videoTitle: test.videoTitle || 'Unknown Video',
-            thumbnailUrl: `https://img.youtube.com/vi/${test.videoId}/hqdefault.jpg`,
-            status: test.status,
-            rotationInterval: test.rotationIntervalMinutes || 60,
-            variants,
-            currentVariantIndex: test.currentTitleIndex || 0,
-            nextRotationTime,
-            createdAt: test.createdAt,
-          };
-        }),
-      );
+      console.log(`📝 [/api/tests/active] Fetching ${activeTests.length} active tests with optimized query`);
+      
+      const testsWithData = await storage.getActiveTestsWithAnalytics();
 
       console.log('🎯 [/api/tests/active] Returning active tests with data:', testsWithData.length);
       res.json(testsWithData);

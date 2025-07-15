@@ -66,6 +66,8 @@ export interface IStorage {
   
   // Winner selection
   determineTestWinner(testId: string): Promise<string | null>;
+  
+  getActiveTestsWithAnalytics(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -190,7 +192,7 @@ export class DatabaseStorage implements IStorage {
     // Delete in order to respect foreign key constraints
     // First get all titles for this test
     const testTitles = await db.select().from(titles).where(eq(titles.testId, id));
-    const titleIds = testTitles.map(t => t.id);
+    const titleIds = testTitles.map((t: any) => t.id);
     
     // Delete analytics polls for all titles
     for (const titleId of titleIds) {
@@ -416,6 +418,82 @@ export class DatabaseStorage implements IStorage {
     }
 
     return null;
+  }
+
+  async getActiveTestsWithAnalytics(): Promise<any[]> {
+    const activeTests = await db
+      .select()
+      .from(tests)
+      .where(eq(tests.status, 'active'))
+      .orderBy(desc(tests.createdAt));
+
+    if (!activeTests.length) {
+      return [];
+    }
+
+    const testIds = activeTests.map((test: any) => test.id);
+    
+    const allTitles = await db
+      .select()
+      .from(titles)
+      .where(sql`${titles.testId} = ANY(${testIds})`)
+      .orderBy(titles.testId, titles.order);
+
+    const titleIds = allTitles.map((title: any) => title.id);
+    
+    const allAnalytics = titleIds.length > 0 ? await db
+      .select()
+      .from(analyticsPolls)
+      .where(sql`${analyticsPolls.titleId} = ANY(${titleIds})`)
+      .orderBy(desc(analyticsPolls.polledAt)) : [];
+
+    const testsWithData = activeTests.map((test: any) => {
+      const testTitles = allTitles.filter((title: any) => title.testId === test.id);
+      
+      const variants = testTitles.map((title: any) => {
+        const titleAnalytics = allAnalytics.filter((poll: any) => poll.titleId === title.id);
+        const latestAnalytics = titleAnalytics[0];
+        
+        return {
+          id: title.id,
+          title: title.text,
+          metrics: {
+            views: latestAnalytics?.views || 0,
+            impressions: latestAnalytics?.impressions || 0,
+            ctr: latestAnalytics?.ctr || 0,
+            avgDuration: latestAnalytics?.averageViewDuration || 0,
+          }
+        };
+      });
+
+      let nextRotationTime = '';
+      if (test.lastRotatedAt) {
+        const lastRotation = new Date(test.lastRotatedAt);
+        const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+        const nextRotation = new Date(lastRotation.getTime() + intervalMs);
+        nextRotationTime = nextRotation.toISOString();
+      } else if (test.createdAt) {
+        const created = new Date(test.createdAt);
+        const intervalMs = (test.rotationIntervalMinutes || 60) * 60 * 1000;
+        const nextRotation = new Date(created.getTime() + intervalMs);
+        nextRotationTime = nextRotation.toISOString();
+      }
+
+      return {
+        id: test.id,
+        videoId: test.videoId,
+        videoTitle: test.videoTitle || 'Unknown Video',
+        thumbnailUrl: `https://img.youtube.com/vi/${test.videoId}/hqdefault.jpg`,
+        status: test.status,
+        rotationInterval: test.rotationIntervalMinutes || 60,
+        variants,
+        currentVariantIndex: test.currentTitleIndex || 0,
+        nextRotationTime,
+        createdAt: test.createdAt,
+      };
+    });
+
+    return testsWithData;
   }
 
 
