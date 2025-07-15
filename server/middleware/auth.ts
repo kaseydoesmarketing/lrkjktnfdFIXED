@@ -38,6 +38,47 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
+      console.log('🔄 [AUTH-MIDDLEWARE] Token validation failed, attempting refresh:', error?.message);
+      
+      const refreshToken = req.cookies['sb-refresh-token'];
+      if (refreshToken) {
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+            refresh_token: refreshToken
+          });
+          
+          if (!refreshError && refreshData.session) {
+            console.log('✅ [AUTH-MIDDLEWARE] Token refreshed successfully');
+            
+            res.cookie('sb-access-token', refreshData.session.access_token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 7 // 7 days
+            });
+            
+            res.cookie('sb-refresh-token', refreshData.session.refresh_token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 30 // 30 days
+            });
+            
+            const { data: { user: refreshedUser }, error: userError } = await supabase.auth.getUser(refreshData.session.access_token);
+            if (!userError && refreshedUser) {
+              const dbUser = await storage.getUserByEmail(refreshedUser.email!);
+              if (dbUser) {
+                req.user = dbUser;
+                return next();
+              }
+            }
+          }
+        } catch (refreshErr) {
+          console.error('❌ [AUTH-MIDDLEWARE] Token refresh failed:', refreshErr);
+        }
+      }
+      
+      console.error('❌ [AUTH-MIDDLEWARE] Authentication failed - no valid session or refresh token');
       return res.status(401).json({ error: 'Invalid or expired session' });
     }
     

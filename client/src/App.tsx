@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { authService } from "@/lib/auth";
 import Dashboard from "@/pages/dashboard";
 import EnhancedAdmin from "@/pages/enhanced-admin";
+import SignIn from "@/pages/signin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Home from "./pages/home";
@@ -53,10 +54,11 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show login if error or no user
+  // Redirect to signin if error or no user
   if (error || !data) {
-    console.log('🚫 [AUTH-WRAPPER] No auth, showing login. Error:', error);
-    return <Login />;
+    console.log('🚫 [AUTH-WRAPPER] No auth, redirecting to signin. Error:', error);
+    window.location.href = '/auth/signin';
+    return null;
   }
 
   // User authenticated, render dashboard
@@ -91,7 +93,7 @@ function Router() {
         setLocation('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-        setLocation('/login');
+        setLocation('/auth/signin');
       }
     });
 
@@ -119,6 +121,7 @@ function Router() {
           </AuthWrapper>
         </Route>
         <Route path="/paywall" component={Paywall} />
+        <Route path="/auth/signin" component={SignIn} />
         <Route path="/login" component={Login} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/oauth-test" component={OAuthTest} />
