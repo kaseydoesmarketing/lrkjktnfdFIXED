@@ -1,0 +1,37 @@
+{
+  "name": "titletester-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --exec node --loader ts-node/esm src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "googleapis": "^126.0.1",
+    "pg": "^8.11.3",
+    "drizzle-orm": "^0.29.0",
+    "node-cron": "^3.0.3",
+    "ws": "^8.14.2",
+    "luxon": "^3.4.4",
+    "crypto": "^1.0.1",
+    "cookie-parser": "^1.4.6",
+    "@supabase/supabase-js": "^2.38.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.7",
+    "@types/express": "^4.17.20",
+    "@types/cors": "^2.8.15",
+    "@types/pg": "^8.10.7",
+    "@types/ws": "^8.5.8",
+    "@types/luxon": "^3.3.4",
+    "@types/cookie-parser": "^1.4.6",
+    "typescript": "^5.2.2",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "drizzle-kit": "^0.20.4"
+  }
+}
