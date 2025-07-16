@@ -1,0 +1,28 @@
+{
+  "name": "titletester-rebuild",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@planetscale/database": "^1.19.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.14",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.16",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.3",
+    "express": "^5.1.0",
+    "googleapis": "^153.0.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "typescript": "^5.8.3"
+  }
+}
